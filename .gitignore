@@ -1,2 +1,38 @@
+# Ferramentas locais (não subir)
 squads/
 rtk/
+
+# Dependências
+node_modules/
+.pnpm-store/
+
+# Build
+apps/api/dist/
+apps/web/.next/
+packages/*/dist/
+
+# Ambiente (NUNCA commitar)
+.env
+.env.local
+.env.production
+
+# Uploads e storage local
+apps/api/uploads/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Prisma
+apps/api/prisma/migrations/*.lock
+
+# TypeScript
+*.tsbuildinfo
