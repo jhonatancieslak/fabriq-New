@@ -26,6 +26,16 @@ export async function operatorsRoutes(app: FastifyInstance): Promise<void> {
     })
   })
 
+  app.get('/:id', { preHandler: [requireAuth, requireRole('admin', 'financial')] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const op = await app.prisma.operator.findFirst({
+      where: { id, tenantId: req.tenantId!, isActive: true },
+      select: { id: true, name: true, username: true, phone: true, email: true, machineId: true },
+    })
+    if (!op) return reply.status(404).send({ error: 'Operador não encontrado' })
+    return op
+  })
+
   app.post('/', adminGuard, async (req, reply) => {
     const body = operatorSchema.safeParse(req.body)
     if (!body.success) return reply.status(400).send({ error: body.error.flatten() })

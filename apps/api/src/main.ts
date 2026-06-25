@@ -15,6 +15,8 @@ import { operatorsRoutes } from './modules/operators/operators.routes.js'
 import { ordersRoutes } from './modules/orders/orders.routes.js'
 import { machinesRoutes } from './modules/machines/machines.routes.js'
 import { materialsRoutes } from './modules/materials/materials.routes.js'
+import { pdfRoutes } from './modules/pdf/pdf.routes.js'
+import { cuttingParamsRoutes } from './modules/cutting-params/cutting-params.routes.js'
 import { resolveTenant } from './shared/middleware/tenant.js'
 
 const prisma = new PrismaClient()
@@ -46,8 +48,10 @@ async function bootstrap() {
   await app.register(projectsRoutes,  { prefix: '/api/v1/projects' })
   await app.register(operatorsRoutes, { prefix: '/api/v1/operators' })
   await app.register(ordersRoutes,    { prefix: '/api/v1/orders' })
-  await app.register(machinesRoutes,  { prefix: '/api/v1/machines' })
-  await app.register(materialsRoutes, { prefix: '/api/v1/materials' })
+  await app.register(machinesRoutes,      { prefix: '/api/v1/machines' })
+  await app.register(materialsRoutes,     { prefix: '/api/v1/materials' })
+  await app.register(pdfRoutes,           { prefix: '/api/v1/pdf' })
+  await app.register(cuttingParamsRoutes, { prefix: '/api/v1/cutting-params' })
 
   const port = Number(process.env.PORT ?? 8190)
   const host = process.env.HOST ?? '127.0.0.1'

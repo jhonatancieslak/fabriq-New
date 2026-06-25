@@ -78,7 +78,7 @@ export const api = {
     get: (id: string) => request<Order>(`/api/v1/orders/${id}`),
     create: (data: unknown) =>
       request<Order>('/api/v1/orders', { method: 'POST', body: JSON.stringify(data) }),
-    cancel: (id: string, reason: string) =>
+    cancel: (id: string, reason?: string) =>
       request<Order>(`/api/v1/orders/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
     verifyByAuthCode: (authCode: string) => request<Order>(`/api/v1/orders/auth/${authCode}`),
   },
@@ -93,6 +93,7 @@ export const api = {
 
   operators: {
     list: () => request<Operator[]>('/api/v1/operators'),
+    get:  (id: string) => request<Operator>(`/api/v1/operators/${id}`),
   },
 }
 
@@ -112,9 +113,15 @@ export interface OrderStage {
   id: string; stageNumber: number; type: string; status: string
   operator?: { name: string }; machine?: { name: string }
 }
+export interface OrderItem {
+  id: string; description: string; thicknessMm: number; quantityPlanned: number
+  widthMm?: number; heightMm?: number; material?: { name: string }
+}
 export interface Order {
   id: string; orderNumber: string; status: string; authCode: string; accessToken: string
+  notes?: string
   client: { name: string }; project: { name: string; code: string }
-  stages: OrderStage[]; createdAt: string
+  stages: (OrderStage & { startedAt?: string; completedAt?: string })[]; items?: OrderItem[]
+  createdAt: string
 }
 export interface OrdersResponse { orders: Order[]; total: number; page: number; pages: number }

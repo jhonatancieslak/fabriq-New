@@ -4,7 +4,7 @@ module.exports = {
   apps: [
     {
       name: 'fabriq-api',
-      script: 'apps/api/dist/main.js',
+      script: '/var/www/fabriq/apps/api/dist/main.js',
       instances: 2,
       exec_mode: 'cluster',
       watch: false,

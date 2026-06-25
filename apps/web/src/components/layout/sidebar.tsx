@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList,
-  Settings, LogOut, Wrench, BarChart3, FileText,
+  Settings, LogOut, Wrench, BarChart3, FileText, HardHat,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from './logo'
@@ -16,6 +16,7 @@ const nav = [
   { href: '/orders',     label: 'Ordens',       icon: ClipboardList },
   { href: '/clients',    label: 'Clientes',     icon: Users },
   { href: '/projects',   label: 'Obras',        icon: FolderOpen },
+  { href: '/operators',  label: 'Operadores',   icon: HardHat },
   { href: '/reports',    label: 'Relatórios',   icon: BarChart3 },
   { href: '/invoicing',  label: 'Faturação',    icon: FileText },
   { href: '/settings',   label: 'Configurações',icon: Settings },
