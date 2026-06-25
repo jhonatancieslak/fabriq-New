@@ -36,3 +36,6 @@ apps/api/prisma/migrations/*.lock
 
 # TypeScript
 *.tsbuildinfo
+
+# Dados Docker / PostgreSQL (resquício do projecto antigo)
+fabriq.pt/
