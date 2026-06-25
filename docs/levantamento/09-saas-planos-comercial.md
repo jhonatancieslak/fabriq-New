@@ -7,7 +7,7 @@
 ## Modelo SaaS
 
 **Pagamento:** mensalidade ou anual (desconto 2 meses grátis no anual)
-**Moeda:** EUR (Portugal/Europa), BRL (Brasil)
+**Moeda:** EUR (mercado Portugal — foco exclusivo fase inicial)
 **Sem trial livre** — demo agendada ou conta demo pública
 **1.º mês gratuito** após assinatura
 
@@ -94,7 +94,7 @@ A empresa que vende a máquina laser conhece TODOS os compradores.
 - 1.º mês grátis após compra da máquina (custo para o revendedor ou FABRIQ)
 
 **Como qualificar:**
-- Empresa que vende máquinas CNC laser (Portugal/Brasil)
+- Empresa que vende máquinas CNC laser em Portugal
 - Mínimo 10 clientes instalados
 - Compromisso de oferecer a todos os novos clientes
 
@@ -111,16 +111,6 @@ A empresa que vende a máquina laser conhece TODOS os compradores.
   - Vai direto para CRM / email do comercial
 
 ---
-
-## Preços Brasil (BRL)
-
-| Plano | EUR | BRL (aprox.) |
-|---|---|---|
-| Starter | 49€ | R$ 290/mês |
-| Pro | 99€ | R$ 590/mês |
-| Factory | 199€ | R$ 1.190/mês |
-
-Nota: preços BRL ajustados trimestralmente com a taxa de câmbio.
 
 ---
 

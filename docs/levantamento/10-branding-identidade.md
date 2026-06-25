@@ -4,14 +4,38 @@
 
 ---
 
-## Nome
+## Nome e Expressão Visual
 
-**FABRIQ**
+**Nome comercial/jurídico:** FABRIQ
+**Expressão visual da marca:** `FABRIQ.IA`
 
-Derivado de "fabric" (estrutura, tecido, trama) + sufixo industrial.
-Soa a tecnologia mas tem raiz industrial.
-Pronuncia-se igual em PT, EN e ES.
-Domínio: `fabriq.pt` (principal) + `fabriq.com.br` (Brasil)
+### Construção visual
+```
+[ FABRIQ ][ .IA ]
+  branco    amarelo
+  Montserrat ExtraBold / Black
+  CAIXA ALTA
+```
+
+- `FABRIQ` — Montserrat ExtraBold, UPPERCASE, **branco** (sobre fundo escuro) / **azul escuro** (sobre fundo claro)
+- `.IA` — Montserrat ExtraBold, UPPERCASE, **amarelo** `#EAB308` — sempre amarelo em qualquer contexto
+- O ponto (`.`) faz parte da expressão — lê-se "FABRIQ ponto IA"
+
+### Porquê Montserrat caixa alta
+- Transmite força e solidez industrial
+- Legível mesmo em ecrãs sujos ou com luz solar (chão de fábrica)
+- Sem serifas — tecnológico e moderno
+- Amplamente disponível (Google Fonts — sem dependência de licença)
+
+### Porquê o split BRANCO + AMARELO
+- Amarelo industrial = sinalização, precisão, atenção — semântica certa para o setor
+- O split visual comunica duas ideias em simultâneo: **gestão fabril** (FABRIQ) + **inteligência artificial** (.IA)
+- O `.IA` amarelo é o diferenciador — lembra que há IA dentro, não é só um software de ordens
+
+### Nome jurídico vs. expressão visual
+- Registos, contratos, faturas, domínios → **FABRIQ**
+- Logótipo, marketing, produto, app → **FABRIQ.IA**
+- Domínio principal: `fabriq.pt`
 
 ---
 
@@ -50,23 +74,27 @@ Não é o software de desenho. Não é o ERP. É o **controlo do que acontece no
 
 ### Paleta de Cores
 
-**Primária — Azul Industrial**
-- `#1E40AF` (azul profundo) — profissionalismo, confiança, tecnologia
-- `#3B82F6` (azul médio) — ação, interação
+**Marca — Amarelo IA (cor principal da identidade)**
+- `#EAB308` (amarelo) — `.IA` no logótipo, destaques, CTAs, badges de IA
+- `#FEF08A` (amarelo claro) — backgrounds de highlight
 
-**Secundária — Laranja de Precisão**
-- `#EA580C` (laranja queimado) — energia, metalurgia, precisão
-- `#FED7AA` (laranja claro) — destaques, badges
+**Primária — Azul Industrial (painel admin)**
+- `#1E40AF` (azul profundo) — profissionalismo, confiança, tecnologia
+- `#3B82F6` (azul médio) — ação, interação, links
+
+**Dark (PWA operador e fundos do logo)**
+- `#0F172A` (quase preto) — background PWA, fundo do logótipo versão escura
+- `#1E293B` (dark card) — cards e superfícies dark mode
+- `#FFFFFF` (branco) — texto `FABRIQ` sobre fundo escuro
 
 **Neutros**
-- `#0F172A` (quase preto) — textos principais
-- `#1E293B` (dark) — backgrounds dark mode (PWA operador)
-- `#F1F5F9` (cinza claro) — backgrounds admin
+- `#F1F5F9` (cinza claro) — backgrounds painel admin
 - `#94A3B8` (cinza médio) — textos secundários
+- `#334155` (cinza escuro) — textos corpo
 
 **Status**
 - Verde `#16A34A` — concluído, funcionou
-- Amarelo `#CA8A04` — em progresso, ajustado
+- Amarelo `#EAB308` — em progresso, ajustado (mesma cor da marca — intencional)
 - Laranja `#EA580C` — pendente, atenção
 - Vermelho `#DC2626` — cancelado, falhou, urgente
 
@@ -82,6 +110,34 @@ Não é o software de desenho. Não é o ERP. É o **controlo do que acontece no
 - Versão dark (para PWA) e light (para painel admin)
 - Versão ícone (para PWA home screen)
 - White-label: substituível por logo do cliente
+
+### Logo — Variações
+
+```
+VERSÃO ESCURA (painel admin header, fundo branco/cinza)
+┌──────────────────────────┐
+│  FABRIQ.IA               │
+│  azul-escuro + amarelo   │
+└──────────────────────────┘
+
+VERSÃO CLARA (PWA operador, fundo #0F172A)
+┌──────────────────────────┐
+│  FABRIQ.IA               │
+│  branco + amarelo        │
+└──────────────────────────┘
+
+VERSÃO ÍCONE (PWA home screen, favicon)
+┌──────┐
+│  F.  │  ← "F" branco + "." amarelo, fundo #0F172A
+└──────┘
+```
+
+### Tipografia
+- **Logo:** Montserrat ExtraBold (800), UPPERCASE
+- **Headings:** Montserrat Bold (700)
+- **Body:** Inter (400/500) — legibilidade em tabelas e formulários
+- **Dados/Números/Parâmetros:** Inter Mono — medidas, tempos, parâmetros de corte
+- **PWA Operador:** tamanho mínimo 16px, line-height 1.6 (gloves-friendly)
 
 ### Ícones
 - Biblioteca: Lucide Icons (consistente com shadcn/ui)

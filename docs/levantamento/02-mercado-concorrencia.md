@@ -6,20 +6,13 @@
 
 ## Tamanho do Mercado
 
-### Portugal
+### Portugal (foco exclusivo — fase inicial)
 - ~2.800 empresas de trabalho de metais (INE 2024)
 - Estimativa de empresas com corte CNC laser: 400–600
 - Ticket médio SaaS: 80–200€/mês
 - TAM Portugal: ~720k€/ano (conservador)
-
-### Brasil
-- ~45.000 empresas de metalurgia/metalomecânica (IBGE)
-- Corte laser fibra: mercado em forte crescimento (2019–2026 +300%)
-- Ticket médio SaaS BR: R$200–600/mês
-- TAM Brasil: multi-milhões R$/ano
-
-### Espanha + LATAM
-- Expansão natural após consolidação PT + BR
+- Foco geográfico: Portugal continental + ilhas
+- Expansão internacional apenas após consolidação em PT
 
 ---
 
@@ -70,10 +63,10 @@ Frase de posicionamento:
 - Revenue share ou comissão por cliente ativado
 - **Este canal é o maior diferencial de distribuição**
 
-### 3. Conteúdo orgânico
-- LinkedIn: "como digitalizar o chão de fábrica"
-- YouTube: demos, tutoriais, casos de uso
-- SEO: "software ordens de serviço laser", "gestão corte CNC"
+### 3. Conteúdo orgânico (Portugal)
+- LinkedIn PT: "como digitalizar o chão de fábrica"
+- YouTube: demos, tutoriais, casos de uso em português de Portugal
+- SEO PT: "software ordens de serviço laser Portugal", "gestão corte CNC PME"
 
 ### 4. Paid (depois de orgânico converter)
 - Meta Ads (segmentação industrial)
