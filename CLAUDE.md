@@ -1,5 +1,22 @@
 # FABRIQ — Instruções para Claude Code
 
+## ⚠️ RTK — USO OBRIGATÓRIO EM TODOS OS COMANDOS
+
+**RTK está instalado em `/var/www/fabriq/rtk/` e DEVE ser usado em TODOS os comandos de terminal, sem exceção.**
+
+```bash
+rtk git status          # em vez de: git status
+rtk git add .           # em vez de: git add .
+rtk git commit -m "..." # em vez de: git commit
+rtk git push            # em vez de: git push
+```
+
+- Nunca executar `git`, `npm`, `composer`, `python` ou qualquer comando diretamente
+- Sempre prefixar com `rtk` para otimizar tokens
+- Em caso de dúvida: `rtk --help` ou `rtk discover`
+
+---
+
 ## INÍCIO DE CADA CONVERSA — OBRIGATÓRIO
 
 Ao iniciar qualquer conversa dentro do diretório `/var/www/fabriq/`:
@@ -100,7 +117,7 @@ Diretório: `/var/www/fabriq/squads/`
 ## RTK
 
 RTK está instalado em `/var/www/fabriq/rtk/`.
-Usar sempre `rtk` para operações de terminal (git, comandos, etc.) para otimizar tokens.
+**USO OBRIGATÓRIO** — ver secção no topo deste ficheiro. Nunca executar comandos sem prefixar com `rtk`.
 
 ---
 
