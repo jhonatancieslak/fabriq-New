@@ -3,36 +3,24 @@
 ## Última sessão: 2026-06-25
 
 ### O que foi feito
-- Reset completo do diretório `/var/www/fabriq/`
-- Clonado `squads/` (xquads-squads) e `rtk/` — ambos no `.gitignore`
-- Criado `CLAUDE.md` com todas as regras do projeto
-- Levantamento completo criado em `docs/levantamento/` (12 documentos)
-  - 01: Produto, visão e posicionamento
-  - 02: Mercado e concorrência
-  - 03: Módulos e funcionalidades detalhadas
-  - 04: Fluxos de utilizador (todos os perfis)
-  - 05: Stack tecnológica e arquitetura
-  - 06: Modelagem de dados (todas as entidades)
-  - 07: Segurança e auditoria
-  - 08: IA de parâmetros de corte
-  - 09: SaaS, planos e modelo comercial
-  - 10: Branding e identidade visual
-  - 11: Roadmap (Fase 0 → v2.0)
-  - 12: Infraestrutura e deploy
+- Fase 0 concluída: estrutura base do monorepo
+- Containers Docker do projeto antigo removidos (portas libertas)
+- pnpm workspaces: apps/api (Fastify) + apps/web (Next.js)
+- Prisma schema completo: 18 modelos, todos os enums, índices multi-tenant
+- Migration `init` aplicada no PostgreSQL (fabriq_db / user fabriq)
+- API Fastify testada e funcional na porta 8190 (/health → 200 OK)
+- Next.js configurado na porta 3190 com cores da marca
+- PM2 ecosystem.config.js pronto para produção
+- Branding FABRIQ.IA: Montserrat ExtraBold + amarelo #EAB308
 
-### Decisões tomadas
-- Stack: Node.js + Fastify (API) + Next.js 15 (frontend) + TypeScript + PostgreSQL + Redis + BullMQ
-- Multi-tenant row-level desde o início
-- PWA operador em dark mode, mobile-first
-- Monorepo pnpm (apps/api + apps/web)
-- Portas FABRIQ: API 8190, Next.js 3190, MinIO 9190/9191
-- Nome e branding FABRIQ confirmados
-- Sistema antigo apenas como referência funcional — stack completamente diferente
+### Portas FABRIQ em uso
+- 8190 → Fastify API
+- 3190 → Next.js web
 
-### Próximo passo
-- Fase 0: estrutura base do monorepo
-  1. Inicializar pnpm workspaces
-  2. Setup Fastify API com health check
-  3. Setup Next.js com Tailwind + shadcn/ui
-  4. Schema Prisma inicial
-  5. Nginx + PM2 + systemd para FABRIQ
+### Próximo passo — Fase 1 (admin)
+1. Auth: POST /api/v1/auth/login (users), POST /api/v1/auth/token (operators)
+2. Middleware de tenant (resolução por subdomínio)
+3. Layout do painel admin (sidebar, header com FABRIQ.IA)
+4. Módulo Clientes (CRUD completo)
+5. Módulo Obras
+6. Módulo Ordens de Serviço (o núcleo)
