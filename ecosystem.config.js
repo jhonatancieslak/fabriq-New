@@ -16,13 +16,16 @@ module.exports = {
     },
     {
       name: 'fabriq-web',
-      script: 'node_modules/.bin/next',
+      script: '/var/www/fabriq/apps/web/node_modules/.bin/next',
       args: 'start -p 3190',
       cwd: '/var/www/fabriq/apps/web',
       instances: 1,
+      exec_mode: 'fork',
       watch: false,
       env: {
         NODE_ENV: 'production',
+        NEXT_PUBLIC_API_URL: 'https://api.fabriq.pt',
+        NEXT_PUBLIC_APP_URL: 'https://novo.fabriq.pt',
       },
     },
     {
