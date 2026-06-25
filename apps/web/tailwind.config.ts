@@ -3,7 +3,6 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  darkMode: ['class'],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -12,32 +11,24 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        display: ['Montserrat', 'sans-serif'],
-        mono: ['Inter Mono', 'monospace'],
+        sans:    ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-montserrat)', 'sans-serif'],
+        mono:    ['ui-monospace', 'monospace'],
       },
       colors: {
-        // Marca
-        brand: {
-          yellow: '#EAB308',
-          'yellow-light': '#FEF08A',
-          blue: '#1E40AF',
-          'blue-mid': '#3B82F6',
-        },
-        // Dark (PWA operador)
-        dark: {
-          bg: '#0F172A',
-          card: '#1E293B',
-          border: '#334155',
-          text: '#F1F5F9',
-          muted: '#94A3B8',
-        },
+        'brand-yellow': '#EAB308',
+        'brand-blue':   '#1E3A8A',
       },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+      borderRadius: { '4xl': '2rem' },
+      boxShadow: {
+        'card':    '0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)',
+        'card-md': '0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07)',
+        'card-lg': '0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08)',
       },
+      keyframes: {
+        'fade-in': { from: { opacity: '0', transform: 'translateY(4px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+      },
+      animation: { 'fade-in': 'fade-in 0.2s ease-out' },
     },
   },
   plugins: [],
