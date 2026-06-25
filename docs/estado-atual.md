@@ -2,25 +2,40 @@
 
 ## Última sessão: 2026-06-25
 
-### O que foi feito
-- Fase 0 concluída: estrutura base do monorepo
-- Containers Docker do projeto antigo removidos (portas libertas)
-- pnpm workspaces: apps/api (Fastify) + apps/web (Next.js)
-- Prisma schema completo: 18 modelos, todos os enums, índices multi-tenant
-- Migration `init` aplicada no PostgreSQL (fabriq_db / user fabriq)
-- API Fastify testada e funcional na porta 8190 (/health → 200 OK)
-- Next.js configurado na porta 3190 com cores da marca
-- PM2 ecosystem.config.js pronto para produção
-- Branding FABRIQ.IA: Montserrat ExtraBold + amarelo #EAB308
+### O que foi feito — Fase 1 (em progresso)
 
-### Portas FABRIQ em uso
-- 8190 → Fastify API
-- 3190 → Next.js web
+**Backend (API Fastify)**
+- Auth completo: POST /api/v1/auth/login, /operator/token, /refresh, /logout
+  - JWT access (15min) + refresh token com rotação (30d)
+  - Bcryptjs hash de senhas (12 rounds)
+  - Redis blacklist via RefreshToken revogation
+  - Audit log em login/logout/tentativas falhadas
+- Middleware de tenant (resolução por subdomínio + header X-Tenant-Slug)
+- Middleware de auth (requireAuth, requireRole, requireOperator)
+- Módulo Clientes: CRUD completo com audit
+- Módulo Obras (Projects): CRUD com relação cliente
+- Módulo Operadores: CRUD, soft delete, hash de senha
 
-### Próximo passo — Fase 1 (admin)
-1. Auth: POST /api/v1/auth/login (users), POST /api/v1/auth/token (operators)
-2. Middleware de tenant (resolução por subdomínio)
-3. Layout do painel admin (sidebar, header com FABRIQ.IA)
-4. Módulo Clientes (CRUD completo)
-5. Módulo Obras
-6. Módulo Ordens de Serviço (o núcleo)
+**Frontend (Next.js)**
+- Logo FABRIQ.IA (Montserrat ExtraBold, branco + amarelo)
+- Layout admin com sidebar (ícones Lucide, active state)
+- Dashboard page com KPI cards
+- Clients page (tabela skeleton)
+- Login page (dark, amarelo nos focus states)
+
+### Estrutura de rotas API disponíveis
+- GET  /health
+- GET  /api/v1/health
+- POST /api/v1/auth/login
+- POST /api/v1/auth/operator/token
+- POST /api/v1/auth/refresh
+- POST /api/v1/auth/logout
+- GET/POST/PATCH/DELETE /api/v1/clients
+- GET/POST/PATCH /api/v1/projects
+- GET/POST/PATCH/DELETE /api/v1/operators
+
+### Próximo passo
+1. Seed de tenant + admin user para testar login
+2. Ligar frontend ao backend (TanStack Query + fetch)
+3. Módulo de Ordens de Serviço (núcleo do produto)
+4. Nginx config para servir o projeto
