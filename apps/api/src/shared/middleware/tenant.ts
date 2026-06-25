@@ -19,8 +19,9 @@ export async function resolveTenant(req: FastifyRequest, reply: FastifyReply): P
     }
   }
 
-  const skip = ['app', 'demo', 'api', 'www']
-  if (!slug || skip.includes(slug)) {
+  // apenas ignorar subdomínios de infra, nunca slugs de tenant reais
+  const infraSubdomains = ['app', 'api', 'www', 'mail', 'smtp']
+  if (!slug || infraSubdomains.includes(slug)) {
     return
   }
 
