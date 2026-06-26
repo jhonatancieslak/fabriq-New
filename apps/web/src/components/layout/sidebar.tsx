@@ -6,18 +6,18 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
-  Settings, LogOut, BarChart3, FileText, ChevronRight,
+  Settings, LogOut, BarChart3, FileText, Zap,
 } from 'lucide-react'
 
 const nav = [
-  { href: '/dashboard',  label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/orders',     label: 'Ordens',        icon: ClipboardList },
-  { href: '/clients',    label: 'Clientes',      icon: Users },
-  { href: '/projects',   label: 'Obras',         icon: FolderOpen },
-  { href: '/operators',  label: 'Operadores',    icon: HardHat },
-  { href: '/reports',    label: 'Relatórios',    icon: BarChart3 },
-  { href: '/invoicing',  label: 'Faturação',     icon: FileText },
-  { href: '/settings',   label: 'Configurações', icon: Settings },
+  { href: '/dashboard',  label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/orders',     label: 'Ordens',         icon: ClipboardList },
+  { href: '/clients',    label: 'Clientes',       icon: Users },
+  { href: '/projects',   label: 'Obras',          icon: FolderOpen },
+  { href: '/operators',  label: 'Operadores',     icon: HardHat },
+  { href: '/reports',    label: 'Relatórios',     icon: BarChart3 },
+  { href: '/invoicing',  label: 'Faturação',      icon: FileText },
+  { href: '/settings',   label: 'Configurações',  icon: Settings },
 ]
 
 export function Sidebar() {
@@ -30,12 +30,16 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r border-slate-100 bg-white">
+    <aside className="flex h-screen w-56 flex-col" style={{ background: '#07080A', borderRight: '1px solid #111318' }}>
+
       {/* Logo */}
-      <div className="flex h-16 items-center px-5 border-b border-slate-100">
-        <div className="font-display text-xl font-black uppercase tracking-tight text-slate-900">
-          FABRIQ<span className="text-brand-yellow">.IA</span>
+      <div className="flex h-16 items-center gap-2.5 px-5" style={{ borderBottom: '1px solid #111318' }}>
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: '#EAB308' }}>
+          <Zap className="h-4 w-4 text-slate-900" strokeWidth={2.5} />
         </div>
+        <span className="font-black text-lg uppercase tracking-tight text-white">
+          FABRIQ<span style={{ color: '#EAB308' }}>.IA</span>
+        </span>
       </div>
 
       {/* Nav */}
@@ -45,24 +49,33 @@ export function Sidebar() {
           const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
           return (
             <Link key={item.href} href={item.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all group ${
-                active
-                  ? 'bg-blue-50 text-brand-blue'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}>
-              <Icon className={`h-4 w-4 flex-shrink-0 ${active ? 'text-brand-blue' : 'text-slate-400 group-hover:text-slate-600'}`} />
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all group"
+              style={active ? {
+                background: 'rgba(234,179,8,0.12)',
+                color: '#EAB308',
+              } : {
+                color: '#6B7280',
+              }}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#D1D5DB' } }}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280' } }}
+            >
+              <Icon className="h-4 w-4 flex-shrink-0" style={{ color: active ? '#EAB308' : 'inherit' }} />
               <span className="flex-1">{item.label}</span>
-              {active && <ChevronRight className="h-3 w-3 text-brand-blue/50" />}
+              {active && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#EAB308' }} />}
             </Link>
           )
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-slate-100 p-3">
+      {/* Logout */}
+      <div className="px-3 pb-4 pt-3" style={{ borderTop: '1px solid #111318' }}>
         <button onClick={logout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all">
-          <LogOut className="h-4 w-4" />
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
+          style={{ color: '#4B5563' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#FCA5A5' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#4B5563' }}
+        >
+          <LogOut className="h-4 w-4 flex-shrink-0" />
           Terminar sessão
         </button>
       </div>

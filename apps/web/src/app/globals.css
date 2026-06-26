@@ -7,15 +7,15 @@
 /* ─── Tokens de marca ─────────────────────────────────────────────────────── */
 :root {
   --brand-yellow: #EAB308;
-  --brand-blue:   #1E3A8A;
-  --radius: 0.625rem;
+  --brand-black:  #07080A;
+  --radius: 0.75rem;
 }
 
 /* ─── Base ────────────────────────────────────────────────────────────────── */
 html { -webkit-tap-highlight-color: transparent; }
 
 body {
-  background-color: #F8FAFC;
+  background-color: #F1F5F9;
   color: #0F172A;
   -webkit-font-smoothing: antialiased;
 }
@@ -24,20 +24,82 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
 
-/* ─── Gradiente hero ──────────────────────────────────────────────────────── */
-.gradient-hero {
-  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #1D4ED8 100%);
-}
+/* ─── Fonte display ───────────────────────────────────────────────────────── */
+.font-display { font-family: var(--font-montserrat), sans-serif; }
 
-/* ─── Fade-in ─────────────────────────────────────────────────────────────── */
+/* ─── Animações ───────────────────────────────────────────────────────────── */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in { animation: fade-in 0.2s ease-out; }
-
-/* ─── Fonte display (Montserrat) ──────────────────────────────────────────── */
-.font-display { font-family: var(--font-montserrat), sans-serif; }
+.animate-fade-in { animation: fade-in 0.25s ease-out; }
 
 /* ─── Safe area PWA ───────────────────────────────────────────────────────── */
 .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ─── Hero gradient (login) ───────────────────────────────────────────────── */
+.gradient-hero {
+  background: linear-gradient(135deg, #07080A 0%, #0d1117 100%);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   COMPONENTES BASE
+══════════════════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ── Cards ────────────────────────────────────────────────────────────── */
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+  }
+  .card-hover {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all;
+  }
+
+  /* ── Botões ───────────────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-yellow {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-slate-900 shadow-sm transition-all hover:bg-yellow-300 active:scale-95 disabled:opacity-50;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-95 disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 transition-all hover:bg-red-100 active:scale-95 disabled:opacity-50;
+  }
+
+  /* ── Inputs ───────────────────────────────────────────────────────────── */
+  .input {
+    @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/5;
+  }
+  .input-dark {
+    @apply w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/10;
+  }
+  .select {
+    @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/5;
+  }
+  .label {
+    @apply block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5;
+  }
+
+  /* ── Badges ───────────────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .badge-pending   { @apply badge bg-amber-100 text-amber-700; }
+  .badge-progress  { @apply badge bg-blue-100 text-blue-700; }
+  .badge-completed { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-cancelled { @apply badge bg-red-100 text-red-600; }
+  .badge-invoiced  { @apply badge bg-purple-100 text-purple-700; }
+
+  /* ── Tipografia de página ─────────────────────────────────────────────── */
+  .page-title    { @apply text-2xl font-bold text-slate-900 tracking-tight; }
+  .page-subtitle { @apply text-sm text-slate-500 mt-0.5; }
+  .section-title { @apply text-base font-semibold text-slate-900; }
+
+  /* ── Table rows ───────────────────────────────────────────────────────── */
+  .table-row {
+    @apply flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0;
+  }
+}

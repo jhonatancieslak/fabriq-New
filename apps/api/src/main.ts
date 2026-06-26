@@ -29,7 +29,13 @@ const app = Fastify({
 async function bootstrap() {
   await app.register(helmet, { contentSecurityPolicy: false })
   await app.register(cors, {
-    origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3190'],
+    origin: process.env.CORS_ORIGIN?.split(',') ?? [
+      'http://localhost:3190',
+      'http://localhost:3191',
+      'https://sistema.fabriq.pt',
+      'https://app.fabriq.pt',
+      'https://saas.fabriq.pt',
+    ],
     credentials: true,
   })
   await app.register(rateLimit, { global: true, max: 100, timeWindow: '1 minute', redis })
