@@ -95,6 +95,18 @@ export const api = {
     list: () => request<Operator[]>('/api/v1/operators'),
     get:  (id: string) => request<Operator>(`/api/v1/operators/${id}`),
   },
+
+  users: {
+    list: () => request<AppUser[]>('/api/v1/users'),
+    get:  (id: string) => request<AppUser>(`/api/v1/users/${id}`),
+    create: (data: { name: string; email: string; password: string; role: string }) =>
+      request<AppUser>('/api/v1/users', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<{ name: string; email: string; role: string; isActive: boolean }>) =>
+      request<AppUser>(`/api/v1/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    resetPassword: (id: string, password: string) =>
+      request(`/api/v1/users/${id}/password`, { method: 'PATCH', body: JSON.stringify({ password }) }),
+    toggle: (id: string) => request<{ id: string; isActive: boolean }>(`/api/v1/users/${id}`, { method: 'DELETE' }),
+  },
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -125,3 +137,8 @@ export interface Order {
   createdAt: string
 }
 export interface OrdersResponse { orders: Order[]; total: number; page: number; pages: number }
+export interface AppUser {
+  id: string; name: string; email: string
+  role: 'admin' | 'financial' | 'requester' | 'viewer'
+  isActive: boolean; lastLoginAt?: string; createdAt: string
+}
