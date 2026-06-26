@@ -9,6 +9,10 @@ import {
 import {
   createOrder, startStage, completeStage, cancelOrder, getOrderByToken,
 } from './orders.service.js'
+import { writeFile, unlink } from 'fs/promises'
+import { join, extname } from 'path'
+import { randomUUID } from 'crypto'
+import { UPLOADS_DIR } from '../../shared/config.js'
 
 export async function ordersRoutes(app: FastifyInstance): Promise<void> {
   // ── Admin routes ────────────────────────────────────────────────────────────
@@ -17,6 +21,7 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
   app.get('/', { preHandler: [requireAuth, requireRole('admin', 'financial', 'viewer', 'requester')] }, async (req) => {
     const { status, projectId, page = '1', limit = '20' } = req.query as Record<string, string>
     const skip = (Number(page) - 1) * Number(limit)
+    const validStatus = status && status !== 'undefined' ? status : undefined
 
     // requesters only see their own orders
     const requesterFilter = req.userRole === 'requester' ? { requesterId: req.userId! } : {}
@@ -26,8 +31,8 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
         where: {
           tenantId: req.tenantId!,
           ...requesterFilter,
-          ...(status ? { status: status as never } : {}),
-          ...(projectId ? { projectId } : {}),
+          ...(validStatus ? { status: validStatus as never } : {}),
+          ...(projectId && projectId !== 'undefined' ? { projectId } : {}),
         },
         include: {
           client: { select: { name: true } },
@@ -39,7 +44,7 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
         skip,
         take: Number(limit),
       }),
-      app.prisma.serviceOrder.count({ where: { tenantId: req.tenantId!, ...requesterFilter, ...(status ? { status: status as never } : {}) } }),
+      app.prisma.serviceOrder.count({ where: { tenantId: req.tenantId!, ...requesterFilter, ...(validStatus ? { status: validStatus as never } : {}) } }),
     ])
 
     return { orders, total, page: Number(page), pages: Math.ceil(total / Number(limit)) }
@@ -185,6 +190,68 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
     } catch {
       return reply.status(404).send({ error: 'Ordem não encontrada ou token inválido' })
     }
+  })
+
+  // ── Fotos de etapa ─────────────────────────────────────────────────────────
+
+  // POST /api/v1/orders/stages/:stageId/photos — upload de foto (operador)
+  app.post('/stages/:stageId/photos', { preHandler: [requireOperator] }, async (req, reply) => {
+    const { stageId } = req.params as { stageId: string }
+
+    const stage = await app.prisma.orderStage.findFirst({
+      where: { id: stageId, tenantId: req.tenantId! },
+    })
+    if (!stage) return reply.status(404).send({ error: 'Etapa não encontrada' })
+    if (stage.status !== 'in_progress') return reply.status(409).send({ error: 'Etapa não está em execução' })
+
+    const data = await req.file()
+    if (!data) return reply.status(400).send({ error: 'Nenhum ficheiro enviado' })
+
+    const ext = extname(data.filename || '.jpg') || '.jpg'
+    const filename = `${randomUUID()}${ext}`
+    const storagePath = join('photos', filename)
+    const fullPath = join(UPLOADS_DIR, storagePath)
+
+    const buffer = await data.toBuffer()
+    await writeFile(fullPath, buffer)
+
+    const photo = await app.prisma.orderPhoto.create({
+      data: {
+        tenantId: req.tenantId!,
+        orderStageId: stageId,
+        storagePath,
+        takenById: req.operatorId!,
+      },
+    })
+
+    await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, operatorId: req.operatorId,
+      action: 'order.stage.photo.uploaded', entityType: 'order_stage', entityId: stageId,
+      payload: { photoId: photo.id } })
+
+    return { id: photo.id, url: `/uploads/${storagePath}`, takenAt: photo.takenAt }
+  })
+
+  // GET /api/v1/orders/stages/:stageId/photos — listar fotos da etapa
+  app.get('/stages/:stageId/photos', { preHandler: [requireOperator] }, async (req, reply) => {
+    const { stageId } = req.params as { stageId: string }
+    const photos = await app.prisma.orderPhoto.findMany({
+      where: { orderStageId: stageId, tenantId: req.tenantId! },
+      orderBy: { takenAt: 'asc' },
+    })
+    return photos.map(p => ({ id: p.id, url: `/uploads/${p.storagePath}`, takenAt: p.takenAt }))
+  })
+
+  // DELETE /api/v1/orders/stages/:stageId/photos/:photoId
+  app.delete('/stages/:stageId/photos/:photoId', { preHandler: [requireOperator] }, async (req, reply) => {
+    const { stageId, photoId } = req.params as { stageId: string; photoId: string }
+    const photo = await app.prisma.orderPhoto.findFirst({
+      where: { id: photoId, orderStageId: stageId, tenantId: req.tenantId! },
+    })
+    if (!photo) return reply.status(404).send({ error: 'Foto não encontrada' })
+
+    try { await unlink(join(UPLOADS_DIR, photo.storagePath)) } catch { /* já apagada */ }
+    await app.prisma.orderPhoto.delete({ where: { id: photoId } })
+    return reply.status(204).send()
   })
 
   // GET /api/v1/orders/auth/:authCode — verificação pública por código
