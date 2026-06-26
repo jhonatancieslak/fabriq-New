@@ -6,19 +6,20 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
-  Settings, LogOut, BarChart3, FileText, Zap,
+  Settings, LogOut, BarChart3, FileText, Zap, Cpu, UserCog,
 } from 'lucide-react'
 
 const nav = [
-  { href: '/dashboard',  label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/orders',     label: 'Ordens',         icon: ClipboardList },
-  { href: '/clients',    label: 'Clientes',       icon: Users },
-  { href: '/projects',   label: 'Obras',          icon: FolderOpen },
-  { href: '/operators',    label: 'Operadores',    icon: HardHat },
-  { href: '/utilizadores', label: 'Utilizadores', icon: Users },
-  { href: '/reports',      label: 'Relatórios',   icon: BarChart3 },
-  { href: '/invoicing',    label: 'Faturação',    icon: FileText },
-  { href: '/settings',     label: 'Configurações',icon: Settings },
+  { href: '/dashboard',    label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/orders',       label: 'Ordens',         icon: ClipboardList },
+  { href: '/clients',      label: 'Clientes',       icon: Users },
+  { href: '/projects',     label: 'Obras',          icon: FolderOpen },
+  { href: '/machines',     label: 'Máquinas',       icon: Cpu },
+  { href: '/operators',    label: 'Operadores',     icon: HardHat },
+  { href: '/invoicing',    label: 'Faturação',      icon: FileText },
+  { href: '/reports',      label: 'Relatórios',     icon: BarChart3 },
+  { href: '/utilizadores', label: 'Utilizadores',   icon: UserCog },
+  { href: '/settings',     label: 'Configurações',  icon: Settings },
 ]
 
 export function Sidebar() {

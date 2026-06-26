@@ -27,8 +27,15 @@ enum UserRole {
 
 enum MachineType {
   laser_cnc
+  cnc_router
+  plasma
+  waterjet
   bending
   guillotine
+  welding
+  turning
+  milling
+  other
 }
 
 enum MaterialType {
@@ -254,6 +261,13 @@ model Machine {
   serial    String?
   isActive  Boolean     @default(true) @map("is_active")
   createdAt DateTime    @default(now()) @map("created_at")
+
+  // Parâmetros de custo para cálculo automático de faturação
+  costPerHour          Decimal? @map("cost_per_hour")           // €/hora base
+  minBilledMinutes     Int?     @map("min_billed_minutes")      // tempo mínimo cobrado (min)
+  costPerMinAfterMin   Decimal? @map("cost_per_min_after_min")  // €/min após o mínimo
+  materialCostEnabled  Boolean  @default(false) @map("material_cost_enabled")
+  marginPercent        Decimal? @map("margin_percent")          // margem sobre o custo total (%)
 
   tenant      Tenant       @relation(fields: [tenantId], references: [id])
   operators   Operator[]

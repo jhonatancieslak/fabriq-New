@@ -84,7 +84,17 @@ export const api = {
   },
 
   machines: {
-    list: () => request<Machine[]>('/api/v1/machines'),
+    list: (params?: { search?: string; page?: number; includeInactive?: boolean }) => {
+      const q = new URLSearchParams(params as never).toString()
+      return request<{ machines: Machine[]; total: number; page: number; pages: number }>(
+        `/api/v1/machines${q ? `?${q}` : ''}`
+      )
+    },
+    create: (data: Partial<Machine>) =>
+      request<Machine>('/api/v1/machines', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Machine>) =>
+      request<Machine>(`/api/v1/machines/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/api/v1/machines/${id}`, { method: 'DELETE' }),
   },
 
   materials: {
@@ -130,7 +140,11 @@ export interface Project {
   id: string; code: string; name: string; description?: string; status: string; clientId: string
   client?: { name: string }
 }
-export interface Machine { id: string; name: string; type: string; model?: string }
+export interface Machine {
+  id: string; name: string; type: string; model?: string; serial?: string; isActive?: boolean
+  costPerHour?: number | null; minBilledMinutes?: number | null
+  costPerMinAfterMin?: number | null; materialCostEnabled?: boolean; marginPercent?: number | null
+}
 export interface Material { id: string; name: string; type: string }
 export interface Operator { id: string; name: string; username: string; phone?: string }
 export interface OrderStage {
