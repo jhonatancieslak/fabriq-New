@@ -126,7 +126,9 @@ model Tenant {
   materials    Material[]
   serviceOrders ServiceOrder[]
   cuttingParams CuttingParam[]
-  auditLogs    AuditLog[]
+  auditLogs     AuditLog[]
+  loginAttempts LoginAttempt[]
+  blockedIps    BlockedIp[]
 
   @@map("tenants")
 }
@@ -147,6 +149,7 @@ model User {
   tenant        Tenant         @relation(fields: [tenantId], references: [id])
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
+  loginAttempts LoginAttempt[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -505,6 +508,48 @@ model AuditLog {
   @@index([tenantId])
   @@index([action])
   @@map("audit_logs")
+}
+
+// ─── Login Attempts (auditoria de acessos) ────────────────────────────────────
+
+model LoginAttempt {
+  id            String   @id @default(uuid())
+  tenantId      String?  @map("tenant_id")
+  userId        String?  @map("user_id")
+  email         String
+  success       Boolean
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  failureReason String?  @map("failure_reason")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([ipAddress])
+  @@index([email])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("login_attempts")
+}
+
+// ─── Blocked IPs ──────────────────────────────────────────────────────────────
+
+model BlockedIp {
+  id          String    @id @default(uuid())
+  ipAddress   String    @unique @map("ip_address")
+  reason      String?
+  blockedBy   String?   @map("blocked_by")
+  isAutoBlock Boolean   @default(false) @map("is_auto_block")
+  tenantId    String?   @map("tenant_id")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([ipAddress])
+  @@index([tenantId])
+  @@map("blocked_ips")
 }
 
 // ─── Notification Log ─────────────────────────────────────────────────────────

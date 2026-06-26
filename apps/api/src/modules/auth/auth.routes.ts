@@ -5,6 +5,7 @@ import { loginSchema, operatorLoginSchema, refreshSchema } from './auth.schema.j
 import { loginUser, loginOperator, refreshAccessToken, revokeRefreshToken } from './auth.service.js'
 import { resolveTenant } from '../../shared/middleware/tenant.js'
 import { audit } from '../../shared/utils/audit.js'
+import { recordLoginAttempt, isIpBlocked } from '../../shared/utils/security.js'
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   // POST /api/v1/auth/login — admin/user login (tenant auto-detectado pelo email)
@@ -14,15 +15,37 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const body = loginSchema.safeParse(req.body)
       if (!body.success) return reply.status(400).send({ error: body.error.flatten() })
 
+      // Verificar IP bloqueado
+      const ipCheck = await isIpBlocked(app.prisma, req.ip)
+      if (ipCheck.blocked) {
+        await recordLoginAttempt(app.prisma, req, {
+          email: body.data.email, success: false, failureReason: 'ip_blocked',
+        })
+        return reply.status(403).send({ error: 'Acesso bloqueado. Contacte o administrador.' })
+      }
+
       try {
         const result = await loginUser(app, body.data.email, body.data.password)
-        await audit({
-          prisma: app.prisma, req, tenantId: result.tenant.id,
-          userId: result.user.id, action: 'auth.login',
-          payload: { email: body.data.email },
-        })
+
+        await Promise.all([
+          recordLoginAttempt(app.prisma, req, {
+            email: body.data.email, success: true,
+            tenantId: result.tenant.id, userId: result.user.id,
+          }),
+          audit({
+            prisma: app.prisma, req, tenantId: result.tenant.id,
+            userId: result.user.id, action: 'auth.login',
+            payload: { email: body.data.email, tenant: result.tenant.slug },
+          }),
+        ])
+
         return reply.send(result)
-      } catch {
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : 'unknown'
+        await recordLoginAttempt(app.prisma, req, {
+          email: body.data.email, success: false,
+          failureReason: reason === 'INVALID_CREDENTIALS' ? 'invalid_credentials' : reason,
+        })
         return reply.status(401).send({ error: 'Credenciais inválidas' })
       }
     },
