@@ -13,6 +13,7 @@ import { writeFile, unlink } from 'fs/promises'
 import { join, extname } from 'path'
 import { randomUUID } from 'crypto'
 import { UPLOADS_DIR } from '../../shared/config.js'
+import { notifyOrderEvent } from '../notifications/notifications.service.js'
 
 export async function ordersRoutes(app: FastifyInstance): Promise<void> {
   // ── Admin routes ────────────────────────────────────────────────────────────
@@ -83,6 +84,7 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
     await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
       action: 'order.created', entityType: 'order', entityId: order.id,
       payload: { orderNumber: order.orderNumber } })
+    notifyOrderEvent({ prisma: app.prisma, tenantId: req.tenantId!, orderId: order.id, event: 'order.created' }).catch(() => {})
     return reply.status(201).send(order)
   })
 
@@ -96,6 +98,7 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
       const order = await cancelOrder(app.prisma, req.tenantId!, id, body.data.reason)
       await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
         action: 'order.cancelled', entityType: 'order', entityId: id, payload: { reason: body.data.reason } })
+      notifyOrderEvent({ prisma: app.prisma, tenantId: req.tenantId!, orderId: id, event: 'order.cancelled' }).catch(() => {})
       return order
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
@@ -125,6 +128,7 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
       const stage = await startStage(app.prisma, req.tenantId!, stageId, req.operatorId!)
       await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, operatorId: req.operatorId,
         action: 'order.stage.started', entityType: 'order_stage', entityId: stageId })
+      notifyOrderEvent({ prisma: app.prisma, tenantId: req.tenantId!, orderId: stage.serviceOrderId, event: 'stage.started', stageId }).catch(() => {})
       return stage
     } catch (err) {
       await app.redis.del(lockKey)
@@ -148,6 +152,11 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
       await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, operatorId: req.operatorId,
         action: 'order.stage.completed', entityType: 'order_stage', entityId: stageId,
         payload: { quantityDone: body.data.quantityDone, cuttingTime: body.data.cuttingTime } })
+      // notifica conclusão de etapa; se ordem completamente concluída também notifica
+      if (order) {
+        const event = (order as { status: string }).status === 'completed' ? 'order.completed' as const : 'stage.completed' as const
+        notifyOrderEvent({ prisma: app.prisma, tenantId: req.tenantId!, orderId: (order as { id: string }).id, event, stageId }).catch(() => {})
+      }
       return order
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
