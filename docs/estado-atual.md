@@ -129,6 +129,21 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 - PWA: upload real com `FormData`, galeria 3 colunas com tap-to-expand (lightbox), botão apagar
 - Fix bug: filtro `status="undefined"` (string) causava erro Prisma
 
+## Notificações (concluído 2026-06-26 Sessão 6)
+
+- `notifications.service.ts` reescrito com:
+  - **Email via nodemailer + Resend SMTP** (smtp.resend.com:587)
+  - **WhatsApp via Evolution API** (se configurada)
+  - Log em `notification_logs` (sent/failed)
+- Eventos ligados em `orders.routes.ts` (fire-and-forget):
+  - `order.created` — ao criar ordem
+  - `stage.started` — ao operador iniciar etapa
+  - `stage.completed` — ao concluir etapa intermédia
+  - `order.completed` — quando todas as etapas estão concluídas
+  - `order.cancelled` — ao cancelar
+- Email HTML profissional com botão "Verificar Ordem" na conclusão
+- Variáveis `.env` necessárias: `RESEND_API_KEY`, `EMAIL_FROM`, `EVOLUTION_API_URL/KEY/INSTANCE`
+
 ## Próximos passos
 
 1. ~~**Gestão de utilizadores**~~ ✅
@@ -140,6 +155,8 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 7. ~~**Dashboard KPIs reais**~~ ✅
 8. ~~**Upload de fotos na PWA**~~ ✅
 9. ~~**Dashboard de segurança**~~ ✅
-10. **Dropdowns do formulário de ordens** ligados à API real (cliente → obra → etapas)
-11. **Notificações** — email/WhatsApp ao solicitador quando ordem conclui
-12. **Billing / planos** (fase futura)
+10. ~~**Notificações email/WhatsApp**~~ ✅
+11. **Configurar RESEND_API_KEY** no `.env` do servidor para activar email
+12. **Portal do Solicitador** — login próprio para clientes externos verem as suas ordens
+13. **QR Code** no PDF da ordem (link para `/verificar/[authCode]`)
+14. **Billing / planos** (fase futura)
