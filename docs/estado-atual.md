@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-06-26
+**Última sessão:** 2026-06-26 (Sessão 3)
 
 ---
 
@@ -76,6 +76,14 @@ OPERADOR        → PWA mobile (já existe)
 
 ## O que foi feito (histórico resumido)
 
+### 2026-06-26 — Sessão 3
+- CRUD completo de utilizadores: `GET/POST/PATCH/DELETE /api/v1/users`
+- Roles: admin, financial, requester, viewer
+- Protecção: não apaga o último admin activo; reset de password revoga tokens
+- Frontend `/utilizadores`: tabela activos/desactivados, modal criar/editar, redefinir password, activar/desactivar
+- Sidebar: link "Utilizadores" adicionado
+- `api.ts`: tipo `AppUser` + módulo `users`
+
 ### 2026-06-26 — Sessão 2
 - Toast de sucesso/erro no login admin
 - Tagline amarela e destaque visual no painel esquerdo do login
@@ -99,7 +107,7 @@ OPERADOR        → PWA mobile (já existe)
 
 ## Próximos passos
 
-1. **Gestão de utilizadores** — CRUD de users com perfis por tenant (admin/financeiro/solicitador)
+1. ~~**Gestão de utilizadores**~~ ✅ Concluído em 2026-06-26
 2. **Portal Financeiro** — ordens `CONCLUÍDA` → aprovar → `FATURADA` + relatório
 3. **Portal Solicitador** — criar pedidos, ver ordens, confirmar entrega
 4. **Configurações da empresa** — máquinas, materiais, custos, Evolution API, SMTP
