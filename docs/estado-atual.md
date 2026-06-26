@@ -119,6 +119,16 @@ Ficheiro partilhado: `apps/web/src/components/ui/admin-ui.tsx`
 Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `ErrorMsg`, `PageHeader`, `SearchBar`, `Table`, `Tr`, `Td`, `Pagination`, `Badge`, `Empty`
 **Usar SEMPRE estes componentes em todas as páginas admin. Nunca usar classes Tailwind azuis ou fundo branco.**
 
+## Upload de Fotos na PWA (concluído 2026-06-26 Sessão 5)
+
+- `shared/config.ts` — `UPLOADS_DIR` centralizado, cria pasta `uploads/photos/` no arranque
+- `@fastify/multipart` + `@fastify/static` registados no `main.ts`
+- Novas rotas: `POST/GET/DELETE /api/v1/orders/stages/:stageId/photos`
+- Fotos guardadas em `/var/www/fabriq/apps/api/uploads/photos/` (UUID + ext)
+- Servidas via `/uploads/` (estático directo)
+- PWA: upload real com `FormData`, galeria 3 colunas com tap-to-expand (lightbox), botão apagar
+- Fix bug: filtro `status="undefined"` (string) causava erro Prisma
+
 ## Próximos passos
 
 1. ~~**Gestão de utilizadores**~~ ✅
@@ -126,12 +136,10 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 3. ~~**Máquinas CRUD + parâmetros de custo**~~ ✅
 4. ~~**Portal Solicitador / Ordens + Obras**~~ ✅
 5. ~~**Dashboard KPIs + Materiais CRUD + Configurações + Cálculo automático**~~ ✅
-6. **Página pública `/verificar/[authCode]`** — sem login, prova de execução
-7. **Dashboard** — KPIs reais (ordens/dia, pendentes, faturação mês)
-8. **Cálculo automático de valor** na faturação (usa params de custo da máquina + tempo registado)
-9. **Upload de fotos** na PWA
-10. **Billing / planos** (fase futura)
-7. **Dropdowns do formulário de ordens** ligados à API real
-8. **Upload de fotos** na PWA
-9. **Dashboard de segurança** — consome `/security/stats`
-10. **Billing / planos** (fase futura)
+6. ~~**Página pública `/verificar/[authCode]`**~~ ✅
+7. ~~**Dashboard KPIs reais**~~ ✅
+8. ~~**Upload de fotos na PWA**~~ ✅
+9. ~~**Dashboard de segurança**~~ ✅
+10. **Dropdowns do formulário de ordens** ligados à API real (cliente → obra → etapas)
+11. **Notificações** — email/WhatsApp ao solicitador quando ordem conclui
+12. **Billing / planos** (fase futura)
