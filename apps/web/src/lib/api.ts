@@ -96,6 +96,18 @@ export const api = {
     get:  (id: string) => request<Operator>(`/api/v1/operators/${id}`),
   },
 
+  financial: {
+    list: (params?: { status?: string; page?: number; from?: string; to?: string }) => {
+      const q = new URLSearchParams(params as never).toString()
+      return request<FinancialResponse>(`/api/v1/financial${q ? `?${q}` : ''}`)
+    },
+    stats: () => request<FinancialStats>('/api/v1/financial/stats'),
+    approve: (id: string, data: { costValue?: number; notes?: string; type?: string }) =>
+      request<InvoicingRecord>(`/api/v1/financial/${id}/approve`, { method: 'PATCH', body: JSON.stringify(data) }),
+    cancel: (id: string) =>
+      request<{ ok: boolean }>(`/api/v1/financial/${id}/cancel`, { method: 'PATCH', body: JSON.stringify({}) }),
+  },
+
   users: {
     list: () => request<AppUser[]>('/api/v1/users'),
     get:  (id: string) => request<AppUser>(`/api/v1/users/${id}`),
@@ -137,6 +149,34 @@ export interface Order {
   createdAt: string
 }
 export interface OrdersResponse { orders: Order[]; total: number; page: number; pages: number }
+export interface InvoicingRecord {
+  id: string
+  status: 'pending' | 'invoiced' | 'cancelled'
+  type: 'material_and_labor' | 'labor_only'
+  costValue?: number
+  invoiceDate?: string
+  notes?: string
+  createdAt: string
+  serviceOrder: {
+    id: string
+    orderNumber: string
+    status: string
+    completedAt?: string
+    client: { name: string }
+    project: { name: string; code: string }
+    stages: { cuttingTime?: number }[]
+  }
+}
+export interface FinancialResponse { records: InvoicingRecord[]; total: number; page: number; pages: number }
+export interface FinancialStats {
+  pendingCount: number
+  invoicedThisMonth: number
+  revenueThisMonth: number
+  revenueLastMonth: number
+  revenueGrowth: number | null
+  revenueTotal: number
+}
+
 export interface AppUser {
   id: string; name: string; email: string
   role: 'admin' | 'financial' | 'requester' | 'viewer'

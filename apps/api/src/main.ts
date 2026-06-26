@@ -19,6 +19,7 @@ import { pdfRoutes } from './modules/pdf/pdf.routes.js'
 import { cuttingParamsRoutes } from './modules/cutting-params/cutting-params.routes.js'
 import { securityRoutes } from './modules/security/security.routes.js'
 import { usersRoutes } from './modules/users/users.routes.js'
+import { financialRoutes } from './modules/financial/financial.routes.js'
 import { resolveTenant } from './shared/middleware/tenant.js'
 
 const prisma = new PrismaClient()
@@ -62,6 +63,7 @@ async function bootstrap() {
   await app.register(cuttingParamsRoutes, { prefix: '/api/v1/cutting-params' })
   await app.register(securityRoutes,     { prefix: '/api/v1/security' })
   await app.register(usersRoutes,        { prefix: '/api/v1/users' })
+  await app.register(financialRoutes,    { prefix: '/api/v1/financial' })
 
   const port = Number(process.env.PORT ?? 8190)
   const host = process.env.HOST ?? '127.0.0.1'
