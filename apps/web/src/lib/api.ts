@@ -43,12 +43,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export const api = {
   auth: {
-    login: (email: string, password: string, tenantSlug: string) => {
-      if (typeof window !== 'undefined') localStorage.setItem('fabriq_tenant', tenantSlug)
-      return request<{ tokens: { accessToken: string; refreshToken: string }; user: { id: string; name: string; role: string } }>(
+    login: (email: string, password: string) =>
+      request<{ tokens: { accessToken: string; refreshToken: string }; user: { id: string; name: string; role: string }; tenant: { slug: string; name: string } }>(
         '/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }
-      )
-    },
+      ),
     logout: (refreshToken: string) =>
       request('/api/v1/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }),
   },

@@ -9,7 +9,6 @@ import { api } from '@/lib/api'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [slug, setSlug]         = useState('')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw]     = useState(false)
@@ -18,11 +17,11 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!slug.trim()) { setError('Indique o identificador da empresa'); return }
     setLoading(true); setError('')
     try {
-      const data = await api.auth.login(email, password, slug.trim().toLowerCase())
+      const data = await api.auth.login(email, password)
       localStorage.setItem('fabriq_token', data.tokens.accessToken)
+      localStorage.setItem('fabriq_tenant', data.tenant.slug)
       router.replace('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar')
@@ -238,20 +237,6 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                Empresa
-              </label>
-              <div className="relative">
-                <input
-                  type="text" value={slug}
-                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  required placeholder="pipesolutions"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-28 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/5"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 select-none pointer-events-none">.fabriq.pt</span>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Email
               </label>
               <input
@@ -303,7 +288,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-xs text-slate-500">
-            <strong className="text-slate-700">Demo:</strong> empresa <code className="font-mono bg-slate-100 px-1 rounded">demo</code> · admin@demo.fabriq.pt / admin123
+            <strong className="text-slate-700">Demo:</strong> admin@demo.fabriq.pt · admin123
           </div>
         </div>
       </div>

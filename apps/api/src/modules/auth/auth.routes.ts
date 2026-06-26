@@ -7,29 +7,22 @@ import { resolveTenant } from '../../shared/middleware/tenant.js'
 import { audit } from '../../shared/utils/audit.js'
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
-  // POST /api/v1/auth/login — admin/user login
+  // POST /api/v1/auth/login — admin/user login (tenant auto-detectado pelo email)
   app.post('/login', {
     config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
     handler: async (req, reply) => {
-      await resolveTenant(req, reply)
-      if (!req.tenantId) return reply.status(400).send({ error: 'Tenant not identified' })
-
       const body = loginSchema.safeParse(req.body)
       if (!body.success) return reply.status(400).send({ error: body.error.flatten() })
 
       try {
-        const result = await loginUser(app, body.data.email, body.data.password, req.tenantId)
+        const result = await loginUser(app, body.data.email, body.data.password)
         await audit({
-          prisma: app.prisma, req, tenantId: req.tenantId,
+          prisma: app.prisma, req, tenantId: result.tenant.id,
           userId: result.user.id, action: 'auth.login',
           payload: { email: body.data.email },
         })
         return reply.send(result)
       } catch {
-        await audit({
-          prisma: app.prisma, req, tenantId: req.tenantId,
-          action: 'auth.login.failed', payload: { email: body.data.email },
-        })
         return reply.status(401).send({ error: 'Credenciais inválidas' })
       }
     },

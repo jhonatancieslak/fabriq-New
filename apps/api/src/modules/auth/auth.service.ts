@@ -14,24 +14,29 @@ export async function loginUser(
   app: FastifyInstance,
   email: string,
   password: string,
-  tenantId: string,
-): Promise<{ tokens: TokenPair; user: { id: string; name: string; role: string } }> {
+): Promise<{ tokens: TokenPair; user: { id: string; name: string; role: string }; tenant: { id: string; slug: string; name: string } }> {
+  // Encontra o utilizador pelo email (globalmente — um email pertence a um tenant)
   const user = await app.prisma.user.findFirst({
-    where: { email, tenantId, isActive: true },
+    where: { email, isActive: true },
+    include: { tenant: { select: { id: true, slug: true, name: true, isActive: true } } },
   })
 
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  if (!user || !user.tenant.isActive || !(await verifyPassword(password, user.passwordHash))) {
     throw new Error('INVALID_CREDENTIALS')
   }
 
-  const tokens = await generateTokenPair(app, { userId: user.id, tenantId, role: user.role })
+  const tokens = await generateTokenPair(app, { userId: user.id, tenantId: user.tenantId, role: user.role })
 
   await app.prisma.user.update({
     where: { id: user.id },
     data: { lastLoginAt: new Date() },
   })
 
-  return { tokens, user: { id: user.id, name: user.name, role: user.role } }
+  return {
+    tokens,
+    user:   { id: user.id, name: user.name, role: user.role },
+    tenant: { id: user.tenant.id, slug: user.tenant.slug, name: user.tenant.name },
+  }
 }
 
 export async function loginOperator(
