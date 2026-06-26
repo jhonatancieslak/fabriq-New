@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
-  Settings, LogOut, BarChart3, FileText, Zap, Cpu, UserCog,
+  Settings, LogOut, BarChart3, FileText, Zap, Cpu, UserCog, Package,
 } from 'lucide-react'
 
 const nav = [
@@ -15,6 +15,7 @@ const nav = [
   { href: '/clients',      label: 'Clientes',       icon: Users },
   { href: '/projects',     label: 'Obras',          icon: FolderOpen },
   { href: '/machines',     label: 'Máquinas',       icon: Cpu },
+  { href: '/materials',    label: 'Materiais',      icon: Package },
   { href: '/operators',    label: 'Operadores',     icon: HardHat },
   { href: '/invoicing',    label: 'Faturação',      icon: FileText },
   { href: '/reports',      label: 'Relatórios',     icon: BarChart3 },

@@ -91,6 +91,64 @@ export async function financialRoutes(app: FastifyInstance): Promise<void> {
     }
   })
 
+  // GET /api/v1/financial/:id/calculate — calcula valor sugerido com base nos params da máquina
+  app.get('/:id/calculate', { preHandler: [requireAuth, requireRole('admin', 'financial')] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const record = await app.prisma.invoicing.findFirst({
+      where: { id, tenantId: req.tenantId! },
+      include: {
+        serviceOrder: {
+          include: {
+            stages: {
+              where: { status: 'completed' },
+              include: { machine: true },
+            },
+          },
+        },
+      },
+    })
+    if (!record) return reply.status(404).send({ error: 'Registo não encontrado' })
+
+    let suggestedValue = 0
+    const breakdown: { stageNumber: number; machineType: string; machineName: string; minutes: number; cost: number }[] = []
+
+    for (const stage of record.serviceOrder.stages) {
+      const m = stage.machine
+      if (!m || !m.costPerHour || stage.cuttingTime == null) continue
+
+      const totalMin = stage.cuttingTime
+      const minBilled = m.minBilledMinutes ?? 0
+      const costPerMin = Number(m.costPerHour) / 60
+      const costPerMinAfter = m.costPerMinAfterMin ? Number(m.costPerMinAfterMin) : costPerMin
+
+      let stageCost = 0
+      if (totalMin <= minBilled) {
+        stageCost = minBilled * costPerMin
+      } else {
+        stageCost = minBilled * costPerMin + (totalMin - minBilled) * costPerMinAfter
+      }
+
+      if (m.marginPercent) {
+        stageCost *= 1 + Number(m.marginPercent) / 100
+      }
+
+      breakdown.push({
+        stageNumber: stage.stageNumber,
+        machineType: stage.type,
+        machineName: m.name,
+        minutes: totalMin,
+        cost: Math.round(stageCost * 100) / 100,
+      })
+      suggestedValue += stageCost
+    }
+
+    return {
+      suggestedValue: Math.round(suggestedValue * 100) / 100,
+      breakdown,
+      hasParams: breakdown.length > 0,
+    }
+  })
+
   // PATCH /api/v1/financial/:id/approve — aprovar e marcar como faturado
   app.patch('/:id/approve', { preHandler: [requireAuth, requireRole('admin', 'financial')] }, async (req, reply) => {
     const { id } = req.params as { id: string }

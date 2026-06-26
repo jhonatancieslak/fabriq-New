@@ -4,175 +4,235 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import {
-  ClipboardList, Users, Clock, CheckCircle2, Plus, ArrowRight,
-  TrendingUp, HardHat, Zap,
-} from 'lucide-react'
+import { ClipboardList, Clock, TrendingUp, CheckCircle2, FileText, Plus, ArrowRight, Zap } from 'lucide-react'
 import { api, type Order } from '@/lib/api'
+import { T, Badge, Btn } from '@/components/ui/admin-ui'
 
-interface Stats { total: number; pending: number; inProgress: number; completed: number }
-
-const statusClass: Record<string, string> = {
-  pending:     'badge-pending',
-  in_progress: 'badge-progress',
-  completed:   'badge-completed',
-  cancelled:   'badge-cancelled',
-  invoiced:    'badge-invoiced',
+interface DashStats {
+  orders: { total: number; pending: number; inProgress: number; completed: number; invoiced: number; createdToday: number; createdMonth: number }
+  financial: { revenueMonth: number; revenueLastMonth: number; revenueGrowth: number | null; invoicedThisMonth: number; pendingInvoices: number }
 }
-const statusLabel: Record<string, string> = {
-  pending: 'Pendente', in_progress: 'Em execução',
-  completed: 'Concluída', cancelled: 'Cancelada', invoiced: 'Faturada',
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Pendente', in_progress: 'Em execução', completed: 'Concluída',
+  cancelled: 'Cancelada', invoiced: 'Faturada',
+}
+const STATUS_COLOR: Record<string, string> = {
+  pending: '#9CA3AF', in_progress: '#EAB308', completed: '#22C55E',
+  cancelled: '#EF4444', invoiced: '#A78BFA',
+}
+
+function fmt(n: number) {
+  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(n)
+}
+
+function KpiCard({ label, value, sub, icon: Icon }: {
+  label: string; value: string | number; sub?: string
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+}) {
+  return (
+    <div className="rounded-2xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: T.subtle }}>{label}</p>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: T.border }}>
+          <Icon className="h-4 w-4" style={{ color: T.muted }} />
+        </div>
+      </div>
+      <p className="text-3xl font-black tabular-nums leading-none" style={{ color: T.text }}>{value}</p>
+      {sub && <p className="text-xs mt-1.5" style={{ color: T.subtle }}>{sub}</p>}
+    </div>
+  )
 }
 
 export default function DashboardPage() {
-  const [stats, setStats]     = useState<Stats>({ total: 0, pending: 0, inProgress: 0, completed: 0 })
-  const [recent, setRecent]   = useState<Order[]>([])
+  const [stats, setStats] = useState<DashStats | null>(null)
+  const [recent, setRecent] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
+      api.dashboard.stats(),
       api.orders.list({ page: 1 }),
-      api.orders.list({ status: 'pending', page: 1 }),
-      api.orders.list({ status: 'in_progress', page: 1 }),
-      api.orders.list({ status: 'completed', page: 1 }),
-    ]).then(([all, pending, inProgress, completed]) => {
-      setStats({ total: all.total, pending: pending.total, inProgress: inProgress.total, completed: completed.total })
-      setRecent(all.orders.slice(0, 6))
+    ]).then(([s, orders]) => {
+      setStats(s)
+      setRecent(orders.orders.slice(0, 6))
+    }).catch(() => {
+      // fallback silencioso — dashboard não deve crashar
     }).finally(() => setLoading(false))
   }, [])
 
-  const kpis = [
-    { label: 'Total de Ordens', value: stats.total,      icon: ClipboardList, accent: '#6366f1', bg: 'rgba(99,102,241,0.08)',  trend: '+12% este mês' },
-    { label: 'Pendentes',       value: stats.pending,    icon: Clock,         accent: '#f59e0b', bg: 'rgba(245,158,11,0.08)', trend: 'Aguardam início' },
-    { label: 'Em Execução',     value: stats.inProgress, icon: TrendingUp,    accent: '#3b82f6', bg: 'rgba(59,130,246,0.08)', trend: 'No chão de fábrica' },
-    { label: 'Concluídas',      value: stats.completed,  icon: CheckCircle2,  accent: '#10b981', bg: 'rgba(16,185,129,0.08)', trend: 'Prontas a faturar' },
-  ]
+  const kpis = stats ? [
+    { label: 'Pendentes',     value: stats.orders.pending,    sub: 'aguardam início',        icon: Clock },
+    { label: 'Em Execução',   value: stats.orders.inProgress, sub: 'no chão de fábrica',     icon: TrendingUp },
+    { label: 'Concluídas',    value: stats.orders.completed,  sub: 'prontas a faturar',      icon: CheckCircle2 },
+    {
+      label: 'Faturação mês',
+      value: fmt(stats.financial.revenueMonth),
+      sub: stats.financial.revenueGrowth != null
+        ? `${stats.financial.revenueGrowth > 0 ? '+' : ''}${stats.financial.revenueGrowth.toFixed(1)}% vs mês anterior`
+        : `${stats.financial.invoicedThisMonth} fatura${stats.financial.invoicedThisMonth !== 1 ? 's' : ''} emitida${stats.financial.invoicedThisMonth !== 1 ? 's' : ''}`,
+      icon: FileText,
+    },
+  ] : []
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6 animate-fade-in">
-
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: '#EAB308' }}>
-              <Zap className="h-3 w-3 text-slate-900" strokeWidth={3} />
-            </div>
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Visão geral</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: T.yellowBg }}>
+            <Zap className="h-5 w-5" style={{ color: T.yellow }} />
           </div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Resumo da actividade de produção</p>
+          <div>
+            <h1 className="text-xl font-black tracking-tight" style={{ color: T.text }}>Dashboard</h1>
+            <p className="text-xs" style={{ color: T.subtle }}>Visão geral da produção</p>
+          </div>
         </div>
-        <Link href="/orders/new" className="btn-yellow">
-          <Plus className="h-4 w-4" /> Nova Ordem
-        </Link>
+        <Link href="/orders/new"><Btn><Plus className="h-4 w-4" />Nova Ordem</Btn></Link>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map(kpi => (
-          <div key={kpi.label} className="card p-5 relative overflow-hidden">
-            <div className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full" style={{ background: kpi.accent }} />
-            <div className="pl-3">
-              <div className="rounded-xl p-2.5 w-fit mb-3" style={{ background: kpi.bg }}>
-                <kpi.icon className="h-5 w-5" style={{ color: kpi.accent }} />
-              </div>
-              <div className="text-3xl font-bold text-slate-900 tabular-nums leading-none mb-1">
-                {loading ? <span className="inline-block w-8 h-7 bg-slate-100 rounded animate-pulse" /> : kpi.value}
-              </div>
-              <div className="text-sm font-medium text-slate-700">{kpi.label}</div>
-              <div className="text-xs text-slate-400 mt-0.5">{kpi.trend}</div>
+      {loading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="rounded-2xl h-28 animate-pulse" style={{ background: T.surface }} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpis.map(k => <KpiCard key={k.label} {...k} />)}
+        </div>
+      )}
+
+      {/* Stats secundários */}
+      {stats && (
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: 'Criadas hoje',      value: stats.orders.createdToday },
+            { label: 'Criadas este mês',  value: stats.orders.createdMonth },
+            { label: 'Faturas pendentes', value: stats.financial.pendingInvoices },
+          ].map(s => (
+            <div key={s.label} className="rounded-2xl px-5 py-4 flex items-center justify-between"
+              style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+              <p className="text-sm" style={{ color: T.subtle }}>{s.label}</p>
+              <p className="text-2xl font-black tabular-nums" style={{ color: T.text }}>{s.value}</p>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Ordens recentes + Atalhos */}
       <div className="grid lg:grid-cols-3 gap-6">
-
-        {/* Ordens */}
-        <div className="card lg:col-span-2">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h2 className="section-title">Ordens Recentes</h2>
-            <Link href="/orders" className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors">
+        {/* Ordens recentes */}
+        <div className="lg:col-span-2 rounded-2xl overflow-hidden"
+          style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+          <div className="flex items-center justify-between px-5 py-4"
+            style={{ borderBottom: `1px solid ${T.divider}` }}>
+            <h2 className="text-sm font-bold" style={{ color: T.text }}>Ordens Recentes</h2>
+            <Link href="/orders"
+              className="flex items-center gap-1 text-xs font-semibold transition-colors"
+              style={{ color: T.subtle }}
+              onMouseEnter={e => (e.currentTarget.style.color = T.yellow)}
+              onMouseLeave={e => (e.currentTarget.style.color = T.subtle)}>
               Ver todas <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
 
           {loading ? (
-            <div className="p-6 space-y-3">
-              {[1,2,3].map(i => <div key={i} className="h-14 bg-slate-50 rounded-xl animate-pulse" />)}
+            <div className="p-5 space-y-3">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-12 rounded-xl animate-pulse" style={{ background: T.border }} />
+              ))}
             </div>
           ) : recent.length === 0 ? (
-            <div className="p-12 text-center">
-              <ClipboardList className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-500 font-medium text-sm">Sem ordens ainda</p>
-              <Link href="/orders/new" className="btn-primary mt-4 inline-flex">
-                <Plus className="h-4 w-4" /> Criar primeira ordem
-              </Link>
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <ClipboardList className="h-8 w-8" style={{ color: T.faint }} />
+              <p className="text-sm" style={{ color: T.subtle }}>Sem ordens ainda</p>
+              <Link href="/orders/new"><Btn><Plus className="h-4 w-4" />Criar primeira ordem</Btn></Link>
             </div>
           ) : (
             <div>
-              {recent.map(order => (
-                <Link key={order.id} href={`/orders/${order.id}`} className="table-row group">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-50">
-                    <ClipboardList className="h-4 w-4 text-slate-400" />
+              {recent.map((order, i) => (
+                <Link key={order.id} href={`/orders/${order.id}`}
+                  className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02] group"
+                  style={i < recent.length - 1 ? { borderBottom: `1px solid ${T.divider}` } : {}}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: T.yellowBg }}>
+                    <ClipboardList className="h-4 w-4" style={{ color: T.yellow }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-slate-900">{order.orderNumber}</span>
-                      <span className={statusClass[order.status]}>{statusLabel[order.status]}</span>
+                      <span className="text-sm font-semibold font-mono" style={{ color: T.text }}>
+                        #{order.orderNumber}
+                      </span>
+                      <Badge label={STATUS_LABEL[order.status] ?? order.status}
+                        color={STATUS_COLOR[order.status] ?? T.subtle} />
                     </div>
-                    <div className="text-xs text-slate-400 mt-0.5 truncate">
-                      {order.client.name} · {order.project.code}
-                    </div>
+                    <p className="text-xs truncate mt-0.5" style={{ color: T.subtle }}>
+                      {order.client?.name} · {order.project?.code}
+                    </p>
                   </div>
-                  <div className="text-xs text-slate-400 tabular-nums flex-shrink-0">
-                    {new Date(order.createdAt).toLocaleDateString('pt-PT')}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs tabular-nums" style={{ color: T.faint }}>
+                      {new Date(order.createdAt).toLocaleDateString('pt-PT')}
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ color: T.muted }} />
                   </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0" />
                 </Link>
               ))}
             </div>
           )}
         </div>
 
-        {/* Atalhos */}
-        <div className="space-y-3">
-          <h2 className="section-title px-1">Acesso rápido</h2>
-
-          {[
-            { href: '/orders/new', label: 'Nova Ordem', desc: 'Criar OS de corte / quinagem', icon: ClipboardList, accent: '#6366f1', bg: 'rgba(99,102,241,0.08)' },
-            { href: '/clients',    label: 'Clientes',   desc: 'Ver e editar clientes',        icon: Users,         accent: '#3b82f6', bg: 'rgba(59,130,246,0.08)' },
-            { href: '/operators',  label: 'Operadores', desc: 'QR code e link PWA',            icon: HardHat,       accent: '#10b981', bg: 'rgba(16,185,129,0.08)' },
-          ].map(item => (
-            <Link key={item.href} href={item.href} className="card-hover flex items-center gap-4 p-4 group">
-              <div className="rounded-xl p-2.5 flex-shrink-0" style={{ background: item.bg }}>
-                <item.icon className="h-5 w-5" style={{ color: item.accent }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm text-slate-900">{item.label}</div>
-                <div className="text-xs text-slate-400 mt-0.5">{item.desc}</div>
-              </div>
-              <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0" />
-            </Link>
-          ))}
+        {/* Coluna direita */}
+        <div className="space-y-4">
+          {/* Atalhos */}
+          <div className="rounded-2xl overflow-hidden"
+            style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.divider}` }}>
+              <h2 className="text-sm font-bold" style={{ color: T.text }}>Acesso Rápido</h2>
+            </div>
+            <div className="p-3 space-y-1">
+              {[
+                { href: '/orders/new', label: 'Nova Ordem',  desc: 'Criar OS de corte / quinagem' },
+                { href: '/invoicing',  label: 'Faturação',
+                  desc: stats ? `${stats.financial.pendingInvoices} pendente${stats.financial.pendingInvoices !== 1 ? 's' : ''}` : '—' },
+                { href: '/clients',    label: 'Clientes',    desc: 'Gerir clientes e obras' },
+                { href: '/machines',   label: 'Máquinas',    desc: 'Equipamentos e parâmetros de custo' },
+              ].map(item => (
+                <Link key={item.href} href={item.href}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-white/[0.04] group">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium" style={{ color: T.text }}>{item.label}</p>
+                    <p className="text-xs" style={{ color: T.subtle }}>{item.desc}</p>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 opacity-40 group-hover:opacity-100 transition-opacity"
+                    style={{ color: T.muted }} />
+                </Link>
+              ))}
+            </div>
+          </div>
 
           {/* Estado do sistema */}
-          <div className="card p-4 mt-2">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sistema</span>
+          <div className="rounded-2xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#22C55E' }} />
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.subtle }}>
+                Estado do Sistema
+              </p>
             </div>
             <div className="space-y-2.5">
               {[
-                { label: 'API',             status: 'Online',      color: '#10b981' },
-                { label: 'WhatsApp',        status: 'Configurar',  color: '#f59e0b' },
-                { label: 'PWA Operadores',  status: 'Online',      color: '#10b981' },
+                { label: 'API',             ok: true  },
+                { label: 'PWA Operadores',  ok: true  },
+                { label: 'WhatsApp',        ok: false, hint: 'Configurar' },
+                { label: 'SMTP Email',      ok: false, hint: 'Configurar' },
               ].map(s => (
                 <div key={s.label} className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">{s.label}</span>
-                  <span className="text-xs font-semibold" style={{ color: s.color }}>{s.status}</span>
+                  <span className="text-sm" style={{ color: T.muted }}>{s.label}</span>
+                  <span className="text-xs font-semibold" style={{ color: s.ok ? '#22C55E' : '#EAB308' }}>
+                    {s.ok ? 'Online' : (s.hint ?? 'Offline')}
+                  </span>
                 </div>
               ))}
             </div>

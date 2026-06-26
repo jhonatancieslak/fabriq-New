@@ -285,6 +285,8 @@ model Material {
   name      String
   type      MaterialType
   isActive  Boolean      @default(true) @map("is_active")
+  costPerKg Decimal?     @map("cost_per_kg")
+  costPerM2 Decimal?     @map("cost_per_m2")
 
   tenant     Tenant       @relation(fields: [tenantId], references: [id])
   orderItems OrderItem[]

@@ -100,12 +100,29 @@ export const api = {
   },
 
   materials: {
-    list: () => request<Material[]>('/api/v1/materials'),
+    list: (params?: { search?: string; page?: number; includeInactive?: boolean }) => {
+      const q = new URLSearchParams(params as never).toString()
+      return request<{ materials: Material[]; total: number; page: number; pages: number } | Material[]>(
+        `/api/v1/materials${q ? `?${q}` : ''}`
+      )
+    },
+    create: (data: Partial<Material>) =>
+      request<Material>('/api/v1/materials', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Material>) =>
+      request<Material>(`/api/v1/materials/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/api/v1/materials/${id}`, { method: 'DELETE' }),
   },
 
   operators: {
     list: () => request<Operator[]>('/api/v1/operators'),
     get:  (id: string) => request<Operator>(`/api/v1/operators/${id}`),
+  },
+
+  dashboard: {
+    stats: () => request<{
+      orders: { total: number; pending: number; inProgress: number; completed: number; invoiced: number; createdToday: number; createdMonth: number }
+      financial: { revenueMonth: number; revenueLastMonth: number; revenueGrowth: number | null; invoicedThisMonth: number; pendingInvoices: number }
+    }>('/api/v1/dashboard/stats'),
   },
 
   financial: {
@@ -118,6 +135,10 @@ export const api = {
       request<InvoicingRecord>(`/api/v1/financial/${id}/approve`, { method: 'PATCH', body: JSON.stringify(data) }),
     cancel: (id: string) =>
       request<{ ok: boolean }>(`/api/v1/financial/${id}/cancel`, { method: 'PATCH', body: JSON.stringify({}) }),
+    calculate: (id: string) =>
+      request<{ suggestedValue: number; breakdown: { stageNumber: number; machineType: string; machineName: string; minutes: number; cost: number }[]; hasParams: boolean }>(
+        `/api/v1/financial/${id}/calculate`
+      ),
   },
 
   users: {
@@ -147,7 +168,7 @@ export interface Machine {
   costPerHour?: number | null; minBilledMinutes?: number | null
   costPerMinAfterMin?: number | null; materialCostEnabled?: boolean; marginPercent?: number | null
 }
-export interface Material { id: string; name: string; type: string }
+export interface Material { id: string; name: string; type: string; isActive?: boolean; costPerKg?: number | null; costPerM2?: number | null }
 export interface Operator { id: string; name: string; username: string; phone?: string }
 export interface OrderStage {
   id: string; stageNumber: number; type: string; status: string

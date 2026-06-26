@@ -10,6 +10,7 @@ const montserrat = Montserrat({ subsets: ['latin'], variable: '--font-montserrat
 export const metadata: Metadata = {
   title: 'FABRIQ.IA — Gestão de Produção',
   description: 'Chão de fábrica sob controlo. Do corte à fatura, sem papel.',
+  icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

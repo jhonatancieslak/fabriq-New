@@ -105,14 +105,33 @@ OPERADOR        → PWA mobile (já existe)
 
 ---
 
+## Portal Financeiro (concluído 2026-06-26 Sessão 4)
+
+- Rotas `GET/PATCH /api/v1/financial` — listar, stats, aprovar, cancelar
+- Aprovação: tipo (mat+MO / só MO), valor, notas, opção **"Sem fatura"** (cliente não quer emissão)
+- Página `/invoicing`: KPIs (pendentes, faturados mês, crescimento, total), tabs por estado, modal profissional
+- Ícones neutros (sem cores), visual profissional
+- Campo `costValue` preparado para futura integração contabilidade (Moloni, etc.)
+
+## UI Components (admin-ui.tsx)
+
+Ficheiro partilhado: `apps/web/src/components/ui/admin-ui.tsx`
+Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `ErrorMsg`, `PageHeader`, `SearchBar`, `Table`, `Tr`, `Td`, `Pagination`, `Badge`, `Empty`
+**Usar SEMPRE estes componentes em todas as páginas admin. Nunca usar classes Tailwind azuis ou fundo branco.**
+
 ## Próximos passos
 
-1. ~~**Gestão de utilizadores**~~ ✅ Concluído em 2026-06-26
-2. **Portal Financeiro** — ordens `CONCLUÍDA` → aprovar → `FATURADA` + relatório
-3. **Portal Solicitador** — criar pedidos, ver ordens, confirmar entrega
-4. **Configurações da empresa** — máquinas, materiais, custos, Evolution API, SMTP
-5. **Página pública `/verificar/[authCode]`** — sem login, prova de execução
-6. **Dropdowns do formulário de ordens** ligados à API real (clientes, obras, máquinas, operadores)
-7. **Upload de fotos** na PWA (câmara → backend)
-8. **Dashboard de segurança** — página no admin que consome `/security/stats` e `/login-attempts`
-9. **Billing / planos** — bloquear funcionalidades por plano (fase futura)
+1. ~~**Gestão de utilizadores**~~ ✅
+2. ~~**Portal Financeiro**~~ ✅
+3. ~~**Máquinas CRUD + parâmetros de custo**~~ ✅
+4. ~~**Portal Solicitador / Ordens + Obras**~~ ✅
+5. **Configurações da empresa** — materiais, Evolution API, SMTP
+6. **Página pública `/verificar/[authCode]`** — sem login, prova de execução
+7. **Dashboard** — KPIs reais (ordens/dia, pendentes, faturação mês)
+8. **Cálculo automático de valor** na faturação (usa params de custo da máquina + tempo registado)
+9. **Upload de fotos** na PWA
+10. **Billing / planos** (fase futura)
+7. **Dropdowns do formulário de ordens** ligados à API real
+8. **Upload de fotos** na PWA
+9. **Dashboard de segurança** — consome `/security/stats`
+10. **Billing / planos** (fase futura)

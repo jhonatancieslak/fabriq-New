@@ -48,7 +48,7 @@ export default function NewOrderPage() {
     ]).then(([c, mRes, mat, op]) => {
       setClients(c)
       setMachines((mRes as { machines: Machine[] }).machines ?? (mRes as unknown as Machine[]))
-      setMaterials(mat)
+      setMaterials(Array.isArray(mat) ? mat : (mat as { materials: Material[] }).materials)
       setOperators(op)
     })
   }, [])

@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   FileText, CheckCircle, Clock, BarChart2, DollarSign,
-  X, ChevronDown, AlertCircle, RefreshCw, Ban,
+  X, ChevronDown, AlertCircle, RefreshCw, Ban, Calculator,
 } from 'lucide-react'
 import { api, type InvoicingRecord, type FinancialStats } from '@/lib/api'
 
@@ -58,6 +58,14 @@ function ApproveModal({ record, onClose, onDone }: {
   const [noInvoice, setNoInvoice] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [calcResult, setCalcResult] = useState<{ suggestedValue: number; breakdown: { stageNumber: number; machineName: string; minutes: number; cost: number }[]; hasParams: boolean } | null>(null)
+
+  useEffect(() => {
+    api.financial.calculate(record.id).then(r => {
+      setCalcResult(r)
+      if (r.hasParams && !record.costValue) setCostValue(String(r.suggestedValue))
+    }).catch(() => { /* sem params configurados — ok */ })
+  }, [record.id, record.costValue])
 
   async function submit() {
     setLoading(true); setError('')
@@ -128,6 +136,22 @@ function ApproveModal({ record, onClose, onDone }: {
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: '#6B7280' }} />
             </div>
           </div>
+
+          {calcResult?.hasParams && (
+            <div className="rounded-xl px-4 py-3" style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.15)' }}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Calculator className="h-3.5 w-3.5" style={{ color: '#EAB308' }} />
+                <p className="text-xs font-semibold" style={{ color: '#EAB308' }}>
+                  Calculado automaticamente: {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(calcResult.suggestedValue)}
+                </p>
+              </div>
+              {calcResult.breakdown.map(b => (
+                <p key={b.stageNumber} className="text-xs" style={{ color: '#6B7280' }}>
+                  Etapa {b.stageNumber} · {b.machineName} · {b.minutes} min → {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(b.cost)}
+                </p>
+              ))}
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: '#9CA3AF' }}>Valor (€) <span style={{ color: '#4B5563' }}>— opcional</span></label>
