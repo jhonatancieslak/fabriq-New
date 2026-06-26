@@ -1,81 +1,153 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
 
-import { Plus, Search } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+'use client'
 
-const statusFilters = [
-  { value: '', label: 'Todas' },
-  { value: 'pending', label: 'Pendentes' },
-  { value: 'in_progress', label: 'Em execução' },
-  { value: 'completed', label: 'Concluídas' },
-  { value: 'awaiting_invoice', label: 'Aguarda faturação' },
-  { value: 'invoiced', label: 'Faturadas' },
+import { useEffect, useState, useCallback } from 'react'
+import { Plus, ClipboardList, Eye } from 'lucide-react'
+import Link from 'next/link'
+import { api, type Order } from '@/lib/api'
+import {
+  T, Toast, PageHeader, SearchBar, Table, Tr, Td,
+  Pagination, Badge, Empty, Btn,
+} from '@/components/ui/admin-ui'
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Pendente', in_progress: 'Em execução', completed: 'Concluída',
+  cancelled: 'Cancelada', invoiced: 'Faturada',
+}
+const STATUS_COLOR: Record<string, string> = {
+  pending: '#9CA3AF', in_progress: '#EAB308', completed: '#22C55E',
+  cancelled: '#EF4444', invoiced: '#A78BFA',
+}
+
+const TABS = [
+  { key: '', label: 'Todas' },
+  { key: 'pending', label: 'Pendentes' },
+  { key: 'in_progress', label: 'Em execução' },
+  { key: 'completed', label: 'Concluídas' },
+  { key: 'invoiced', label: 'Faturadas' },
+  { key: 'cancelled', label: 'Canceladas' },
 ]
 
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [total, setTotal] = useState(0)
+  const [pages, setPages] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [tab, setTab] = useState('')
+  const [page, setPage] = useState(1)
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+
+  function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
+    setToast({ msg, type }); setTimeout(() => setToast(null), 3500)
+  }
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await api.orders.list({ status: tab || undefined, page })
+      setOrders(res.orders)
+      setTotal(res.total)
+      setPages(res.pages)
+    } catch { showToast('Erro ao carregar ordens', 'err') }
+    finally { setLoading(false) }
+  }, [tab, page])
+
+  useEffect(() => { setPage(1) }, [tab, search])
+  useEffect(() => { load() }, [load])
+
+  // client-side search filter (sobre os resultados já paginados)
+  const filtered = search
+    ? orders.filter(o =>
+        o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
+        o.client?.name.toLowerCase().includes(search.toLowerCase()) ||
+        o.project?.name.toLowerCase().includes(search.toLowerCase())
+      )
+    : orders
+
   return (
     <div className="p-6 space-y-5">
-      {/* Cabeçalho */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Ordens de Serviço</h1>
-          <p className="text-sm text-slate-500 mt-1">Gestão de ordens de corte, quinagem e guilhotina</p>
-        </div>
-        <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-          <Plus className="h-4 w-4" />
-          Nova ordem
-        </button>
-      </div>
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
 
-      {/* Filtros de estado */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {statusFilters.map(f => (
-          <button
-            key={f.value}
-            className="shrink-0 rounded-full border border-slate-200 px-4 py-1.5 text-sm font-medium text-slate-600 hover:border-blue-500 hover:text-blue-600 transition-colors first:bg-blue-600 first:text-white first:border-blue-600"
-          >
-            {f.label}
+      <PageHeader
+        title="Ordens de Serviço"
+        sub={`${total} ordem${total !== 1 ? 's' : ''}`}
+        action={
+          <Link href="/orders/new">
+            <Btn><Plus className="h-4 w-4" />Nova Ordem</Btn>
+          </Link>
+        }
+      />
+
+      {/* Status tabs */}
+      <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: T.surface, border: `1px solid ${T.border}`, width: 'fit-content' }}>
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className="px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
+            style={tab === t.key ? { background: T.yellow, color: '#07080A' } : { color: T.subtle }}>
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* Pesquisa */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Pesquisar por número, cliente ou obra..."
-          className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
+      {/* Search */}
+      <div className="max-w-sm">
+        <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por número, cliente ou obra…" />
       </div>
 
-      {/* Tabela */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-5 py-3 text-left font-medium text-slate-500">Número</th>
-              <th className="px-5 py-3 text-left font-medium text-slate-500">Cliente</th>
-              <th className="px-5 py-3 text-left font-medium text-slate-500">Obra</th>
-              <th className="px-5 py-3 text-left font-medium text-slate-500">Etapas</th>
-              <th className="px-5 py-3 text-left font-medium text-slate-500">Estado</th>
-              <th className="px-5 py-3 text-left font-medium text-slate-500">Data</th>
-              <th className="px-5 py-3 text-right font-medium text-slate-500">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={7} className="px-5 py-16 text-center text-slate-400">
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-4xl">📋</span>
-                  <span className="font-medium">Nenhuma ordem criada</span>
-                  <span className="text-xs">Crie a primeira ordem para começar</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <Table
+        headers={['Número', 'Cliente', 'Obra', 'Etapas', 'Estado', 'Data', 'Ações']}
+        loading={loading}
+      >
+        {filtered.length === 0 && !loading ? (
+          <tr><td colSpan={7}>
+            <Empty icon={ClipboardList} title="Nenhuma ordem encontrada" sub="Crie a primeira ordem para começar" />
+          </td></tr>
+        ) : filtered.map((o, i) => (
+          <Tr key={o.id} last={i === filtered.length - 1}>
+            <Td>
+              <span className="text-sm font-mono font-bold" style={{ color: T.yellow }}>#{o.orderNumber}</span>
+            </Td>
+            <Td>
+              <span className="text-sm font-medium" style={{ color: T.text }}>{o.client?.name ?? '—'}</span>
+            </Td>
+            <Td>
+              <div>
+                <span className="text-sm" style={{ color: T.muted }}>{o.project?.name ?? '—'}</span>
+                {o.project?.code && <span className="text-xs ml-1.5 font-mono" style={{ color: T.faint }}>{o.project.code}</span>}
+              </div>
+            </Td>
+            <Td>
+              <div className="flex gap-1">
+                {(o.stages ?? []).map(s => (
+                  <span key={s.id} className="w-2 h-2 rounded-full" title={s.status}
+                    style={{ background: s.status === 'completed' ? '#22C55E' : s.status === 'in_progress' ? T.yellow : T.faint }} />
+                ))}
+              </div>
+            </Td>
+            <Td>
+              <Badge label={STATUS_LABEL[o.status] ?? o.status} color={STATUS_COLOR[o.status] ?? T.subtle} />
+            </Td>
+            <Td>
+              <span className="text-sm" style={{ color: T.subtle }}>{fmtDate(o.createdAt)}</span>
+            </Td>
+            <Td>
+              <Link href={`/orders/${o.id}`}>
+                <button className="p-2 rounded-lg hover:bg-white/5" title="Ver detalhe">
+                  <Eye className="h-3.5 w-3.5" style={{ color: T.subtle }} />
+                </button>
+              </Link>
+            </Td>
+          </Tr>
+        ))}
+      </Table>
+
+      <Pagination page={page} pages={pages} total={total} onPage={setPage} />
     </div>
   )
 }

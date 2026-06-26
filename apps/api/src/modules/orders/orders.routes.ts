@@ -18,10 +18,14 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
     const { status, projectId, page = '1', limit = '20' } = req.query as Record<string, string>
     const skip = (Number(page) - 1) * Number(limit)
 
+    // requesters only see their own orders
+    const requesterFilter = req.userRole === 'requester' ? { requesterId: req.userId! } : {}
+
     const [orders, total] = await Promise.all([
       app.prisma.serviceOrder.findMany({
         where: {
           tenantId: req.tenantId!,
+          ...requesterFilter,
           ...(status ? { status: status as never } : {}),
           ...(projectId ? { projectId } : {}),
         },
@@ -35,7 +39,7 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
         skip,
         take: Number(limit),
       }),
-      app.prisma.serviceOrder.count({ where: { tenantId: req.tenantId!, ...(status ? { status: status as never } : {}) } }),
+      app.prisma.serviceOrder.count({ where: { tenantId: req.tenantId!, ...requesterFilter, ...(status ? { status: status as never } : {}) } }),
     ])
 
     return { orders, total, page: Number(page), pages: Math.ceil(total / Number(limit)) }
@@ -67,7 +71,10 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
     const body = createOrderSchema.safeParse(req.body)
     if (!body.success) return reply.status(400).send({ error: body.error.flatten() })
 
-    const order = await createOrder(app.prisma, req.tenantId!, req.userId!, body.data)
+    const data = req.userRole === 'requester'
+      ? { ...body.data, requesterId: req.userId! }
+      : body.data
+    const order = await createOrder(app.prisma, req.tenantId!, req.userId!, data)
     await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
       action: 'order.created', entityType: 'order', entityId: order.id,
       payload: { orderNumber: order.orderNumber } })

@@ -68,6 +68,8 @@ export const api = {
     get: (id: string) => request<Project>(`/api/v1/projects/${id}`),
     create: (data: Partial<Project>) =>
       request<Project>('/api/v1/projects', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Project>) =>
+      request<Project>(`/api/v1/projects/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
   orders: {
@@ -138,7 +140,7 @@ export interface Client {
 }
 export interface Project {
   id: string; code: string; name: string; description?: string; status: string; clientId: string
-  client?: { name: string }
+  client?: { name: string }; createdAt?: string
 }
 export interface Machine {
   id: string; name: string; type: string; model?: string; serial?: string; isActive?: boolean

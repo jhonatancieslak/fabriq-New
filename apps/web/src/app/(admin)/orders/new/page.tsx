@@ -2,26 +2,22 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft, Plus, Trash2 } from 'lucide-react'
-import { api } from '@/lib/api'
+import { ChevronRight, ChevronLeft, Plus, Trash2, Check } from 'lucide-react'
+import { api, type Client, type Project, type Machine, type Material, type Operator } from '@/lib/api'
+import { T, Field, Input, Select, Textarea, ErrorMsg, Btn } from '@/components/ui/admin-ui'
+import { MACHINE_TYPE_LABELS } from './machine-types'
 
-type StageType = 'laser_cnc' | 'bending' | 'guillotine'
-
+// re-export so page file doesn't export non-page exports
+type StageType = string
 interface Stage { type: StageType; machineId?: string; operatorId?: string }
 interface Item {
-  description: string; filename: string; materialId: string
+  description: string; materialId: string
   thicknessMm: number; quantityPlanned: number; widthMm?: number; heightMm?: number
 }
 
-const STEPS = ['Obra & Cliente', 'Etapas', 'Peças', 'Confirmar']
-
-const stageTypeOptions: { value: StageType; label: string; icon: string }[] = [
-  { value: 'laser_cnc',  label: 'Corte CNC Laser', icon: '⚡' },
-  { value: 'bending',    label: 'Quinagem',         icon: '🔧' },
-  { value: 'guillotine', label: 'Guilhotina',        icon: '✂️' },
-]
+const STEPS = ['Cliente & Obra', 'Etapas', 'Peças', 'Confirmar']
 
 export default function NewOrderPage() {
   const router = useRouter()
@@ -29,310 +25,301 @@ export default function NewOrderPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  // Dados do formulário
-  const [projectId, setProjectId]   = useState('')
-  const [clientId,  setClientId]    = useState('')
-  const [requesterId, setRequesterId] = useState('')
-  const [notes, setNotes]           = useState('')
-  const [stages, setStages]         = useState<Stage[]>([{ type: 'laser_cnc' }])
-  const [items,  setItems]          = useState<Item[]>([{
-    description: '', filename: 'peça-01.dxf', materialId: '', thicknessMm: 3, quantityPlanned: 1,
-  }])
+  // API data
+  const [clients, setClients]     = useState<Client[]>([])
+  const [projects, setProjects]   = useState<Project[]>([])
+  const [machines, setMachines]   = useState<Machine[]>([])
+  const [materials, setMaterials] = useState<Material[]>([])
+  const [operators, setOperators] = useState<Operator[]>([])
 
-  // Dados para dropdowns (simplificado — em produção usar TanStack Query)
-  const [clients]   = useState([{ id: 'seed-client-001',   name: 'Construções Ribeiro Lda' }])
-  const [projects]  = useState([{ id: 'seed-project-001',  name: 'OB-2026-001 — Armazém Braga' }])
-  const [materials] = useState([
-    { id: 'seed-mat-001', name: 'Aço Carbono S235' },
-    { id: 'seed-mat-002', name: 'Inox 304' },
-    { id: 'seed-mat-003', name: 'Alumínio 5052' },
-  ])
-  const [operators] = useState([{ id: 'seed-operator-001', name: 'João Silva' }])
+  // form state
+  const [clientId,   setClientId]   = useState('')
+  const [projectId,  setProjectId]  = useState('')
+  const [notes,      setNotes]      = useState('')
+  const [stages,     setStages]     = useState<Stage[]>([{ type: 'laser_cnc' }])
+  const [items,      setItems]      = useState<Item[]>([{ description: '', materialId: '', thicknessMm: 3, quantityPlanned: 1 }])
 
-  function addStage() { setStages(s => [...s, { type: 'laser_cnc' }]) }
-  function removeStage(i: number) { setStages(s => s.filter((_, idx) => idx !== i)) }
-  function updateStage(i: number, data: Partial<Stage>) {
-    setStages(s => s.map((st, idx) => idx === i ? { ...st, ...data } : st))
-  }
+  useEffect(() => {
+    Promise.all([
+      api.clients.list(),
+      api.machines.list(),
+      api.materials.list(),
+      api.operators.list(),
+    ]).then(([c, mRes, mat, op]) => {
+      setClients(c)
+      setMachines((mRes as { machines: Machine[] }).machines ?? (mRes as unknown as Machine[]))
+      setMaterials(mat)
+      setOperators(op)
+    })
+  }, [])
 
-  function addItem() {
-    setItems(it => [...it, {
-      description: '', filename: `peça-0${it.length + 1}.dxf`, materialId: '', thicknessMm: 3, quantityPlanned: 1,
-    }])
-  }
-  function removeItem(i: number) { setItems(it => it.filter((_, idx) => idx !== i)) }
-  function updateItem(i: number, data: Partial<Item>) {
-    setItems(it => it.map((item, idx) => idx === i ? { ...item, ...data } : item))
-  }
-
-  async function handleSubmit() {
-    setSaving(true)
-    setError('')
-    try {
-      const order = await api.orders.create({ projectId, clientId, requesterId: requesterId || undefined, notes, stages, items })
-      router.push(`/orders/${order.id}`)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao criar ordem')
-    } finally {
-      setSaving(false)
+  useEffect(() => {
+    if (clientId) {
+      api.projects.list(clientId).then(setProjects)
+      setProjectId('')
+    } else {
+      setProjects([])
     }
-  }
+  }, [clientId])
 
   const canNext = () => {
-    if (step === 0) return projectId && clientId
+    if (step === 0) return clientId && projectId
     if (step === 1) return stages.length > 0
     if (step === 2) return items.every(i => i.description && i.materialId && i.quantityPlanned > 0)
     return true
   }
 
+  async function handleSubmit() {
+    setSaving(true); setError('')
+    try {
+      const order = await api.orders.create({ projectId, clientId, notes, stages, items })
+      router.push(`/orders/${order.id}`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao criar ordem')
+      setSaving(false)
+    }
+  }
+
+  // ── Card wrapper used in steps ─────────────────────────────────────────────
+  function Card({ children }: { children: React.ReactNode }) {
+    return (
+      <div className="rounded-2xl p-5 space-y-4" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+        {children}
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      {/* Cabeçalho */}
-      <div className="mb-6">
-        <button onClick={() => router.back()} className="text-sm text-slate-500 hover:text-slate-700 mb-2 flex items-center gap-1">
+    <div className="p-6 max-w-2xl mx-auto space-y-6">
+      {/* Back + title */}
+      <div>
+        <button onClick={() => router.push('/orders')}
+          className="flex items-center gap-1.5 text-sm mb-3 transition-colors"
+          style={{ color: T.subtle }}
+          onMouseEnter={e => e.currentTarget.style.color = T.text}
+          onMouseLeave={e => e.currentTarget.style.color = T.subtle}>
           <ChevronLeft className="h-4 w-4" /> Ordens
         </button>
-        <h1 className="text-2xl font-bold text-slate-900">Nova Ordem de Serviço</h1>
+        <h1 className="text-xl font-black tracking-tight" style={{ color: T.text }}>Nova Ordem de Serviço</h1>
       </div>
 
-      {/* Indicador de passos */}
-      <div className="flex items-center gap-2 mb-8">
+      {/* Step indicator */}
+      <div className="flex items-center gap-2">
         {STEPS.map((label, i) => (
           <div key={i} className="flex items-center gap-2">
-            <div className={`flex items-center gap-2 ${i <= step ? 'text-blue-600' : 'text-slate-400'}`}>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
-                i < step ? 'bg-blue-600 border-blue-600 text-white' :
-                i === step ? 'border-blue-600 text-blue-600' : 'border-slate-200 text-slate-400'
-              }`}>{i < step ? '✓' : i + 1}</div>
-              <span className="text-sm font-medium hidden sm:block">{label}</span>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                style={i < step
+                  ? { background: T.yellow, color: '#07080A' }
+                  : i === step
+                    ? { background: T.yellowBg, border: `2px solid ${T.yellow}`, color: T.yellow }
+                    : { background: T.surface, border: `1px solid ${T.border}`, color: T.faint }}>
+                {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+              </div>
+              <span className="text-sm font-medium hidden sm:block" style={{ color: i <= step ? T.text : T.faint }}>{label}</span>
             </div>
-            {i < STEPS.length - 1 && <div className={`h-px w-8 ${i < step ? 'bg-blue-600' : 'bg-slate-200'}`} />}
+            {i < STEPS.length - 1 && (
+              <div className="h-px w-6" style={{ background: i < step ? T.yellow : T.border }} />
+            )}
           </div>
         ))}
       </div>
 
-      {/* Passo 0 — Obra & Cliente */}
+      {/* Step 0 — Cliente & Obra */}
       {step === 0 && (
-        <div className="space-y-4">
-          <h2 className="text-base font-semibold text-slate-900">Seleccionar cliente e obra</h2>
-
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Cliente *</label>
-            <select value={clientId} onChange={e => setClientId(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-              <option value="">Seleccionar cliente...</option>
+        <Card>
+          <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Cliente & Obra</h2>
+          <Field label="Cliente *">
+            <Select value={clientId} onChange={setClientId}>
+              <option value="">Seleccionar cliente…</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Obra *</label>
-            <select value={projectId} onChange={e => setProjectId(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-              <option value="">Seleccionar obra...</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Solicitador</label>
-            <select value={requesterId} onChange={e => setRequesterId(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-              <option value="">Seleccionar solicitador...</option>
-              <option value="seed-requester-001">Carlos Ferreira</option>
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700">Observações</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-              placeholder="Instruções adicionais para o operador..."
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none resize-none" />
-          </div>
-        </div>
+            </Select>
+          </Field>
+          <Field label="Obra *">
+            <Select value={projectId} onChange={setProjectId} disabled={!clientId}>
+              <option value="">Seleccionar obra…</option>
+              {projects.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
+            </Select>
+          </Field>
+          <Field label="Observações" hint="— opcional">
+            <Textarea value={notes} onChange={setNotes} placeholder="Instruções adicionais para o operador…" rows={2} />
+          </Field>
+        </Card>
       )}
 
-      {/* Passo 1 — Etapas */}
+      {/* Step 1 — Etapas */}
       {step === 1 && (
-        <div className="space-y-4">
-          <h2 className="text-base font-semibold text-slate-900">Definir etapas de produção</h2>
-          <p className="text-sm text-slate-500">As etapas são executadas em sequência. O operador só pode avançar para a próxima após concluir a anterior.</p>
-
-          <div className="space-y-3">
-            {stages.map((stage, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase">Etapa {i + 1}</span>
-                  {stages.length > 1 && (
-                    <button onClick={() => removeStage(i)} className="text-red-400 hover:text-red-600">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {stageTypeOptions.map(opt => (
-                    <button key={opt.value} onClick={() => updateStage(i, { type: opt.value })}
-                      className={`rounded-lg border-2 p-3 text-center text-xs font-medium transition-colors ${
-                        stage.type === opt.value ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}>
-                      <div className="text-xl mb-1">{opt.icon}</div>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Operador</label>
-                    <select value={stage.operatorId ?? ''} onChange={e => updateStage(i, { operatorId: e.target.value || undefined })}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-                      <option value="">Atribuir depois</option>
-                      {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
-                    </select>
-                  </div>
-                </div>
+        <div className="space-y-3">
+          <p className="text-xs" style={{ color: T.subtle }}>
+            As etapas são executadas em sequência. Adicione tantas quantas necessárias.
+          </p>
+          {stages.map((stage, i) => (
+            <div key={i} className="rounded-2xl p-4 space-y-3" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Etapa {i + 1}</span>
+                {stages.length > 1 && (
+                  <button onClick={() => setStages(s => s.filter((_, idx) => idx !== i))}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10">
+                    <Trash2 className="h-3.5 w-3.5" style={{ color: T.faint }} />
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
 
-          <button onClick={addStage}
-            className="flex items-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600 w-full justify-center transition-colors">
+              {/* Machine type grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                {Object.entries(MACHINE_TYPE_LABELS).map(([val, label]) => (
+                  <button key={val} onClick={() => setStages(s => s.map((st, idx) => idx === i ? { ...st, type: val } : st))}
+                    className="rounded-xl p-2.5 text-center text-xs font-medium transition-all"
+                    style={stage.type === val
+                      ? { background: T.yellowBg, border: `1px solid ${T.yellow}`, color: T.yellow }
+                      : { background: T.bg, border: `1px solid ${T.border}`, color: T.subtle }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Máquina" hint="— opcional">
+                  <Select value={stage.machineId ?? ''} onChange={v => setStages(s => s.map((st, idx) => idx === i ? { ...st, machineId: v || undefined } : st))}>
+                    <option value="">Atribuir depois</option>
+                    {machines.filter(m => m.type === stage.type).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </Select>
+                </Field>
+                <Field label="Operador" hint="— opcional">
+                  <Select value={stage.operatorId ?? ''} onChange={v => setStages(s => s.map((st, idx) => idx === i ? { ...st, operatorId: v || undefined } : st))}>
+                    <option value="">Atribuir depois</option>
+                    {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
+                  </Select>
+                </Field>
+              </div>
+            </div>
+          ))}
+
+          <button onClick={() => setStages(s => [...s, { type: 'laser_cnc' }])}
+            className="flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium w-full justify-center transition-all"
+            style={{ background: T.bg, border: `1px dashed ${T.border}`, color: T.subtle }}>
             <Plus className="h-4 w-4" /> Adicionar etapa
           </button>
         </div>
       )}
 
-      {/* Passo 2 — Peças */}
+      {/* Step 2 — Peças */}
       {step === 2 && (
-        <div className="space-y-4">
-          <h2 className="text-base font-semibold text-slate-900">Itens / Peças</h2>
-
-          <div className="space-y-3">
-            {items.map((item, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase">Peça {i + 1}</span>
-                  {items.length > 1 && (
-                    <button onClick={() => removeItem(i)} className="text-red-400 hover:text-red-600">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Descrição da peça *</label>
-                    <input type="text" value={item.description} onChange={e => updateItem(i, { description: e.target.value })}
-                      placeholder="Ex: Suporte lateral direito"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Material *</label>
-                    <select value={item.materialId} onChange={e => updateItem(i, { materialId: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-                      <option value="">Seleccionar...</option>
-                      {materials.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Espessura (mm) *</label>
-                    <input type="number" min={0.5} step={0.5} value={item.thicknessMm}
-                      onChange={e => updateItem(i, { thicknessMm: parseFloat(e.target.value) })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Largura (mm)</label>
-                    <input type="number" min={1} value={item.widthMm ?? ''} onChange={e => updateItem(i, { widthMm: e.target.value ? parseFloat(e.target.value) : undefined })}
-                      placeholder="opcional"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Altura (mm)</label>
-                    <input type="number" min={1} value={item.heightMm ?? ''} onChange={e => updateItem(i, { heightMm: e.target.value ? parseFloat(e.target.value) : undefined })}
-                      placeholder="opcional"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Quantidade *</label>
-                    <input type="number" min={1} value={item.quantityPlanned}
-                      onChange={e => updateItem(i, { quantityPlanned: parseInt(e.target.value) })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
-                  </div>
-                </div>
+        <div className="space-y-3">
+          {items.map((item, i) => (
+            <div key={i} className="rounded-2xl p-4 space-y-3" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Peça {i + 1}</span>
+                {items.length > 1 && (
+                  <button onClick={() => setItems(it => it.filter((_, idx) => idx !== i))}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10">
+                    <Trash2 className="h-3.5 w-3.5" style={{ color: T.faint }} />
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
+              <Field label="Descrição *">
+                <Input value={item.description} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, description: v } : x))}
+                  placeholder="Ex: Suporte lateral direito" />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Material *">
+                  <Select value={item.materialId} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, materialId: v } : x))}>
+                    <option value="">Seleccionar…</option>
+                    {materials.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </Select>
+                </Field>
+                <Field label="Espessura (mm) *">
+                  <Input value={String(item.thicknessMm)} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, thicknessMm: parseFloat(v) || 0 } : x))} type="number" />
+                </Field>
+                <Field label="Largura (mm)" hint="— opcional">
+                  <Input value={item.widthMm != null ? String(item.widthMm) : ''} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, widthMm: v ? parseFloat(v) : undefined } : x))} type="number" placeholder="opcional" />
+                </Field>
+                <Field label="Altura (mm)" hint="— opcional">
+                  <Input value={item.heightMm != null ? String(item.heightMm) : ''} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, heightMm: v ? parseFloat(v) : undefined } : x))} type="number" placeholder="opcional" />
+                </Field>
+                <Field label="Quantidade *">
+                  <Input value={String(item.quantityPlanned)} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, quantityPlanned: parseInt(v) || 1 } : x))} type="number" />
+                </Field>
+              </div>
+            </div>
+          ))}
 
-          <button onClick={addItem}
-            className="flex items-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600 w-full justify-center transition-colors">
+          <button onClick={() => setItems(it => [...it, { description: '', materialId: '', thicknessMm: 3, quantityPlanned: 1 }])}
+            className="flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium w-full justify-center transition-all"
+            style={{ background: T.bg, border: `1px dashed ${T.border}`, color: T.subtle }}>
             <Plus className="h-4 w-4" /> Adicionar peça
           </button>
         </div>
       )}
 
-      {/* Passo 3 — Confirmar */}
+      {/* Step 3 — Confirmar */}
       {step === 3 && (
-        <div className="space-y-5">
-          <h2 className="text-base font-semibold text-slate-900">Confirmar e gerar ordem</h2>
+        <div className="rounded-2xl p-5 space-y-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+          <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Resumo da Ordem</h2>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-xs font-bold text-slate-500 uppercase mb-2">Obra & Cliente</div>
-              <div className="text-sm">{projects.find(p => p.id === projectId)?.name ?? projectId}</div>
-              <div className="text-sm text-slate-500">{clients.find(c => c.id === clientId)?.name ?? clientId}</div>
+              <p className="text-xs uppercase tracking-wider mb-1" style={{ color: T.faint }}>Cliente</p>
+              <p className="text-sm font-medium" style={{ color: T.text }}>{clients.find(c => c.id === clientId)?.name ?? '—'}</p>
             </div>
-
             <div>
-              <div className="text-xs font-bold text-slate-500 uppercase mb-2">Etapas ({stages.length})</div>
-              {stages.map((s, i) => (
-                <div key={i} className="text-sm">{i + 1}. {stageTypeOptions.find(o => o.value === s.type)?.label}</div>
-              ))}
+              <p className="text-xs uppercase tracking-wider mb-1" style={{ color: T.faint }}>Obra</p>
+              <p className="text-sm font-medium" style={{ color: T.text }}>{projects.find(p => p.id === projectId)?.name ?? '—'}</p>
             </div>
-
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase mb-2">Peças ({items.length})</div>
-              {items.map((item, i) => (
-                <div key={i} className="text-sm">{i + 1}. {item.description} — {item.quantityPlanned} un.</div>
-              ))}
-            </div>
-
-            {notes && (
-              <div>
-                <div className="text-xs font-bold text-slate-500 uppercase mb-1">Observações</div>
-                <div className="text-sm text-slate-600">{notes}</div>
-              </div>
-            )}
           </div>
 
-          {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+          <div>
+            <p className="text-xs uppercase tracking-wider mb-2" style={{ color: T.faint }}>Etapas ({stages.length})</p>
+            <div className="space-y-1">
+              {stages.map((s, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm" style={{ color: T.muted }}>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: T.yellowBg, color: T.yellow }}>{i + 1}</span>
+                  {MACHINE_TYPE_LABELS[s.type] ?? s.type}
+                  {s.machineId && machines.find(m => m.id === s.machineId) && (
+                    <span style={{ color: T.faint }}>· {machines.find(m => m.id === s.machineId)?.name}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs uppercase tracking-wider mb-2" style={{ color: T.faint }}>Peças ({items.length})</p>
+            <div className="space-y-1">
+              {items.map((it, i) => (
+                <div key={i} className="text-sm" style={{ color: T.muted }}>
+                  {i + 1}. {it.description} — {it.quantityPlanned} un. · {it.thicknessMm}mm
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {notes && (
+            <div>
+              <p className="text-xs uppercase tracking-wider mb-1" style={{ color: T.faint }}>Observações</p>
+              <p className="text-sm" style={{ color: T.muted }}>{notes}</p>
+            </div>
           )}
+
+          {error && <ErrorMsg msg={error} />}
         </div>
       )}
 
-      {/* Navegação */}
-      <div className="flex justify-between mt-8 pt-5 border-t border-slate-200">
-        <button onClick={() => setStep(s => s - 1)} disabled={step === 0}
-          className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+      {/* Navigation */}
+      <div className="flex justify-between pt-2">
+        <Btn variant="ghost" onClick={() => setStep(s => s - 1)} disabled={step === 0}>
           <ChevronLeft className="h-4 w-4" /> Anterior
-        </button>
-
+        </Btn>
         {step < STEPS.length - 1 ? (
-          <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <Btn onClick={() => setStep(s => s + 1)} disabled={!canNext()}>
             Seguinte <ChevronRight className="h-4 w-4" />
-          </button>
+          </Btn>
         ) : (
-          <button onClick={handleSubmit} disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60 transition-colors">
-            {saving ? 'A criar...' : '✓ Criar Ordem'}
-          </button>
+          <Btn onClick={handleSubmit} disabled={saving}>
+            <Check className="h-4 w-4" />
+            {saving ? 'A criar…' : 'Criar Ordem'}
+          </Btn>
         )}
       </div>
     </div>
