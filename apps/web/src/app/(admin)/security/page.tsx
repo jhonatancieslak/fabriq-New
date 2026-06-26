@@ -180,7 +180,7 @@ export default function SecurityPage() {
         {([['attempts', 'Tentativas de login'], ['blocked', 'IPs bloqueados']] as [Tab, string][]).map(([t, l]) => (
           <button key={t} onClick={() => setTab(t)}
             className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-            style={tab === t ? { background: T.yellow, color: '#07080A' } : { color: T.subtle }}>
+            style={tab === t ? { background: T.yellow, color: T.bg } : { color: T.subtle }}>
             {l}
           </button>
         ))}

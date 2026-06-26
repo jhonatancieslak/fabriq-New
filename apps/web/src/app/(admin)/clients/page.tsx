@@ -124,7 +124,7 @@ export default function ClientsPage() {
             <Td><span className="text-sm" style={{ color: T.muted }}>{c.phone ?? '—'}</span></Td>
             <Td>
               <div className="flex items-center gap-1">
-                <button onClick={() => setModal(c)} className="p-2 rounded-lg hover:bg-white/5" title="Editar">
+                <button onClick={() => setModal(c)} className="p-2 rounded-lg hover:bg-gray-100" title="Editar">
                   <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
                 </button>
                 <button onClick={() => handleDelete(c)} className="p-2 rounded-lg hover:bg-red-500/10" title="Remover">

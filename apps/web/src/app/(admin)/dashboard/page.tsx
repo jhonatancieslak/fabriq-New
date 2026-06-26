@@ -48,6 +48,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashStats | null>(null)
   const [recent, setRecent] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  // T is light theme — override inline colors that were written for dark
 
   useEffect(() => {
     Promise.all([
@@ -153,7 +154,7 @@ export default function DashboardPage() {
             <div>
               {recent.map((order, i) => (
                 <Link key={order.id} href={`/orders/${order.id}`}
-                  className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02] group"
+                  className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-gray-50 group"
                   style={i < recent.length - 1 ? { borderBottom: `1px solid ${T.divider}` } : {}}>
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: T.yellowBg }}>
@@ -201,7 +202,7 @@ export default function DashboardPage() {
                 { href: '/machines',   label: 'Máquinas',    desc: 'Equipamentos e parâmetros de custo' },
               ].map(item => (
                 <Link key={item.href} href={item.href}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-white/[0.04] group">
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-gray-50 group">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium" style={{ color: T.text }}>{item.label}</p>
                     <p className="text-xs" style={{ color: T.subtle }}>{item.desc}</p>

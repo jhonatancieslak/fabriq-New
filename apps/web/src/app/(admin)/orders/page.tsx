@@ -89,7 +89,7 @@ export default function OrdersPage() {
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className="px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
-            style={tab === t.key ? { background: T.yellow, color: '#07080A' } : { color: T.subtle }}>
+            style={tab === t.key ? { background: T.yellow, color: T.bg } : { color: T.subtle }}>
             {t.label}
           </button>
         ))}
@@ -138,7 +138,7 @@ export default function OrdersPage() {
             </Td>
             <Td>
               <Link href={`/orders/${o.id}`}>
-                <button className="p-2 rounded-lg hover:bg-white/5" title="Ver detalhe">
+                <button className="p-2 rounded-lg hover:bg-gray-100" title="Ver detalhe">
                   <Eye className="h-3.5 w-3.5" style={{ color: T.subtle }} />
                 </button>
               </Link>

@@ -120,7 +120,7 @@ function MachineModal({ machine, onClose, onDone }: {
         {(['info', 'cost'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className="flex-1 rounded-lg py-2 text-sm font-medium transition-all"
-            style={tab === t ? { background: T.yellow, color: '#07080A' } : { color: T.subtle }}>
+            style={tab === t ? { background: T.yellow, color: T.bg } : { color: T.subtle }}>
             {t === 'info' ? 'Informações' : 'Parâmetros de Custo'}
           </button>
         ))}
@@ -173,7 +173,7 @@ function MachineModal({ machine, onClose, onDone }: {
             <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
               style={{ background: form.materialCostEnabled ? T.yellow : T.surface, border: `1px solid ${T.border}` }}
               onClick={() => set('materialCostEnabled')(!form.materialCostEnabled)}>
-              {form.materialCostEnabled && <svg className="h-3 w-3" viewBox="0 0 12 12" fill="#07080A"><path d="M2 6l3 3 5-5" stroke="#07080A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
+              {form.materialCostEnabled && <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#07080A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
             </div>
             <div onClick={() => set('materialCostEnabled')(!form.materialCostEnabled)}>
               <p className="text-sm font-medium" style={{ color: T.text }}>Incluir custo de material</p>
@@ -317,7 +317,7 @@ export default function MachinesPage() {
             <Td>
               <div className="flex items-center gap-1">
                 <button onClick={() => setModal(m)}
-                  className="p-2 rounded-lg transition-colors hover:bg-white/5"
+                  className="p-2 rounded-lg transition-colors hover:bg-gray-100"
                   title="Editar">
                   <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
                 </button>

@@ -205,10 +205,10 @@ export default function OperatorsPage() {
             </Td>
             <Td>
               <div className="flex items-center gap-1">
-                <button onClick={() => setPwaModal(op)} className="p-2 rounded-lg hover:bg-white/5" title="Acesso PWA">
+                <button onClick={() => setPwaModal(op)} className="p-2 rounded-lg hover:bg-gray-100" title="Acesso PWA">
                   <QrCode className="h-3.5 w-3.5" style={{ color: T.subtle }} />
                 </button>
-                <button onClick={() => setModal(op)} className="p-2 rounded-lg hover:bg-white/5" title="Editar">
+                <button onClick={() => setModal(op)} className="p-2 rounded-lg hover:bg-gray-100" title="Editar">
                   <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
                 </button>
                 <button onClick={() => deactivate(op)} className="p-2 rounded-lg hover:bg-red-500/10" title="Desactivar">

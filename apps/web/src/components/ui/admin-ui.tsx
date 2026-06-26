@@ -1,5 +1,5 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
-// Componentes UI partilhados — dark theme FABRIQ.IA
+// Componentes UI partilhados — tema claro profissional FABRIQ.IA
 
 'use client'
 
@@ -8,33 +8,33 @@ import { X, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Search, Refresh
 
 // ─── Tokens ──────────────────────────────────────────────────────────────────
 export const T = {
-  bg:       '#07080A',
-  surface:  '#0D0E12',
-  border:   '#1C1F26',
-  divider:  '#111318',
-  text:     '#FFFFFF',
-  muted:    '#9CA3AF',
-  subtle:   '#6B7280',
-  faint:    '#374151',
-  yellow:   '#EAB308',
-  danger:   '#EF4444',
-  dangerBg: 'rgba(239,68,68,0.08)',
-  dangerBorder: 'rgba(239,68,68,0.2)',
-  successBg: 'rgba(34,197,94,0.1)',
-  successBorder: 'rgba(34,197,94,0.25)',
-  yellowBg: 'rgba(234,179,8,0.12)',
-  yellowBorder: 'rgba(234,179,8,0.25)',
+  bg:       '#F3F4F6',
+  surface:  '#FFFFFF',
+  border:   '#E5E7EB',
+  divider:  '#F3F4F6',
+  text:     '#111827',
+  muted:    '#6B7280',
+  subtle:   '#9CA3AF',
+  faint:    '#D1D5DB',
+  yellow:   '#CA8A04',
+  danger:   '#DC2626',
+  dangerBg: 'rgba(220,38,38,0.06)',
+  dangerBorder: 'rgba(220,38,38,0.2)',
+  successBg: 'rgba(22,163,74,0.07)',
+  successBorder: 'rgba(22,163,74,0.2)',
+  yellowBg: 'rgba(202,138,4,0.08)',
+  yellowBorder: 'rgba(202,138,4,0.2)',
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 export function Toast({ msg, type }: { msg: string; type: 'ok' | 'err' }) {
   const ok = type === 'ok'
   return (
-    <div className="fixed top-5 right-5 z-[100] flex items-center gap-3 rounded-2xl px-5 py-3.5 text-sm font-medium shadow-2xl"
+    <div className="fixed top-5 right-5 z-[100] flex items-center gap-3 rounded-2xl px-5 py-3.5 text-sm font-medium shadow-lg"
       style={{
-        background: ok ? T.successBg : T.dangerBg,
-        border: `1px solid ${ok ? T.successBorder : T.dangerBorder}`,
-        color: ok ? '#86EFAC' : '#FCA5A5',
+        background: ok ? '#F0FDF4' : '#FEF2F2',
+        border: `1px solid ${ok ? '#86EFAC' : '#FECACA'}`,
+        color: ok ? '#166534' : '#991B1B',
       }}>
       {ok ? <CheckCircle className="h-4 w-4 flex-shrink-0" /> : <AlertCircle className="h-4 w-4 flex-shrink-0" />}
       {msg}
@@ -66,7 +66,7 @@ export function Modal({ title, sub, onClose, children, footer }: {
             <h2 className="text-base font-bold" style={{ color: T.text }}>{title}</h2>
             {sub && <p className="text-xs mt-0.5" style={{ color: T.subtle }}>{sub}</p>}
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg transition-colors hover:bg-white/5">
+          <button onClick={onClose} className="p-2 rounded-lg transition-colors hover:bg-gray-100">
             <X className="h-4 w-4" style={{ color: T.subtle }} />
           </button>
         </div>
@@ -89,9 +89,9 @@ export function Btn({ children, onClick, variant = 'primary', disabled, type = '
   className?: string
 }) {
   const styles = {
-    primary: { background: T.yellow, color: '#07080A' },
+    primary: { background: T.yellow, color: '#FFFFFF' },
     ghost:   { background: T.surface, border: `1px solid ${T.border}`, color: T.muted },
-    danger:  { background: T.dangerBg, border: `1px solid ${T.dangerBorder}`, color: '#FCA5A5' },
+    danger:  { background: T.dangerBg, border: `1px solid ${T.dangerBorder}`, color: '#DC2626' },
   }
   return (
     <button type={type} onClick={onClick} disabled={disabled}
@@ -116,7 +116,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
 }
 
 const inputBase = `w-full rounded-xl px-4 py-3 text-sm transition-colors outline-none`
-const inputStyle = { background: T.bg, border: `1px solid ${T.border}`, color: T.text }
+const inputStyle = { background: '#F9FAFB', border: `1px solid ${T.border}`, color: T.text, colorScheme: 'light' as const }
 
 export function Input({ value, onChange, placeholder, type = 'text', disabled }: {
   value: string; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean
@@ -161,7 +161,7 @@ export function ErrorMsg({ msg }: { msg: string }) {
     <div className="flex items-center gap-2 rounded-xl px-4 py-3"
       style={{ background: T.dangerBg, border: `1px solid ${T.dangerBorder}` }}>
       <AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: T.danger }} />
-      <p className="text-sm" style={{ color: '#FCA5A5' }}>{msg}</p>
+      <p className="text-sm" style={{ color: '#991B1B' }}>{msg}</p>
     </div>
   )
 }
@@ -190,7 +190,7 @@ export function SearchBar({ value, onChange, placeholder = 'Pesquisar…' }: {
         type="text" value={value} onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition-colors"
-        style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.text }}
+        style={{ background: '#F9FAFB', border: `1px solid ${T.border}`, color: T.text, colorScheme: 'light' }}
       />
     </div>
   )
@@ -227,7 +227,7 @@ export function Table({ headers, children, loading, empty }: {
 export function Tr({ children, last }: { children: React.ReactNode; last?: boolean }) {
   return (
     <tr style={last ? {} : { borderBottom: `1px solid ${T.divider}` }}
-      className="transition-colors hover:bg-white/[0.02]">
+      className="transition-colors hover:bg-gray-50">
       {children}
     </tr>
   )
@@ -257,7 +257,7 @@ export function Pagination({ page, pages, total, onPage }: {
             <button key={p} onClick={() => onPage(p)}
               className="w-9 h-9 rounded-lg text-sm font-medium transition-all"
               style={p === page
-                ? { background: T.yellow, color: '#07080A' }
+                ? { background: T.yellow, color: '#FFFFFF' }
                 : { background: T.surface, border: `1px solid ${T.border}`, color: T.muted }}>
               {p}
             </button>

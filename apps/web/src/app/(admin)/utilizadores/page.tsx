@@ -181,10 +181,10 @@ function UserRow({ user, last, onEdit, onPassword, onToggle }: {
       <Td><span className="text-sm" style={{ color: T.subtle }}>{lastLogin}</span></Td>
       <Td>
         <div className="flex items-center gap-1">
-          <button onClick={() => onEdit(user)} className="p-2 rounded-lg hover:bg-white/5" title="Editar">
+          <button onClick={() => onEdit(user)} className="p-2 rounded-lg hover:bg-gray-100" title="Editar">
             <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
           </button>
-          <button onClick={() => onPassword(user)} className="p-2 rounded-lg hover:bg-white/5" title="Password">
+          <button onClick={() => onPassword(user)} className="p-2 rounded-lg hover:bg-gray-100" title="Password">
             <KeyRound className="h-3.5 w-3.5" style={{ color: T.subtle }} />
           </button>
           <button onClick={() => onToggle(user)} className="p-2 rounded-lg hover:bg-red-500/10" title={user.isActive ? 'Desactivar' : 'Reactivar'}>

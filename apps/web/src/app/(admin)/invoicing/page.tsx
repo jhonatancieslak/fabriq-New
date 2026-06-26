@@ -8,6 +8,7 @@ import {
   X, ChevronDown, AlertCircle, RefreshCw, Ban, Calculator,
 } from 'lucide-react'
 import { api, type InvoicingRecord, type FinancialStats } from '@/lib/api'
+import { T } from '@/components/ui/admin-ui'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -34,10 +35,10 @@ function KpiCard({ label, value, sub, icon: Icon }: {
   label: string; value: string; sub?: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
 }) {
   return (
-    <div className="rounded-2xl p-5" style={{ background: '#0D0E12', border: '1px solid #1C1F26' }}>
+    <div className="rounded-2xl p-5" style={{ background: T.surface, border: '1px solid #1C1F26' }}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium uppercase tracking-widest" style={{ color: '#6B7280' }}>{label}</span>
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#1C1F26' }}>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: T.border }}>
           <Icon className="h-4 w-4" style={{ color: '#9CA3AF' }} />
         </div>
       </div>
@@ -87,7 +88,7 @@ function ApproveModal({ record, onClose, onDone }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: '#0D0E12', border: '1px solid #1C1F26' }}>
+      <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: T.surface, border: '1px solid #1C1F26' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1C1F26' }}>
           <div>
@@ -96,24 +97,24 @@ function ApproveModal({ record, onClose, onDone }: {
               Ordem #{record.serviceOrder.orderNumber} · {record.serviceOrder.client?.name}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg transition-colors hover:bg-white/5">
+          <button onClick={onClose} className="p-2 rounded-lg transition-colors hover:bg-gray-100">
             <X className="h-4 w-4" style={{ color: '#6B7280' }} />
           </button>
         </div>
 
         {/* Info resumo */}
         <div className="px-6 py-4 grid grid-cols-3 gap-3" style={{ borderBottom: '1px solid #111318' }}>
-          <div className="rounded-xl p-3 text-center" style={{ background: '#07080A' }}>
+          <div className="rounded-xl p-3 text-center" style={{ background: T.bg }}>
             <p className="text-xs" style={{ color: '#6B7280' }}>Obra</p>
             <p className="text-sm font-semibold text-white mt-0.5">{record.serviceOrder.project?.name ?? '—'}</p>
           </div>
-          <div className="rounded-xl p-3 text-center" style={{ background: '#07080A' }}>
+          <div className="rounded-xl p-3 text-center" style={{ background: T.bg }}>
             <p className="text-xs" style={{ color: '#6B7280' }}>Concluída</p>
             <p className="text-sm font-semibold text-white mt-0.5">
               {record.serviceOrder.completedAt ? fmtDate(record.serviceOrder.completedAt) : '—'}
             </p>
           </div>
-          <div className="rounded-xl p-3 text-center" style={{ background: '#07080A' }}>
+          <div className="rounded-xl p-3 text-center" style={{ background: T.bg }}>
             <p className="text-xs" style={{ color: '#6B7280' }}>Tempo corte</p>
             <p className="text-sm font-semibold text-white mt-0.5">{totalTime > 0 ? `${totalTime} min` : '—'}</p>
           </div>
@@ -128,7 +129,7 @@ function ApproveModal({ record, onClose, onDone }: {
                 value={type}
                 onChange={e => setType(e.target.value)}
                 className="w-full rounded-xl px-4 py-3 text-sm text-white appearance-none pr-10"
-                style={{ background: '#07080A', border: '1px solid #1C1F26' }}
+                style={{ background: T.bg, border: '1px solid #1C1F26' }}
               >
                 <option value="material_and_labor">Material + Mão-de-obra</option>
                 <option value="labor_only">Só Mão-de-obra</option>
@@ -163,7 +164,7 @@ function ApproveModal({ record, onClose, onDone }: {
               onChange={e => setCostValue(e.target.value)}
               placeholder="Ex: 350.00"
               className="w-full rounded-xl px-4 py-3 text-sm text-white"
-              style={{ background: '#07080A', border: '1px solid #1C1F26', outline: 'none' }}
+              style={{ background: T.bg, border: '1px solid #1C1F26', outline: 'none' }}
             />
           </div>
 
@@ -175,16 +176,16 @@ function ApproveModal({ record, onClose, onDone }: {
               rows={2}
               placeholder="Observações sobre esta faturação…"
               className="w-full rounded-xl px-4 py-3 text-sm text-white resize-none"
-              style={{ background: '#07080A', border: '1px solid #1C1F26', outline: 'none' }}
+              style={{ background: T.bg, border: '1px solid #1C1F26', outline: 'none' }}
             />
           </div>
 
           {/* Sem fatura */}
           <label className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer select-none"
-            style={{ background: noInvoice ? 'rgba(107,114,128,0.08)' : '#07080A', border: `1px solid ${noInvoice ? '#374151' : '#1C1F26'}` }}>
+            style={{ background: noInvoice ? 'rgba(107,114,128,0.08)' : T.bg, border: `1px solid ${noInvoice ? '#374151' : T.border}` }}>
             <input type="checkbox" checked={noInvoice} onChange={e => setNoInvoice(e.target.checked)} className="hidden" />
             <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
-              style={{ background: noInvoice ? '#374151' : '#1C1F26', border: '1px solid #374151' }}>
+              style={{ background: noInvoice ? '#374151' : T.border, border: '1px solid #374151' }}>
               {noInvoice && <Ban className="h-3 w-3" style={{ color: '#9CA3AF' }} />}
             </div>
             <div>
@@ -205,13 +206,13 @@ function ApproveModal({ record, onClose, onDone }: {
         <div className="flex gap-3 px-6 pb-5">
           <button onClick={onClose} disabled={loading}
             className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-all"
-            style={{ background: '#07080A', border: '1px solid #1C1F26', color: '#9CA3AF' }}
+            style={{ background: T.bg, border: '1px solid #1C1F26', color: '#9CA3AF' }}
           >
             Cancelar
           </button>
           <button onClick={submit} disabled={loading}
             className="flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all flex items-center justify-center gap-2"
-            style={{ background: '#EAB308', color: '#07080A' }}
+            style={{ background: '#EAB308', color: T.bg }}
           >
             {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
             Confirmar Faturação
@@ -301,7 +302,7 @@ export default function InvoicingPage() {
         </div>
         <button onClick={load}
           className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all"
-          style={{ background: '#0D0E12', border: '1px solid #1C1F26', color: '#9CA3AF' }}
+          style={{ background: T.surface, border: '1px solid #1C1F26', color: '#9CA3AF' }}
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           Atualizar
@@ -325,12 +326,12 @@ export default function InvoicingPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: '#0D0E12', border: '1px solid #1C1F26', width: 'fit-content' }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: T.surface, border: '1px solid #1C1F26', width: 'fit-content' }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
             style={tab === t.key
-              ? { background: '#EAB308', color: '#07080A' }
+              ? { background: '#EAB308', color: T.bg }
               : { color: '#6B7280' }}
           >
             {t.label}
@@ -339,7 +340,7 @@ export default function InvoicingPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: '#0D0E12', border: '1px solid #1C1F26' }}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: T.surface, border: '1px solid #1C1F26' }}>
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <RefreshCw className="h-5 w-5 animate-spin" style={{ color: '#EAB308' }} />
@@ -382,7 +383,7 @@ export default function InvoicingPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: '#1C1F26', color: '#9CA3AF' }}>
+                    <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: T.border, color: '#9CA3AF' }}>
                       {rec.type === 'material_and_labor' ? 'Mat + M.O.' : 'M.O.'}
                     </span>
                   </td>
