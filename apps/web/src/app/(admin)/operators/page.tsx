@@ -2,69 +2,234 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Plus, Smartphone, User } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react'
+import { Plus, HardHat, Pencil, Power, QrCode, Copy, Check } from 'lucide-react'
 import { api, type Operator } from '@/lib/api'
+import {
+  T, Toast, Modal, Btn, Field, Input, ErrorMsg,
+  PageHeader, SearchBar, Table, Tr, Td, Pagination, Badge, Empty,
+} from '@/components/ui/admin-ui'
 
-export default function OperatorsPage() {
-  const [operators, setOperators] = useState<Operator[]>([])
-  const [loading, setLoading]     = useState(true)
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8190'
 
-  useEffect(() => {
-    api.operators.list().then(setOperators).finally(() => setLoading(false))
-  }, [])
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-Tenant-Slug': (typeof window !== 'undefined' ? localStorage.getItem('fabriq_tenant') : null) ?? 'demo',
+    Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('fabriq_token') : ''}`,
+  }
+}
 
-  if (loading) return <div className="p-6 text-sm text-slate-500 animate-pulse">A carregar...</div>
+interface OperatorExt extends Operator { email?: string }
+interface FormState { name: string; username: string; password: string; phone: string; email: string }
+const EMPTY: FormState = { name: '', username: '', password: '', phone: '', email: '' }
+
+function OperatorModal({ operator, onClose, onDone }: {
+  operator: OperatorExt | null; onClose: () => void; onDone: () => void
+}) {
+  const isEdit = !!operator
+  const [form, setForm] = useState<FormState>(operator
+    ? { name: operator.name, username: operator.username, password: '', phone: operator.phone ?? '', email: operator.email ?? '' }
+    : EMPTY)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  function set(k: keyof FormState) { return (v: string) => setForm(f => ({ ...f, [k]: v })) }
+
+  async function submit() {
+    if (!form.name.trim()) { setError('Nome é obrigatório'); return }
+    if (!isEdit && !form.username.trim()) { setError('Username é obrigatório'); return }
+    if (!isEdit && form.password.length < 6) { setError('Password mínima 6 caracteres'); return }
+    setLoading(true); setError('')
+    try {
+      const payload: Record<string, string> = { name: form.name, username: form.username }
+      if (form.phone) payload.phone = form.phone
+      if (form.email) payload.email = form.email
+      if (form.password) payload.password = form.password
+      const url  = isEdit ? `${BASE}/api/v1/operators/${operator!.id}` : `${BASE}/api/v1/operators`
+      const meth = isEdit ? 'PATCH' : 'POST'
+      const r = await fetch(url, { method: meth, headers: authHeaders(), body: JSON.stringify(payload) })
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error ?? 'Erro') }
+      onDone()
+    } catch (e) { setError(e instanceof Error ? e.message : 'Erro') }
+    finally { setLoading(false) }
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Operadores</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Gestão de operadores do chão de fábrica</p>
+    <Modal title={isEdit ? 'Editar Operador' : 'Novo Operador'} sub={operator?.name} onClose={onClose}
+      footer={<><Btn variant="ghost" onClick={onClose} className="flex-1">Cancelar</Btn><Btn onClick={submit} disabled={loading} className="flex-1">{loading ? 'A guardar…' : 'Guardar'}</Btn></>}>
+      <Field label="Nome completo *">
+        <Input value={form.name} onChange={set('name')} placeholder="Ex: João Ferreira" />
+      </Field>
+      <Field label="Username *" hint="letras minúsculas, números, . _ -">
+        <Input value={form.username} onChange={set('username')} placeholder="joao.ferreira" disabled={isEdit} />
+      </Field>
+      <Field label={isEdit ? 'Nova password' : 'Password *'} hint={isEdit ? '— vazio = não alterar' : '— mín. 6 caracteres'}>
+        <Input value={form.password} onChange={set('password')} type="password" placeholder={isEdit ? '••••••' : 'Mínimo 6 caracteres'} />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Telemóvel" hint="— opcional">
+          <Input value={form.phone} onChange={set('phone')} placeholder="+351 912…" />
+        </Field>
+        <Field label="Email" hint="— opcional">
+          <Input value={form.email} onChange={set('email')} type="email" placeholder="op@empresa.pt" />
+        </Field>
+      </div>
+      {error && <ErrorMsg msg={error} />}
+    </Modal>
+  )
+}
+
+function PwaAccessModal({ operator, onClose }: { operator: OperatorExt; onClose: () => void }) {
+  const pwaUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/pwa/login?u=${encodeURIComponent(operator.username)}`
+  const [copied, setCopied] = useState(false)
+
+  function copyLink() {
+    navigator.clipboard.writeText(pwaUrl)
+    setCopied(true); setTimeout(() => setCopied(false), 2200)
+  }
+
+  return (
+    <Modal title="Acesso PWA" sub={operator.name} onClose={onClose}
+      footer={<Btn onClick={onClose} className="w-full">Fechar</Btn>}>
+      <div className="rounded-2xl p-5 space-y-4" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
+        <div className="flex justify-center">
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
+            style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <QrCode className="h-10 w-10" style={{ color: T.subtle }} />
+          </div>
         </div>
-        <Link href="/operators/new"
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-          <Plus className="h-4 w-4" /> Novo Operador
-        </Link>
+        <p className="text-xs text-center" style={{ color: T.subtle }}>
+          Na PWA, cada operador tem um QR code gerado automaticamente. Partilhe o link abaixo para acesso directo.
+        </p>
+        <div className="rounded-xl px-3 py-2.5 text-xs font-mono break-all"
+          style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.muted }}>
+          {pwaUrl}
+        </div>
+      </div>
+      <div className="rounded-2xl p-4" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
+        <p className="text-xs font-semibold mb-2" style={{ color: T.subtle }}>Credenciais</p>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span style={{ color: T.faint }}>Username</span>
+            <p className="font-mono font-bold mt-0.5" style={{ color: T.text }}>{operator.username}</p>
+          </div>
+          <div>
+            <span style={{ color: T.faint }}>Password</span>
+            <p className="mt-0.5" style={{ color: T.subtle }}>Definida no registo</p>
+          </div>
+        </div>
+      </div>
+      <Btn variant="ghost" onClick={copyLink} className="w-full">
+        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        {copied ? 'Link copiado!' : 'Copiar link PWA'}
+      </Btn>
+    </Modal>
+  )
+}
+
+const PER_PAGE = 15
+
+export default function OperatorsPage() {
+  const [all, setAll] = useState<OperatorExt[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [modal, setModal] = useState<OperatorExt | null | 'new'>(null)
+  const [pwaModal, setPwaModal] = useState<OperatorExt | null>(null)
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+
+  function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
+    setToast({ msg, type }); setTimeout(() => setToast(null), 3500)
+  }
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try { setAll(await api.operators.list() as OperatorExt[]) }
+    catch { showToast('Erro ao carregar operadores', 'err') }
+    finally { setLoading(false) }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+  useEffect(() => { setPage(1) }, [search])
+
+  const filtered = all.filter(o =>
+    !search || o.name.toLowerCase().includes(search.toLowerCase()) ||
+    o.username.toLowerCase().includes(search.toLowerCase()) ||
+    (o.phone ?? '').includes(search)
+  )
+  const pages   = Math.ceil(filtered.length / PER_PAGE)
+  const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
+  async function deactivate(op: OperatorExt) {
+    if (!confirm(`Desactivar "${op.name}"?`)) return
+    try {
+      const r = await fetch(`${BASE}/api/v1/operators/${op.id}`, { method: 'DELETE', headers: authHeaders() })
+      if (!r.ok) throw new Error()
+      showToast('Operador desactivado'); load()
+    } catch { showToast('Erro ao desactivar', 'err') }
+  }
+
+  return (
+    <div className="p-6 space-y-5">
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
+
+      <PageHeader title="Operadores" sub={`${filtered.length} operador${filtered.length !== 1 ? 'es' : ''}`}
+        action={<Btn onClick={() => setModal('new')}><Plus className="h-4 w-4" />Novo Operador</Btn>} />
+
+      <div className="max-w-sm">
+        <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar operadores…" />
       </div>
 
-      {operators.length === 0 ? (
-        <div className="text-center py-16 text-slate-400">
-          <User className="h-12 w-12 mx-auto mb-3 text-slate-300" />
-          <p className="font-medium">Sem operadores registados</p>
-          <p className="text-sm mt-1">Crie o primeiro operador para começar</p>
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {operators.map(op => (
-            <div key={op.id} className="bg-white rounded-xl border border-slate-200 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="font-semibold text-slate-900">{op.name}</div>
-                  <div className="text-xs text-slate-500 font-mono mt-0.5">@{op.username}</div>
-                  {op.phone && <div className="text-xs text-slate-500 mt-1">{op.phone}</div>}
+      <Table headers={['Operador', 'Username', 'Telemóvel', 'Ações']} loading={loading}>
+        {visible.length === 0 && !loading ? (
+          <tr><td colSpan={4}>
+            <Empty icon={HardHat} title="Nenhum operador" sub="Crie o primeiro operador para o chão de fábrica" />
+          </td></tr>
+        ) : visible.map((op, i) => (
+          <Tr key={op.id} last={i === visible.length - 1}>
+            <Td>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: T.border }}>
+                  <HardHat className="h-4 w-4" style={{ color: T.muted }} />
                 </div>
-                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <User className="h-4 w-4 text-blue-600" />
-                </div>
+                <span className="text-sm font-semibold" style={{ color: T.text }}>{op.name}</span>
               </div>
+            </Td>
+            <Td><Badge label={`@${op.username}`} /></Td>
+            <Td>
+              <span className="text-sm font-mono" style={{ color: op.phone ? T.text : T.faint }}>
+                {op.phone ?? '—'}
+              </span>
+            </Td>
+            <Td>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setPwaModal(op)} className="p-2 rounded-lg hover:bg-white/5" title="Acesso PWA">
+                  <QrCode className="h-3.5 w-3.5" style={{ color: T.subtle }} />
+                </button>
+                <button onClick={() => setModal(op)} className="p-2 rounded-lg hover:bg-white/5" title="Editar">
+                  <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
+                </button>
+                <button onClick={() => deactivate(op)} className="p-2 rounded-lg hover:bg-red-500/10" title="Desactivar">
+                  <Power className="h-3.5 w-3.5" style={{ color: T.faint }} />
+                </button>
+              </div>
+            </Td>
+          </Tr>
+        ))}
+      </Table>
 
-              <div className="mt-4 flex gap-2">
-                <Link href={`/operators/${op.id}/access`}
-                  className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors">
-                  <Smartphone className="h-3.5 w-3.5" /> Acesso PWA
-                </Link>
-                <Link href={`/operators/${op.id}`}
-                  className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-                  Editar
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+      <Pagination page={page} pages={pages} total={filtered.length} onPage={setPage} />
+
+      {modal !== null && (
+        <OperatorModal
+          operator={modal === 'new' ? null : modal as OperatorExt}
+          onClose={() => setModal(null)}
+          onDone={() => { setModal(null); showToast(modal === 'new' ? 'Operador criado' : 'Actualizado'); load() }}
+        />
       )}
+      {pwaModal && <PwaAccessModal operator={pwaModal} onClose={() => setPwaModal(null)} />}
     </div>
   )
 }

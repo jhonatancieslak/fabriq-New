@@ -125,7 +125,7 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 2. ~~**Portal Financeiro**~~ ✅
 3. ~~**Máquinas CRUD + parâmetros de custo**~~ ✅
 4. ~~**Portal Solicitador / Ordens + Obras**~~ ✅
-5. **Configurações da empresa** — materiais, Evolution API, SMTP
+5. ~~**Dashboard KPIs + Materiais CRUD + Configurações + Cálculo automático**~~ ✅
 6. **Página pública `/verificar/[authCode]`** — sem login, prova de execução
 7. **Dashboard** — KPIs reais (ordens/dia, pendentes, faturação mês)
 8. **Cálculo automático de valor** na faturação (usa params de custo da máquina + tempo registado)
