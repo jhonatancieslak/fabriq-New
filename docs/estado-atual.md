@@ -205,11 +205,17 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 - `/billing`: página com barras de uso, alerta de trial, cards de upgrade
 - Sidebar: link "Plano" com ícone de cartão
 
+## Reset Demo (concluído 2026-06-29 Sessão 8)
+
+- `apps/api/src/scripts/reset-demo.ts` — apaga ordens/stages/items/fotos/logs, recria estrutura base + 5 ordens demo
+- `ecosystem.demo-reset.config.cjs` — PM2 cron `0 8 * * 1` (segunda-feira 08h00)
+- Processo `fabriq-demo-reset` activo no PM2 (estado `stopped` entre execuções = correcto)
+- Para forçar reset manual: `pm2 restart fabriq-demo-reset`
+
 ## Próximos passos
 
 - **Rota super-admin** para alterar plano de tenants (painel interno)
 - **Webhook Stripe** para activar/desactivar planos automaticamente
-- **Reset automático da conta demo** (segunda-feira 08h00)
 
 ## Email — Resend (concluído 2026-06-29)
 
