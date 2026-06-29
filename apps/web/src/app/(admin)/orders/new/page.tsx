@@ -4,12 +4,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft, Plus, Trash2, Check } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Plus, Trash2, Check, FolderOpen } from 'lucide-react'
 import { api, type Client, type Project, type Machine, type Material, type Operator } from '@/lib/api'
-import { T, Field, Input, Select, Textarea, ErrorMsg, Btn } from '@/components/ui/admin-ui'
+import { T, Field, Input, Select, Textarea, ErrorMsg, Btn, Combobox } from '@/components/ui/admin-ui'
 import { MACHINE_TYPE_LABELS } from './machine-types'
 
-// re-export so page file doesn't export non-page exports
 type StageType = string
 interface Stage { type: StageType; machineId?: string; operatorId?: string }
 interface Item {
@@ -21,9 +20,9 @@ const STEPS = ['Cliente & Obra', 'Etapas', 'Peças', 'Confirmar']
 
 export default function NewOrderPage() {
   const router = useRouter()
-  const [step, setStep] = useState(0)
+  const [step, setStep]     = useState(0)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError]   = useState('')
 
   // API data
   const [clients, setClients]     = useState<Client[]>([])
@@ -32,38 +31,61 @@ export default function NewOrderPage() {
   const [materials, setMaterials] = useState<Material[]>([])
   const [operators, setOperators] = useState<Operator[]>([])
 
-  // form state
-  const [clientId,   setClientId]   = useState('')
-  const [projectId,  setProjectId]  = useState('')
-  const [notes,      setNotes]      = useState('')
-  const [stages,     setStages]     = useState<Stage[]>([{ type: 'laser_cnc' }])
-  const [items,      setItems]      = useState<Item[]>([{ description: '', materialId: '', thicknessMm: 3, quantityPlanned: 1 }])
+  // form state — step 0
+  const [clientId,  setClientId]  = useState('')
+  const [projectId, setProjectId] = useState('')
+  const [notes,     setNotes]     = useState('')
+
+  // inline "nova obra"
+  const [showNewProject, setShowNewProject] = useState(false)
+  const [newProjForm, setNewProjForm]       = useState({ code: '', name: '', description: '' })
+  const [projLoading, setProjLoading]       = useState(false)
+  const [projError, setProjError]           = useState('')
+
+  // step 1-2
+  const [stages, setStages] = useState<Stage[]>([{ type: 'laser_cnc' }])
+  const [items,  setItems]  = useState<Item[]>([{ description: '', materialId: '', thicknessMm: 3, quantityPlanned: 1 }])
 
   useEffect(() => {
-    Promise.all([
-      api.clients.list(),
-      api.machines.list(),
-      api.materials.list(),
-      api.operators.list(),
-    ]).then(([c, mRes, mat, op]) => {
-      setClients(c)
-      setMachines((mRes as { machines: Machine[] }).machines ?? (mRes as unknown as Machine[]))
-      setMaterials(Array.isArray(mat) ? mat : (mat as { materials: Material[] }).materials)
-      setOperators(op)
-    })
+    Promise.all([api.clients.list(), api.machines.list(), api.materials.list(), api.operators.list()])
+      .then(([c, mRes, mat, op]) => {
+        setClients(c)
+        setMachines((mRes as { machines: Machine[] }).machines ?? (mRes as unknown as Machine[]))
+        setMaterials(Array.isArray(mat) ? mat : (mat as { materials: Material[] }).materials)
+        setOperators(op)
+      })
   }, [])
 
+  // When client changes, load its projects
   useEffect(() => {
-    if (clientId) {
-      api.projects.list(clientId).then(setProjects)
+    if (!clientId) { setProjects([]); setProjectId(''); return }
+    api.projects.list(clientId).then(p => {
+      setProjects(p)
       setProjectId('')
-    } else {
-      setProjects([])
-    }
+    })
   }, [clientId])
 
+  // Auto-select if only 1 project
+  useEffect(() => {
+    if (projects.length === 1) setProjectId(projects[0].id)
+  }, [projects])
+
+  async function createProject() {
+    if (!clientId) { setProjError('Seleccione um cliente primeiro'); return }
+    if (!newProjForm.code.trim() || !newProjForm.name.trim()) { setProjError('Código e nome obrigatórios'); return }
+    setProjLoading(true); setProjError('')
+    try {
+      const p = await api.projects.create({ clientId, ...newProjForm })
+      setProjects(prev => [...prev, p])
+      setProjectId(p.id)
+      setShowNewProject(false)
+      setNewProjForm({ code: '', name: '', description: '' })
+    } catch (e) { setProjError(e instanceof Error ? e.message : 'Erro') }
+    finally { setProjLoading(false) }
+  }
+
   const canNext = () => {
-    if (step === 0) return clientId && projectId
+    if (step === 0) return !!clientId && !!projectId
     if (step === 1) return stages.length > 0
     if (step === 2) return items.every(i => i.description && i.materialId && i.quantityPlanned > 0)
     return true
@@ -80,7 +102,6 @@ export default function NewOrderPage() {
     }
   }
 
-  // ── Card wrapper used in steps ─────────────────────────────────────────────
   function Card({ children }: { children: React.ReactNode }) {
     return (
       <div className="rounded-2xl p-5 space-y-4" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
@@ -89,9 +110,14 @@ export default function NewOrderPage() {
     )
   }
 
+  const clientOptions  = clients.map(c => ({ id: c.id, label: c.name, sub: c.email ?? undefined }))
+  const projectOptions = projects.map(p => ({ id: p.id, label: p.name, sub: p.code }))
+  const selectedClient = clients.find(c => c.id === clientId)
+  const selectedProject = projects.find(p => p.id === projectId)
+
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
-      {/* Back + title */}
+      {/* Back */}
       <div>
         <button onClick={() => router.push('/orders')}
           className="flex items-center gap-1.5 text-sm mb-3 transition-colors"
@@ -118,36 +144,87 @@ export default function NewOrderPage() {
               </div>
               <span className="text-sm font-medium hidden sm:block" style={{ color: i <= step ? T.text : T.faint }}>{label}</span>
             </div>
-            {i < STEPS.length - 1 && (
-              <div className="h-px w-6" style={{ background: i < step ? T.yellow : T.border }} />
-            )}
+            {i < STEPS.length - 1 && <div className="h-px w-6" style={{ background: i < step ? T.yellow : T.border }} />}
           </div>
         ))}
       </div>
 
-      {/* Step 0 — Cliente & Obra */}
+      {/* ── Step 0 — Cliente & Obra ── */}
       {step === 0 && (
         <Card>
           <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Cliente & Obra</h2>
+
           <Field label="Cliente *">
-            <Select value={clientId} onChange={setClientId}>
-              <option value="">Seleccionar cliente…</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
+            <Combobox
+              options={clientOptions}
+              value={clientId}
+              onChange={setClientId}
+              placeholder="Pesquisar cliente…"
+              label={selectedClient?.name}
+            />
           </Field>
-          <Field label="Obra *">
-            <Select value={projectId} onChange={setProjectId} disabled={!clientId}>
-              <option value="">Seleccionar obra…</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
-            </Select>
-          </Field>
+
+          {/* Obras do cliente */}
+          {clientId && (
+            <Field label="Obra *">
+              {projects.length === 0 ? (
+                <div className="rounded-xl px-4 py-3 text-sm" style={{ background: T.divider, color: T.subtle }}>
+                  Nenhuma obra para este cliente.{' '}
+                  <button type="button" onClick={() => setShowNewProject(true)}
+                    className="font-semibold underline" style={{ color: T.yellow }}>
+                    Criar agora
+                  </button>
+                </div>
+              ) : (
+                <Combobox
+                  options={projectOptions}
+                  value={projectId}
+                  onChange={setProjectId}
+                  onCreate={() => setShowNewProject(true)}
+                  placeholder="Pesquisar obra…"
+                  label={selectedProject?.name}
+                />
+              )}
+            </Field>
+          )}
+
+          {/* Inline: criar obra nova */}
+          {showNewProject && (
+            <div className="rounded-xl p-4 space-y-3" style={{ background: T.yellowBg, border: `1px solid ${T.yellowBorder}` }}>
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4 flex-shrink-0" style={{ color: T.yellow }} />
+                <p className="text-sm font-semibold" style={{ color: T.yellow }}>
+                  Nova obra — {selectedClient?.name}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Código *">
+                  <Input value={newProjForm.code} onChange={v => setNewProjForm(f => ({ ...f, code: v }))} placeholder="OB-2026-001" />
+                </Field>
+                <Field label="Nome *">
+                  <Input value={newProjForm.name} onChange={v => setNewProjForm(f => ({ ...f, name: v }))} placeholder="Armazém Braga" />
+                </Field>
+              </div>
+              <Field label="Descrição" hint="— opcional">
+                <Textarea value={newProjForm.description} onChange={v => setNewProjForm(f => ({ ...f, description: v }))} rows={2} placeholder="Notas…" />
+              </Field>
+              {projError && <ErrorMsg msg={projError} />}
+              <div className="flex gap-2">
+                <Btn variant="ghost" onClick={() => { setShowNewProject(false); setProjError('') }} className="flex-1">Cancelar</Btn>
+                <Btn onClick={createProject} disabled={projLoading} className="flex-1">
+                  {projLoading ? 'A criar…' : 'Criar obra'}
+                </Btn>
+              </div>
+            </div>
+          )}
+
           <Field label="Observações" hint="— opcional">
             <Textarea value={notes} onChange={setNotes} placeholder="Instruções adicionais para o operador…" rows={2} />
           </Field>
         </Card>
       )}
 
-      {/* Step 1 — Etapas */}
+      {/* ── Step 1 — Etapas ── */}
       {step === 1 && (
         <div className="space-y-3">
           <p className="text-xs" style={{ color: T.subtle }}>
@@ -164,8 +241,6 @@ export default function NewOrderPage() {
                   </button>
                 )}
               </div>
-
-              {/* Machine type grid */}
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {Object.entries(MACHINE_TYPE_LABELS).map(([val, label]) => (
                   <button key={val} onClick={() => setStages(s => s.map((st, idx) => idx === i ? { ...st, type: val } : st))}
@@ -177,7 +252,6 @@ export default function NewOrderPage() {
                   </button>
                 ))}
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Máquina" hint="— opcional">
                   <Select value={stage.machineId ?? ''} onChange={v => setStages(s => s.map((st, idx) => idx === i ? { ...st, machineId: v || undefined } : st))}>
@@ -194,7 +268,6 @@ export default function NewOrderPage() {
               </div>
             </div>
           ))}
-
           <button onClick={() => setStages(s => [...s, { type: 'laser_cnc' }])}
             className="flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium w-full justify-center transition-all"
             style={{ background: T.bg, border: `1px dashed ${T.border}`, color: T.subtle }}>
@@ -203,7 +276,7 @@ export default function NewOrderPage() {
         </div>
       )}
 
-      {/* Step 2 — Peças */}
+      {/* ── Step 2 — Peças ── */}
       {step === 2 && (
         <div className="space-y-3">
           {items.map((item, i) => (
@@ -243,7 +316,6 @@ export default function NewOrderPage() {
               </div>
             </div>
           ))}
-
           <button onClick={() => setItems(it => [...it, { description: '', materialId: '', thicknessMm: 3, quantityPlanned: 1 }])}
             className="flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium w-full justify-center transition-all"
             style={{ background: T.bg, border: `1px dashed ${T.border}`, color: T.subtle }}>
@@ -252,22 +324,21 @@ export default function NewOrderPage() {
         </div>
       )}
 
-      {/* Step 3 — Confirmar */}
+      {/* ── Step 3 — Confirmar ── */}
       {step === 3 && (
         <div className="rounded-2xl p-5 space-y-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
           <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Resumo da Ordem</h2>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ color: T.faint }}>Cliente</p>
-              <p className="text-sm font-medium" style={{ color: T.text }}>{clients.find(c => c.id === clientId)?.name ?? '—'}</p>
+              <p className="text-sm font-medium" style={{ color: T.text }}>{selectedClient?.name ?? '—'}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ color: T.faint }}>Obra</p>
-              <p className="text-sm font-medium" style={{ color: T.text }}>{projects.find(p => p.id === projectId)?.name ?? '—'}</p>
+              <p className="text-sm font-medium" style={{ color: T.text }}>{selectedProject?.name ?? '—'}</p>
+              {selectedProject?.code && <p className="text-xs font-mono mt-0.5" style={{ color: T.subtle }}>{selectedProject.code}</p>}
             </div>
           </div>
-
           <div>
             <p className="text-xs uppercase tracking-wider mb-2" style={{ color: T.faint }}>Etapas ({stages.length})</p>
             <div className="space-y-1">
@@ -283,7 +354,6 @@ export default function NewOrderPage() {
               ))}
             </div>
           </div>
-
           <div>
             <p className="text-xs uppercase tracking-wider mb-2" style={{ color: T.faint }}>Peças ({items.length})</p>
             <div className="space-y-1">
@@ -294,14 +364,12 @@ export default function NewOrderPage() {
               ))}
             </div>
           </div>
-
           {notes && (
             <div>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ color: T.faint }}>Observações</p>
               <p className="text-sm" style={{ color: T.muted }}>{notes}</p>
             </div>
           )}
-
           {error && <ErrorMsg msg={error} />}
         </div>
       )}

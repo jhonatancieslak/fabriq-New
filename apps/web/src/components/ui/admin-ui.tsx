@@ -3,8 +3,8 @@
 
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { X, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Search, RefreshCw } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { X, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Search, RefreshCw, Plus } from 'lucide-react'
 
 // ─── Tokens ──────────────────────────────────────────────────────────────────
 export const T = {
@@ -151,6 +151,94 @@ export function Select({ value, onChange, children, disabled }: {
         style={{ color: T.subtle }} viewBox="0 0 20 20" fill="currentColor">
         <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
       </svg>
+    </div>
+  )
+}
+
+// ─── Combobox ─────────────────────────────────────────────────────────────────
+export function Combobox({ options, value, onChange, onCreate, placeholder, disabled, label: selectedLabel }: {
+  options: { id: string; label: string; sub?: string }[]
+  value: string                           // selected id
+  onChange: (id: string) => void
+  onCreate?: (typed: string) => void      // "Criar 'X'" option
+  placeholder?: string
+  disabled?: boolean
+  label?: string                          // label for the currently selected value (when options may not be loaded yet)
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen]   = useState(false)
+  const ref               = useRef<HTMLDivElement>(null)
+
+  // sync display when value changes externally
+  const matched = options.find(o => o.id === value)
+  const display = matched?.label ?? selectedLabel ?? ''
+
+  useEffect(() => {
+    if (!open) setQuery(display)
+  }, [open, display])
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+        setQuery(display) // reset if user typed but didn't select
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [display])
+
+  const filtered = options.filter(o =>
+    !query || o.label.toLowerCase().includes(query.toLowerCase()) ||
+    (o.sub ?? '').toLowerCase().includes(query.toLowerCase())
+  )
+
+  const showCreate = onCreate && query.trim().length >= 2 && !options.some(o => o.label.toLowerCase() === query.toLowerCase())
+
+  function select(o: { id: string; label: string }) {
+    onChange(o.id)
+    setQuery(o.label)
+    setOpen(false)
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="relative">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: T.subtle }} />
+        <input
+          type="text"
+          value={query}
+          placeholder={placeholder ?? 'Pesquisar…'}
+          disabled={disabled}
+          onChange={e => { setQuery(e.target.value); setOpen(true); if (!e.target.value) onChange('') }}
+          onFocus={() => { setOpen(true); setQuery('') }}
+          className="w-full rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-colors"
+          style={{ background: disabled ? T.divider : '#F9FAFB', border: `1px solid ${T.border}`, color: T.text }}
+        />
+      </div>
+      {open && (filtered.length > 0 || showCreate) && (
+        <div className="absolute z-50 mt-1 w-full rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto"
+          style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+          {filtered.map(o => (
+            <button key={o.id} type="button"
+              onClick={() => select(o)}
+              className="flex w-full flex-col items-start px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 text-left"
+              style={{ color: T.text, borderBottom: `1px solid ${T.divider}` }}>
+              <span className="font-medium">{o.label}</span>
+              {o.sub && <span className="text-xs mt-0.5" style={{ color: T.subtle }}>{o.sub}</span>}
+            </button>
+          ))}
+          {showCreate && (
+            <button type="button"
+              onClick={() => { onCreate!(query.trim()); setOpen(false) }}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-yellow-50"
+              style={{ color: T.yellow }}>
+              <Plus className="h-3.5 w-3.5 flex-shrink-0" />
+              Criar &ldquo;{query.trim()}&rdquo;
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
