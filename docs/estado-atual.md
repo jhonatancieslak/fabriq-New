@@ -458,13 +458,50 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 ### Trial Banner
 - Sem emojis nem ícones coloridos — fundo `#07080A`, texto branco, link amarelo da marca
 
-## Próximos passos
+## Módulo de Nesting — Fase 1 (concluído 2026-06-29 Sessão 14)
+
+Análise completa do NestCut (`/var/www/pipesolutions/nesting/`) — 20+ modelos mapeados.  
+Ver plano detalhado: `docs/nesting-plano.md`
+
+### Schema Prisma — novos enums e modelos
+- Enums: `ProcessType` (laser_cut/guillotine/bending/other), `SheetOrigin` (ours/offcut/client), `BatchStatus`
+- `ServiceOrder`: +5 campos: `processes`, `drawingTimeSecs`, `sheetBatch`, `scheduledAt`, `isUrgent`
+- `OrderItem`: +2 campos: `perimeterMm`, `notes`
+- `OrderFile`: +5 campos: `fileType`, `areaM2`, `bboxWidthMm`, `bboxHeightMm`, `perimeterMm`, `processed`
+- Novos modelos: `OrderSheet` (chapas por ordem), `NestingJob` (resultado bin-packing), `OrderBatch` (agrupamento), `OrderBatchOrder`
+- Migration aplicada via `prisma db push`
+
+### Python DXF Processor (`/var/www/fabriq/services/dxf-processor/process_dxf.py`)
+- Usa `ezdxf` + `matplotlib` (já instalados no servidor)
+- Entidades suportadas: LINE, CIRCLE, ARC, LWPOLYLINE, POLYLINE, SPLINE, ELLIPSE
+- Output JSON: `{ ok, areaM2, bboxWidthMm, bboxHeightMm, perimeterMm }`
+- Preview PNG: fundo `#0A0B0D`, linhas amber `#EAB308` — 150 DPI
+- Testado com DXF real do NestCut: `138mm × 240.5mm · 617mm perímetro`
+
+### API — Upload de ficheiros
+- `POST /api/v1/orders/:orderId/items/:itemId/files` — upload até 50MB
+- `GET  /api/v1/orders/:orderId/items/:itemId/files` — listar com dimensões e previewUrl
+- `DELETE /api/v1/orders/:orderId/items/:itemId/files/:fileId` — remover
+- Processamento DXF em background (não bloqueia resposta)
+- `@fastify/multipart` limite aumentado para 50MB
+- Uploads guardados em `uploads/dxf/{tenantId}/`, previews em `uploads/previews/{tenantId}/`
+
+### Frontend — Componentes
+- `components/ui/dxf-upload.tsx` — componente de upload completo (drag-and-drop, polling de preview, dimensões)
+- `/orders/new` — `DxfFilePicker` por peça; ficheiros seleccionados → upload automático após criação da ordem
+- Campo de observação por peça adicionado
+- Largura/Altura com placeholder "auto via DXF"
+
+## Próximos passos (Nesting)
+
+- **Fase 2** — Editor DXF no browser: viewer (`dxf-viewer`/Three.js) + remoção de entidades + re-export DXF limpo
+- **Fase 3** — Algoritmo de nesting: bin-packing, aproveitamento %, imagem PNG do layout
+- **Fase 4** — Agrupamento de ordens (OrderBatch), Kanban por máquina/data, QR por ordem
+
+## Próximos passos (geral)
 
 - **Webhook Stripe** já configurado — testar fluxo completo de subscrição
-- **Evolution API por tenant** — UI para cada cliente configurar a sua instância WhatsApp
-- **Webhook Stripe** para activar/desactivar planos automaticamente
-- **Relatórios avançados** (PDF exportável, filtros por período)
-- **Gestão multi-máquina** (Starter só tem 1 máquina)
+- **Evolution API por tenant** — UI para cada cliente configurar a sua instância WhatsApp ✅ (backend feito, falta testar)
 - **Invoicing** — filtros por período e export XLS/PDF
 
 ## Email — Resend (concluído 2026-06-29)
