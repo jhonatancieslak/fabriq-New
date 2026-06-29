@@ -28,7 +28,7 @@ const sections: NavSection[] = [
     title: 'Integrações',
     items: [
       { href: '/settings/whatsapp', icon: MessageSquare, label: 'WhatsApp (Evolution API)', desc: 'Notificações automáticas via WhatsApp', badge: 'Em breve' },
-      { href: '/settings/smtp',     icon: Mail,          label: 'Email (SMTP)',              desc: 'Envio de relatórios e notificações',    badge: 'Em breve' },
+      { href: '/settings/smtp',     icon: Mail,          label: 'Email (Resend)',            desc: 'Notificações automáticas por email' },
     ],
   },
 ]

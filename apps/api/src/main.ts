@@ -24,6 +24,7 @@ import { securityRoutes } from './modules/security/security.routes.js'
 import { usersRoutes } from './modules/users/users.routes.js'
 import { financialRoutes } from './modules/financial/financial.routes.js'
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js'
+import { notificationsRoutes } from './modules/notifications/notifications.routes.js'
 import { resolveTenant } from './shared/middleware/tenant.js'
 
 const prisma = new PrismaClient()
@@ -70,7 +71,8 @@ async function bootstrap() {
   await app.register(securityRoutes,     { prefix: '/api/v1/security' })
   await app.register(usersRoutes,        { prefix: '/api/v1/users' })
   await app.register(financialRoutes,    { prefix: '/api/v1/financial' })
-  await app.register(dashboardRoutes,    { prefix: '/api/v1/dashboard' })
+  await app.register(dashboardRoutes,        { prefix: '/api/v1/dashboard' })
+  await app.register(notificationsRoutes,    { prefix: '/api/v1/notifications' })
 
   const port = Number(process.env.PORT ?? 8190)
   const host = process.env.HOST ?? '127.0.0.1'
