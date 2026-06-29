@@ -28,6 +28,7 @@ import { notificationsRoutes } from './modules/notifications/notifications.route
 import { billingRoutes } from './modules/billing/billing.routes.js'
 import { superadminRoutes } from './modules/superadmin/superadmin.routes.js'
 import { settingsRoutes } from './modules/settings/settings.routes.js'
+import { reportsRoutes } from './modules/reports/reports.routes.js'
 import { resolveTenant } from './shared/middleware/tenant.js'
 
 const prisma = new PrismaClient()
@@ -79,6 +80,7 @@ async function bootstrap() {
   await app.register(billingRoutes,          { prefix: '/api/v1/billing' })
   await app.register(superadminRoutes,       { prefix: '/api/v1/superadmin' })
   await app.register(settingsRoutes,         { prefix: '/api/v1/settings' })
+  await app.register(reportsRoutes,          { prefix: '/api/v1/reports' })
 
   const port = Number(process.env.PORT ?? 8190)
   const host = process.env.HOST ?? '127.0.0.1'

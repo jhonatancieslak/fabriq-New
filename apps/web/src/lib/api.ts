@@ -159,6 +159,11 @@ export const api = {
       request<{ config: Record<string, unknown>; preview: string }>('/api/v1/settings/order-numbering', { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
+  reports: {
+    get: (from: string, to: string) =>
+      request<any>(`/api/v1/reports?from=${from}&to=${to}`),
+  },
+
   notifications: {
     badge: () => request<{ pendingOrders: number; recentNotifications: number; total: number }>('/api/v1/notifications/badge'),
     status: () => request<{ email: { configured: boolean; from: string | null; provider: string }; whatsapp: { configured: boolean; apiUrl: string | null; provider: string } }>('/api/v1/notifications/status'),
