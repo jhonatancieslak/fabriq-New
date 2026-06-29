@@ -152,6 +152,12 @@ export const api = {
       request(`/api/v1/users/${id}/password`, { method: 'PATCH', body: JSON.stringify({ password }) }),
     toggle: (id: string) => request<{ id: string; isActive: boolean }>(`/api/v1/users/${id}`, { method: 'DELETE' }),
   },
+
+  notifications: {
+    badge: () => request<{ pendingOrders: number; recentNotifications: number; total: number }>('/api/v1/notifications/badge'),
+    status: () => request<{ email: { configured: boolean; from: string | null; provider: string }; whatsapp: { configured: boolean; apiUrl: string | null; provider: string } }>('/api/v1/notifications/status'),
+    sendTestEmail: (to: string) => request('/api/v1/notifications/test-email', { method: 'POST', body: JSON.stringify({ to }) }),
+  },
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

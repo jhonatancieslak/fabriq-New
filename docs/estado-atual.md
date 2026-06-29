@@ -224,6 +224,28 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 - Sidebar: link "Super Admin" vermelho visível apenas para super admins
 - `fabriq_super_admin` guardado no localStorage no login
 
+## UI — Sidebar + Header (concluído 2026-06-29 Sessão 10)
+
+### Sidebar colapsável
+- Toggle botão (ChevronLeft/Right) sobreposto na sidebar, posição `-right-3 top-[60px]`
+- Estado guardado em `localStorage.fabriq_sidebar_collapsed`
+- Quando recolhida: só ícones (w-[64px]); quando expandida: ícones + labels (w-56)
+- Tooltip `title` nos links quando colapsada
+- Sem utilizador/logout na sidebar — movido para header
+
+### Header fixo (novo componente `components/layout/header.tsx`)
+- Título da página detectado automaticamente pelo `pathname`
+- **Sino de notificações** com badge amarelo: mostra count de ordens `pending`
+  - Polling a cada 60s via `GET /api/v1/notifications/badge`
+  - Dropdown com CTA "Ver ordens pendentes →"
+- **Menu de utilizador**: avatar com iniciais, nome + role, tenant name
+  - Dropdown com logout completo (limpa todos os localStorage)
+- Login: passa a guardar `fabriq_user_name`, `fabriq_user_id`, `fabriq_tenant_name`
+
+### API
+- `GET /api/v1/notifications/badge` — retorna `{ pendingOrders, recentNotifications, total }`
+- `api.notifications.badge()` adicionado ao api.ts do frontend
+
 ## Próximos passos
 
 - **Webhook Stripe** para activar/desactivar planos automaticamente

@@ -3,10 +3,12 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
-  Settings, LogOut, BarChart3, FileText, Zap, Cpu, UserCog, Package, ShieldAlert, CreditCard, ShieldCheck,
+  Settings, BarChart3, FileText, Zap, Cpu, UserCog, Package,
+  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 
 const nav = [
@@ -27,36 +29,58 @@ const nav = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const router   = useRouter()
   const isSuperAdmin = typeof window !== 'undefined' && localStorage.getItem('fabriq_super_admin') === 'true'
 
-  function logout() {
-    localStorage.removeItem('fabriq_token')
-    localStorage.removeItem('fabriq_super_admin')
-    router.replace('/login')
-  }
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('fabriq_sidebar_collapsed') === 'true'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('fabriq_sidebar_collapsed', String(collapsed))
+  }, [collapsed])
+
+  const w = collapsed ? 'w-[64px]' : 'w-56'
 
   return (
-    <aside className="flex h-screen w-56 flex-col" style={{ background: '#07080A', borderRight: '1px solid #111318' }}>
-
+    <aside
+      className={`relative flex h-screen flex-col flex-shrink-0 transition-all duration-200 ${w}`}
+      style={{ background: '#07080A', borderRight: '1px solid #111318' }}
+    >
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2.5 px-5" style={{ borderBottom: '1px solid #111318' }}>
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: '#EAB308' }}>
+      <div className="flex h-16 items-center gap-2.5 px-4 flex-shrink-0" style={{ borderBottom: '1px solid #111318' }}>
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0" style={{ background: '#EAB308' }}>
           <Zap className="h-4 w-4 text-slate-900" strokeWidth={2.5} />
         </div>
-        <span className="font-black text-lg uppercase tracking-tight text-white">
-          FABRIQ<span style={{ color: '#EAB308' }}>.IA</span>
-        </span>
+        {!collapsed && (
+          <span className="font-black text-lg uppercase tracking-tight text-white whitespace-nowrap">
+            FABRIQ<span style={{ color: '#EAB308' }}>.IA</span>
+          </span>
+        )}
       </div>
 
+      {/* Toggle button */}
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className="absolute -right-3 top-[60px] z-10 flex items-center justify-center w-6 h-6 rounded-full transition-colors"
+        style={{ background: '#1a1d24', border: '1px solid #2a2d35', color: '#6B7280' }}
+        title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+      >
+        {collapsed
+          ? <ChevronRight className="h-3 w-3" />
+          : <ChevronLeft className="h-3 w-3" />
+        }
+      </button>
+
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4 space-y-0.5">
         {nav.map(item => {
-          const Icon   = item.icon
+          const Icon = item.icon
           const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
           return (
             <Link key={item.href} href={item.href}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all group"
+              title={collapsed ? item.label : undefined}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
               style={active ? {
                 background: 'rgba(234,179,8,0.12)',
                 color: '#EAB308',
@@ -67,8 +91,8 @@ export function Sidebar() {
               onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280' } }}
             >
               <Icon className="h-4 w-4 flex-shrink-0" style={{ color: active ? '#EAB308' : 'inherit' }} />
-              <span className="flex-1">{item.label}</span>
-              {active && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#EAB308' }} />}
+              {!collapsed && <span className="flex-1 whitespace-nowrap">{item.label}</span>}
+              {!collapsed && active && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#EAB308' }} />}
             </Link>
           )
         })}
@@ -76,28 +100,18 @@ export function Sidebar() {
 
       {/* Super Admin link */}
       {isSuperAdmin && (
-        <div className="px-3 pb-1">
+        <div className="px-2 pb-1">
           <Link href="/superadmin"
+            title={collapsed ? 'Super Admin' : undefined}
             className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold transition-all"
             style={{ background: 'rgba(239,68,68,0.08)', color: '#EF4444' }}>
             <ShieldCheck className="h-4 w-4 flex-shrink-0" />
-            Super Admin
+            {!collapsed && 'Super Admin'}
           </Link>
         </div>
       )}
 
-      {/* Logout */}
-      <div className="px-3 pb-4 pt-3" style={{ borderTop: '1px solid #111318' }}>
-        <button onClick={logout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
-          style={{ color: '#4B5563' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#FCA5A5' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#4B5563' }}
-        >
-          <LogOut className="h-4 w-4 flex-shrink-0" />
-          Terminar sessão
-        </button>
-      </div>
+      <div className="pb-4" />
     </aside>
   )
 }

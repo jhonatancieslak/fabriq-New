@@ -6,6 +6,23 @@ import nodemailer from 'nodemailer'
 
 export async function notificationsRoutes(app: FastifyInstance): Promise<void> {
 
+  // GET /api/v1/notifications/badge — contagem de itens pendentes para o header
+  app.get('/badge', { preHandler: [requireAuth, requireRole('admin', 'financial')] }, async (req) => {
+    const [pendingOrders, recentLogs] = await Promise.all([
+      app.prisma.serviceOrder.count({
+        where: { tenantId: req.tenantId!, status: 'pending' },
+      }),
+      app.prisma.notificationLog.count({
+        where: {
+          tenantId: req.tenantId!,
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          status: 'sent',
+        },
+      }),
+    ])
+    return { pendingOrders, recentNotifications: recentLogs, total: pendingOrders }
+  })
+
   // GET /api/v1/notifications/status — estado actual da configuração
   app.get('/status', { preHandler: [requireAuth, requireRole('admin')] }, async () => {
     const resendKey  = process.env.RESEND_API_KEY

@@ -62,6 +62,9 @@ export default function LoginPage() {
       localStorage.setItem('fabriq_tenant', data.tenant.slug)
       localStorage.setItem('fabriq_role', data.user.role)
       localStorage.setItem('fabriq_super_admin', String(data.user.isSuperAdmin ?? false))
+      localStorage.setItem('fabriq_user_name', data.user.name)
+      localStorage.setItem('fabriq_user_id', data.user.id)
+      localStorage.setItem('fabriq_tenant_name', data.tenant.name)
       addToast('success', `Bem-vindo, ${data.user.name.split(' ')[0]}! A redirecionar…`)
       const dest = data.user.role === 'requester' ? '/req/ordens' : '/dashboard'
       setTimeout(() => router.replace(dest), 900)

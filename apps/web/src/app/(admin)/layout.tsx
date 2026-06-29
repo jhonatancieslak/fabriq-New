@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -19,7 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!ready) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
       <div className="flex items-center gap-3 text-slate-400">
-        <div className="w-5 h-5 rounded-full border-2 border-slate-300 border-t-brand-blue animate-spin" />
+        <div className="w-5 h-5 rounded-full border-2 border-slate-300 border-t-yellow-400 animate-spin" />
         <span className="text-sm">A carregar...</span>
       </div>
     </div>
@@ -28,11 +29,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="animate-fade-in">
-          {children}
-        </div>
-      </main>
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto">
+          <div className="animate-fade-in">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
