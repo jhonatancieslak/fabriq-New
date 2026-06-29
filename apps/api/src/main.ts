@@ -12,6 +12,7 @@ import Redis from 'ioredis'
 import { UPLOADS_DIR } from './shared/config.js'
 
 import { authRoutes } from './modules/auth/auth.routes.js'
+import { registerRoutes } from './modules/auth/register.routes.js'
 import { clientsRoutes } from './modules/clients/clients.routes.js'
 import { projectsRoutes } from './modules/projects/projects.routes.js'
 import { operatorsRoutes } from './modules/operators/operators.routes.js'
@@ -74,6 +75,7 @@ async function bootstrap() {
   app.get('/health', async () => ({ status: 'ok', version: '0.1.0', timestamp: new Date().toISOString() }))
 
   await app.register(authRoutes,      { prefix: '/api/v1/auth' })
+  await app.register(registerRoutes,  { prefix: '/api/v1/auth' })
   await app.register(clientsRoutes,   { prefix: '/api/v1/clients' })
   await app.register(projectsRoutes,  { prefix: '/api/v1/projects' })
   await app.register(operatorsRoutes, { prefix: '/api/v1/operators' })

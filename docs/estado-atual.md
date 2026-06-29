@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-06-29 (Sessão 10)
+**Última sessão:** 2026-06-29 (Sessão 12)
 
 ---
 
@@ -382,6 +382,46 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 
 - Combobox de obra ocultada quando form inline está aberto (evita conflito de eventos)
 - Combobox: `onFocus` não limpa query quando já tem valor seleccionado
+
+## Registo público + Trial UX (Sessão 12 — 2026-06-29)
+
+### Schema
+- Campos `evolution_api_url`, `evolution_api_key`, `evolution_instance` adicionados ao modelo `Tenant` (migration via `db push`)
+
+### API — Registo
+- `POST /api/v1/auth/register` — rota pública de registo de novo tenant
+  - Validação Zod, verificação de slug/email duplicados (409)
+  - Cria Tenant (plan: trial, trialEndsAt: +14 dias) + User (role: admin)
+  - Gera JWT access+refresh tokens (igual ao login)
+  - Email de boas-vindas ao admin via Resend SMTP
+  - Email de notificação ao super admin (jhonatan.cieslak94@gmail.com)
+  - Rate limit: 5 req/10min
+  - Ficheiro: `apps/api/src/modules/auth/register.routes.ts`
+
+### API — Middleware check-trial
+- `checkTrial` middleware em `apps/api/src/shared/middleware/check-trial.ts`
+  - trial expirado → 402 `trial_expired`
+  - plano inactivo → 402 `subscription_inactive`
+  - Pronto para usar como preHandler em rotas protegidas
+
+### API — Billing
+- `GET /api/v1/billing` agora inclui `trial.isTrialPlan` e `trial.expiresAt` (antes só `endsAt`)
+
+### Frontend — Página /register
+- `apps/web/src/app/(auth)/register/page.tsx`
+  - Campos: empresa, slug (auto-gerado + editável), nome, email, password, telefone
+  - Suspense boundary para useSearchParams
+  - Após criar conta → redireciona para /dashboard
+  - Se `?plan=X` → faz checkout Stripe automaticamente após registo
+
+### Frontend — Banner de trial
+- `apps/web/src/components/ui/trial-banner.tsx`
+  - Amarelo quando daysLeft <= 14; vermelho quando <= 3
+  - Botão "Ver planos →" para /billing; botão X para fechar
+  - Adicionado ao layout admin entre Header e main
+
+### Frontend — Landing Pricing
+- Botões dos planos fazem checkout Stripe se autenticado, ou redirect para /register?plan=X se não autenticado
 
 ## Próximos passos
 

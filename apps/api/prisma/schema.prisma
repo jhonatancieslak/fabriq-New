@@ -128,6 +128,9 @@ model Tenant {
   stripeCustomerId  String?    @unique @map("stripe_customer_id")
   stripeSubscriptionId String? @unique @map("stripe_subscription_id")
   stripePriceId     String?    @map("stripe_price_id")
+  evolutionApiUrl   String?    @map("evolution_api_url")
+  evolutionApiKey   String?    @map("evolution_api_key")
+  evolutionInstance String?    @map("evolution_instance")
   createdAt         DateTime   @default(now()) @map("created_at")
 
   users        User[]

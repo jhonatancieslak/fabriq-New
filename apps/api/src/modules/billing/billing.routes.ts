@@ -52,11 +52,12 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
       planPrice: PLAN_PRICE[plan as keyof typeof PLAN_PRICE] ?? '—',
       planExpiresAt: tenant.planExpiresAt,
       planExpired,
-      trial: isTrial ? {
-        endsAt: tenant.trialEndsAt,
+      trial: {
+        isTrialPlan: isTrial,
         daysLeft: trialDaysLeft,
+        expiresAt: tenant.trialEndsAt,
         expired: trialExpired,
-      } : null,
+      },
       usage: {
         operators:    { current: operatorsCount,   limit: limits.maxOperators,    unlimited: isUnlimited(limits.maxOperators) },
         adminUsers:   { current: adminUsersCount,   limit: limits.maxAdminUsers,   unlimited: isUnlimited(limits.maxAdminUsers) },

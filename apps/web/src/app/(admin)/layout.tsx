@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { FeedbackWidget } from '@/components/ui/feedback-widget'
+import { TrialBanner } from '@/components/ui/trial-banner'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -32,6 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header />
+        <TrialBanner />
         <main className="flex-1 overflow-y-auto">
           <div className="animate-fade-in">
             {children}
