@@ -10,8 +10,15 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Pro
     req.userId = payload.userId
     req.operatorId = payload.operatorId
     req.userRole = payload.role
+    req.isSuperAdmin = payload.isSuperAdmin === 'true'
   } catch {
     return reply.status(401).send({ error: 'Não autorizado' })
+  }
+}
+
+export async function requireSuperAdmin(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  if (!req.isSuperAdmin) {
+    return reply.status(403).send({ error: 'Acesso restrito ao super administrador' })
   }
 }
 

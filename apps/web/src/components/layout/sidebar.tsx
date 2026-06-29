@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
-  Settings, LogOut, BarChart3, FileText, Zap, Cpu, UserCog, Package, ShieldAlert, CreditCard,
+  Settings, LogOut, BarChart3, FileText, Zap, Cpu, UserCog, Package, ShieldAlert, CreditCard, ShieldCheck,
 } from 'lucide-react'
 
 const nav = [
@@ -28,9 +28,11 @@ const nav = [
 export function Sidebar() {
   const pathname = usePathname()
   const router   = useRouter()
+  const isSuperAdmin = typeof window !== 'undefined' && localStorage.getItem('fabriq_super_admin') === 'true'
 
   function logout() {
     localStorage.removeItem('fabriq_token')
+    localStorage.removeItem('fabriq_super_admin')
     router.replace('/login')
   }
 
@@ -71,6 +73,18 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      {/* Super Admin link */}
+      {isSuperAdmin && (
+        <div className="px-3 pb-1">
+          <Link href="/superadmin"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold transition-all"
+            style={{ background: 'rgba(239,68,68,0.08)', color: '#EF4444' }}>
+            <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+            Super Admin
+          </Link>
+        </div>
+      )}
 
       {/* Logout */}
       <div className="px-3 pb-4 pt-3" style={{ borderTop: '1px solid #111318' }}>

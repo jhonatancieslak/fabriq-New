@@ -26,6 +26,7 @@ import { financialRoutes } from './modules/financial/financial.routes.js'
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes.js'
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js'
 import { billingRoutes } from './modules/billing/billing.routes.js'
+import { superadminRoutes } from './modules/superadmin/superadmin.routes.js'
 import { resolveTenant } from './shared/middleware/tenant.js'
 
 const prisma = new PrismaClient()
@@ -75,6 +76,7 @@ async function bootstrap() {
   await app.register(dashboardRoutes,        { prefix: '/api/v1/dashboard' })
   await app.register(notificationsRoutes,    { prefix: '/api/v1/notifications' })
   await app.register(billingRoutes,          { prefix: '/api/v1/billing' })
+  await app.register(superadminRoutes,       { prefix: '/api/v1/superadmin' })
 
   const port = Number(process.env.PORT ?? 8190)
   const host = process.env.HOST ?? '127.0.0.1'
@@ -86,5 +88,5 @@ bootstrap().catch((err) => { console.error(err); process.exit(1) })
 
 declare module 'fastify' {
   interface FastifyInstance { prisma: PrismaClient; redis: Redis }
-  interface FastifyRequest { tenantId?: string; userId?: string; operatorId?: string; userRole?: string }
+  interface FastifyRequest { tenantId?: string; userId?: string; operatorId?: string; userRole?: string; isSuperAdmin?: boolean }
 }
