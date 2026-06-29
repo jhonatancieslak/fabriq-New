@@ -2,6 +2,9 @@
 
 import { randomBytes } from 'crypto'
 import type { PrismaClient } from '@prisma/client'
+import QRCode from 'qrcode'
+
+const APP_URL = process.env.APP_URL ?? 'https://sistema.fabriq.pt'
 
 // Gera o HTML da folha de corte — convertido para PDF via Puppeteer ou enviado como HTML
 export async function generateCuttingSheetHtml(
@@ -49,6 +52,13 @@ export async function generateCuttingSheetHtml(
   const now = new Date()
   const dateStr = now.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })
   const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+
+  const verifyUrl = `${APP_URL}/verificar/${order.authCode}`
+  const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+    width: 120,
+    margin: 1,
+    color: { dark: '#1e293b', light: '#ffffff' },
+  })
 
   const stagesHtml = order.stages.map(s => `
     <tr>
@@ -153,11 +163,11 @@ export async function generateCuttingSheetHtml(
 
 <!-- QR CODE -->
 <div class="section qr-section">
-  <div class="qr-placeholder">QR CODE<br/>ACESSO<br/>OPERADOR</div>
+  <img src="${qrDataUrl}" alt="QR Code" style="width:100px;height:100px;flex-shrink:0;border-radius:4px;" />
   <div>
-    <div style="font-weight:bold;margin-bottom:4px">Acesso rápido via QR Code</div>
-    <div style="color:#64748b;font-size:10px;margin-bottom:4px">O operador deve digitalizar este código para iniciar o apontamento sem necessidade de login.</div>
-    <div style="font-family:monospace;font-size:9px;color:#475569">Token: ${order.accessToken}</div>
+    <div style="font-weight:bold;margin-bottom:4px">Verificar estado da ordem</div>
+    <div style="color:#64748b;font-size:10px;margin-bottom:6px">Digitalize o código QR para acompanhar o estado desta ordem em tempo real, sem necessidade de login.</div>
+    <div style="font-family:monospace;font-size:9px;color:#1e40af;word-break:break-all">${verifyUrl}</div>
   </div>
 </div>
 
