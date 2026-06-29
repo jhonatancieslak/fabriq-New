@@ -224,16 +224,22 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-2.5">
               {[
-                { label: 'API',             ok: true  },
-                { label: 'PWA Operadores',  ok: true  },
-                { label: 'WhatsApp',        ok: false, hint: 'Configurar' },
-                { label: 'SMTP Email',      ok: false, hint: 'Configurar' },
+                { label: 'API',            ok: true  },
+                { label: 'PWA Operadores', ok: true  },
+                { label: 'WhatsApp',       ok: false, href: '/settings/whatsapp' },
+                { label: 'SMTP Email',     ok: false, href: '/settings/smtp' },
               ].map(s => (
                 <div key={s.label} className="flex items-center justify-between">
                   <span className="text-sm" style={{ color: T.muted }}>{s.label}</span>
-                  <span className="text-xs font-semibold" style={{ color: s.ok ? '#22C55E' : '#EAB308' }}>
-                    {s.ok ? 'Online' : (s.hint ?? 'Offline')}
-                  </span>
+                  {s.ok ? (
+                    <span className="text-xs font-semibold" style={{ color: '#22C55E' }}>Online</span>
+                  ) : s.href ? (
+                    <a href={s.href} className="text-xs font-semibold underline underline-offset-2 transition-opacity hover:opacity-70" style={{ color: '#EAB308' }}>
+                      Configurar →
+                    </a>
+                  ) : (
+                    <span className="text-xs font-semibold" style={{ color: '#EAB308' }}>Offline</span>
+                  )}
                 </div>
               ))}
             </div>

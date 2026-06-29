@@ -102,4 +102,62 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
     const preview = generateOrderNumber(updated)
     return { config: updated, preview }
   })
+
+  // GET /api/v1/settings/whatsapp — configuração Evolution API do tenant
+  app.get('/whatsapp', { preHandler: [requireAuth, requireRole('admin')] }, async (req) => {
+    const tenant = await app.prisma.tenant.findUnique({
+      where: { id: req.tenantId! },
+      select: { evolutionApiUrl: true, evolutionApiKey: true, evolutionInstance: true },
+    })
+    return {
+      apiUrl:    tenant?.evolutionApiUrl ?? null,
+      apiKey:    tenant?.evolutionApiKey ? '••••••••' : null,
+      instance:  tenant?.evolutionInstance ?? null,
+      configured: !!(tenant?.evolutionApiUrl && tenant?.evolutionApiKey && tenant?.evolutionInstance),
+    }
+  })
+
+  // PATCH /api/v1/settings/whatsapp — guardar credenciais Evolution API
+  app.patch('/whatsapp', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const { apiUrl, apiKey, instance } = req.body as { apiUrl?: string; apiKey?: string; instance?: string }
+
+    const data: Record<string, string | null> = {}
+    if (apiUrl  !== undefined) data.evolutionApiUrl      = apiUrl  || null
+    if (instance !== undefined) data.evolutionInstance   = instance || null
+    // só actualiza a key se não for placeholder
+    if (apiKey !== undefined && apiKey !== '••••••••') data.evolutionApiKey = apiKey || null
+
+    await app.prisma.tenant.update({ where: { id: req.tenantId! }, data })
+    return { ok: true }
+  })
+
+  // POST /api/v1/settings/whatsapp/test — enviar mensagem de teste
+  app.post('/whatsapp/test', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const { phone } = req.body as { phone: string }
+    if (!phone) return reply.status(400).send({ error: 'Número de telefone obrigatório' })
+
+    const tenant = await app.prisma.tenant.findUnique({
+      where: { id: req.tenantId! },
+      select: { evolutionApiUrl: true, evolutionApiKey: true, evolutionInstance: true, name: true },
+    })
+
+    if (!tenant?.evolutionApiUrl || !tenant?.evolutionApiKey || !tenant?.evolutionInstance) {
+      return reply.status(400).send({ error: 'Evolution API não configurada' })
+    }
+
+    try {
+      const res = await fetch(`${tenant.evolutionApiUrl}/message/sendText/${tenant.evolutionInstance}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': tenant.evolutionApiKey },
+        body: JSON.stringify({ number: phone, text: `✅ FABRIQ.IA — Teste de WhatsApp da empresa ${tenant.name}. A integração está a funcionar!` }),
+      })
+      if (!res.ok) {
+        const err = await res.text()
+        return reply.status(400).send({ error: `Evolution API: ${err}` })
+      }
+      return { ok: true }
+    } catch (e) {
+      return reply.status(500).send({ error: e instanceof Error ? e.message : 'Erro ao contactar Evolution API' })
+    }
+  })
 }
