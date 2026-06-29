@@ -2,6 +2,7 @@
 
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import bcrypt from 'bcryptjs'
 import { requireAuth, requireSuperAdmin } from '../../shared/middleware/auth.js'
 import { PLAN_LABEL, PLAN_PRICE } from '../../shared/utils/plan-limits.js'
 
@@ -127,5 +128,106 @@ export async function superadminRoutes(app: FastifyInstance): Promise<void> {
     })
 
     return updated
+  })
+
+  // POST /api/v1/superadmin/tenants/:id/grant-free — dar acesso gratuito (plano Pro sem expiração)
+  app.post('/tenants/:id/grant-free', guard, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const { plan = 'pro', months = 12 } = req.body as { plan?: string; months?: number }
+
+    const tenant = await app.prisma.tenant.findUnique({ where: { id } })
+    if (!tenant) return reply.status(404).send({ error: 'Tenant não encontrado' })
+
+    const expiresAt = new Date()
+    expiresAt.setMonth(expiresAt.getMonth() + (months ?? 12))
+
+    const updated = await app.prisma.tenant.update({
+      where: { id },
+      data: {
+        plan: plan as any,
+        planExpiresAt: expiresAt,
+        trialEndsAt: null,
+        isActive: true,
+      },
+      select: { id: true, slug: true, name: true, plan: true, planExpiresAt: true },
+    })
+
+    return { ...updated, message: `Acesso gratuito concedido: ${plan} por ${months} meses` }
+  })
+
+  // POST /api/v1/superadmin/tenants/:id/users — criar utilizador admin para um tenant
+  app.post('/tenants/:id/users', guard, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const { name, email, password, role = 'admin' } = req.body as { name: string; email: string; password: string; role?: string }
+
+    if (!name || !email || !password) return reply.status(400).send({ error: 'Nome, email e password são obrigatórios' })
+    if (password.length < 8) return reply.status(400).send({ error: 'Password mínimo 8 caracteres' })
+
+    const tenant = await app.prisma.tenant.findUnique({ where: { id } })
+    if (!tenant) return reply.status(404).send({ error: 'Tenant não encontrado' })
+
+    const exists = await app.prisma.user.findFirst({ where: { email } })
+    if (exists) return reply.status(409).send({ error: 'Email já em uso' })
+
+    const hash = await bcrypt.hash(password, 12)
+    const user = await app.prisma.user.create({
+      data: {
+        tenantId: id,
+        name, email,
+        passwordHash: hash,
+        role: role as any,
+        isActive: true,
+      },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    })
+
+    return user
+  })
+
+  // GET /api/v1/superadmin/tenants/:id/users — listar utilizadores de um tenant
+  app.get('/tenants/:id/users', guard, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const users = await app.prisma.user.findMany({
+      where: { tenantId: id },
+      select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    return users
+  })
+
+  // POST /api/v1/superadmin/feedback — guardar feedback de utilizadores
+  app.post('/feedback', { preHandler: [requireAuth] }, async (req) => {
+    const { message, rating, page, tenantId: bodyTenantId } = req.body as {
+      message: string; rating?: number; page?: string; tenantId?: string
+    }
+    const tenantId = req.tenantId ?? bodyTenantId ?? 'unknown'
+
+    // Guardar como audit log com tipo especial
+    await app.prisma.auditLog.create({
+      data: {
+        tenantId,
+        userId: req.userId,
+        action: 'feedback.submitted',
+        resource: 'feedback',
+        details: { message, rating, page },
+        ipAddress: req.ip,
+      } as any,
+    })
+
+    return { received: true }
+  })
+
+  // GET /api/v1/superadmin/feedback — ver todos os feedbacks
+  app.get('/feedback', guard, async () => {
+    const logs = await app.prisma.auditLog.findMany({
+      where: { action: 'feedback.submitted' },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: {
+        id: true, tenantId: true, userId: true, details: true, createdAt: true,
+        tenant: { select: { name: true, slug: true } },
+      } as any,
+    })
+    return logs
   })
 }

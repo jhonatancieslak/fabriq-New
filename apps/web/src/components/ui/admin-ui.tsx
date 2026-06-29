@@ -211,7 +211,7 @@ export function Combobox({ options, value, onChange, onCreate, placeholder, disa
           placeholder={placeholder ?? 'Pesquisar…'}
           disabled={disabled}
           onChange={e => { setQuery(e.target.value); setOpen(true); if (!e.target.value) onChange('') }}
-          onFocus={() => { setOpen(true); setQuery('') }}
+          onFocus={() => { setOpen(true); if (!value) setQuery('') }}
           className="w-full rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-colors"
           style={{ background: disabled ? T.divider : '#F9FAFB', border: `1px solid ${T.border}`, color: T.text }}
         />

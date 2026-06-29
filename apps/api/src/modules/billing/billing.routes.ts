@@ -3,6 +3,7 @@
 import type { FastifyInstance } from 'fastify'
 import { requireAuth, requireRole } from '../../shared/middleware/auth.js'
 import { getLimits, PLAN_LABEL, PLAN_PRICE, isUnlimited } from '../../shared/utils/plan-limits.js'
+import { stripe, createCheckoutSession, createPortalSession, handleWebhookEvent, PLAN_TO_PRICE } from './stripe.service.js'
 
 export async function billingRoutes(app: FastifyInstance): Promise<void> {
 
@@ -131,5 +132,79 @@ export async function billingRoutes(app: FastifyInstance): Promise<void> {
     }
 
     return { allowed: true }
+  })
+
+  // POST /api/v1/billing/checkout — criar Checkout Session para upgrade
+  app.post('/checkout', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const { plan } = req.body as { plan: 'starter' | 'pro' | 'factory' }
+    const tenantId = req.tenantId!
+
+    if (!['starter', 'pro', 'factory'].includes(plan)) {
+      return reply.status(400).send({ error: 'Plano inválido' })
+    }
+    if (!PLAN_TO_PRICE[plan]) {
+      return reply.status(503).send({ error: 'Stripe não configurado. Configure STRIPE_PRICE_* no servidor.' })
+    }
+
+    const appUrl = process.env.APP_URL ?? 'https://sistema.fabriq.pt'
+    const url = await createCheckoutSession(
+      app.prisma, tenantId, plan,
+      `${appUrl}/billing?success=1`,
+      `${appUrl}/billing?cancelled=1`,
+    )
+
+    return { url }
+  })
+
+  // POST /api/v1/billing/portal — Customer Portal (gerir subscrição, cancelar, mudar plano)
+  app.post('/portal', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const tenantId = req.tenantId!
+    const appUrl = process.env.APP_URL ?? 'https://sistema.fabriq.pt'
+
+    const tenant = await app.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { stripeCustomerId: true },
+    })
+    if (!tenant?.stripeCustomerId) {
+      return reply.status(400).send({ error: 'Sem subscrição activa no Stripe' })
+    }
+
+    const url = await createPortalSession(app.prisma, tenantId, `${appUrl}/billing`)
+    return { url }
+  })
+
+  // POST /api/v1/billing/webhook — receber eventos do Stripe (sem auth — verificado por assinatura)
+  app.post('/webhook', {
+    config: { rawBody: true },
+  }, async (req, reply) => {
+    const sig = req.headers['stripe-signature'] as string
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+    let event: any
+    try {
+      if (webhookSecret && sig) {
+        const rawBody = (req as any).rawBody ?? JSON.stringify(req.body)
+        event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
+      } else {
+        // Sem secret configurado — aceitar sem verificar (apenas em desenvolvimento)
+        event = req.body as any
+      }
+    } catch (err: any) {
+      return reply.status(400).send({ error: `Webhook Error: ${err.message}` })
+    }
+
+    await handleWebhookEvent(app.prisma, event)
+    return { received: true }
+  })
+
+  // GET /api/v1/billing/plans — listar planos disponíveis com preços
+  app.get('/plans', async () => {
+    return {
+      plans: [
+        { id: 'starter', label: 'Starter', price: 49,  priceId: PLAN_TO_PRICE.starter, features: ['150 ordens/mês', '5 operadores', '3 admins', '1 máquina'] },
+        { id: 'pro',     label: 'Pro',     price: 99,  priceId: PLAN_TO_PRICE.pro,     features: ['Ilimitado ordens', '20 operadores', '10 admins', '3 máquinas'] },
+        { id: 'factory', label: 'Factory', price: 199, priceId: PLAN_TO_PRICE.factory, features: ['Tudo ilimitado', 'Suporte prioritário'] },
+      ]
+    }
   })
 }

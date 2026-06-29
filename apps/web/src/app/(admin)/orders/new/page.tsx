@@ -175,7 +175,7 @@ export default function NewOrderPage() {
                     Criar agora
                   </button>
                 </div>
-              ) : (
+              ) : !showNewProject ? (
                 <Combobox
                   options={projectOptions}
                   value={projectId}
@@ -184,7 +184,7 @@ export default function NewOrderPage() {
                   placeholder="Pesquisar obra…"
                   label={selectedProject?.name}
                 />
-              )}
+              ) : null}
             </Field>
           )}
 

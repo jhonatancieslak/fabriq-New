@@ -38,6 +38,16 @@ const app = Fastify({
   logger: { level: process.env.NODE_ENV === 'production' ? 'warn' : 'info' },
 })
 
+// Guardar raw body para verificação de assinatura Stripe
+app.addContentTypeParser('application/json', { parseAs: 'buffer' }, function (req, body, done) {
+  try {
+    ;(req as any).rawBody = body
+    done(null, JSON.parse(body.toString()))
+  } catch (err: any) {
+    done(err, undefined)
+  }
+})
+
 async function bootstrap() {
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } }) // 10 MB
   await app.register(staticFiles, { root: UPLOADS_DIR, prefix: '/uploads/' })

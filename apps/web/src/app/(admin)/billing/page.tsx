@@ -65,21 +65,58 @@ function UsageBar({ label, icon: Icon, item }: { label: string; icon: React.Comp
 }
 
 export default function BillingPage() {
-  const [data, setData]     = useState<BillingData | null>(null)
+  const [data, setData]       = useState<BillingData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [toast, setToast]   = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+  const [upgrading, setUpgrading] = useState<string | null>(null)
+  const [toast, setToast]     = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
 
   function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3500)
   }
 
   useEffect(() => {
+    // Mostrar feedback de retorno do Stripe
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('success') === '1') showToast('Subscrição activada com sucesso! 🎉')
+    if (params.get('cancelled') === '1') showToast('Pagamento cancelado.', 'err')
+
     fetch(`${API_URL}/api/v1/billing`, { headers: authHeaders() })
       .then(r => r.json())
       .then(setData)
       .catch(() => showToast('Erro ao carregar plano', 'err'))
       .finally(() => setLoading(false))
   }, [])
+
+  async function handleUpgrade(plan: string) {
+    setUpgrading(plan)
+    try {
+      const res = await fetch(`${API_URL}/api/v1/billing/checkout`, {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ plan: plan.toLowerCase() }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Erro ao criar sessão')
+      window.location.href = json.url
+    } catch (err: any) {
+      showToast(err.message, 'err')
+      setUpgrading(null)
+    }
+  }
+
+  async function handlePortal() {
+    setUpgrading('portal')
+    try {
+      const res = await fetch(`${API_URL}/api/v1/billing/portal`, {
+        method: 'POST', headers: authHeaders(),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Erro')
+      window.location.href = json.url
+    } catch (err: any) {
+      showToast(err.message, 'err')
+      setUpgrading(null)
+    }
+  }
 
   function fmtDate(iso: string) {
     return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -162,46 +199,73 @@ export default function BillingPage() {
             </div>
           </div>
 
-          {/* Planos de upgrade — só se não for factory/enterprise */}
+          {/* Gerir subscrição Stripe (se já tiver) */}
+          {data.plan !== 'trial' && (
+            <div className="flex justify-end">
+              <button
+                onClick={handlePortal}
+                disabled={upgrading === 'portal'}
+                className="flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-xl transition-opacity hover:opacity-80 disabled:opacity-50"
+                style={{ background: T.border, color: T.muted }}>
+                {upgrading === 'portal' ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                Gerir subscrição (Stripe Portal)
+              </button>
+            </div>
+          )}
+
+          {/* Planos de upgrade */}
           {!['factory', 'enterprise'].includes(data.plan) && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: T.subtle }}>Fazer upgrade</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {UPGRADE_PLANS.map(p => (
-                  <div key={p.plan}
-                    className="rounded-2xl p-5 flex flex-col"
-                    style={{
-                      background: p.highlight ? 'rgba(139,92,246,0.06)' : T.surface,
-                      border: `1px solid ${p.highlight ? 'rgba(139,92,246,0.3)' : T.border}`,
-                    }}>
-                    {p.highlight && (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full self-start mb-3"
-                        style={{ background: 'rgba(139,92,246,0.15)', color: '#A78BFA' }}>
-                        Mais popular
-                      </span>
-                    )}
-                    <p className="text-base font-black" style={{ color: T.text }}>{p.plan}</p>
-                    <p className="text-sm font-semibold mt-0.5 mb-4" style={{ color: p.highlight ? '#A78BFA' : T.muted }}>{p.price}</p>
-                    <ul className="space-y-1.5 flex-1 mb-4">
-                      {p.features.map(f => (
-                        <li key={f} className="flex items-center gap-2 text-xs" style={{ color: T.muted }}>
-                          <span style={{ color: '#22C55E' }}>✓</span> {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <a href={`mailto:jhonatan.cieslak94@gmail.com?subject=Upgrade FABRIQ — Plano ${p.plan}`}
-                      className="flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all"
+                {UPGRADE_PLANS.map(p => {
+                  const planKey = p.plan.toLowerCase()
+                  const isCurrent = data.plan === planKey
+                  return (
+                    <div key={p.plan}
+                      className="rounded-2xl p-5 flex flex-col"
                       style={{
-                        background: p.highlight ? '#8B5CF6' : T.border,
-                        color: p.highlight ? '#fff' : T.muted,
+                        background: p.highlight ? 'rgba(139,92,246,0.06)' : T.surface,
+                        border: `1px solid ${isCurrent ? '#22C55E' : p.highlight ? 'rgba(139,92,246,0.3)' : T.border}`,
                       }}>
-                      Contratar <ArrowRight className="h-3 w-3" />
-                    </a>
-                  </div>
-                ))}
+                      {isCurrent && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full self-start mb-3"
+                          style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E' }}>Plano actual</span>
+                      )}
+                      {p.highlight && !isCurrent && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full self-start mb-3"
+                          style={{ background: 'rgba(139,92,246,0.15)', color: '#A78BFA' }}>Mais popular</span>
+                      )}
+                      <p className="text-base font-black" style={{ color: T.text }}>{p.plan}</p>
+                      <p className="text-sm font-semibold mt-0.5 mb-4" style={{ color: p.highlight ? '#A78BFA' : T.muted }}>{p.price}</p>
+                      <ul className="space-y-1.5 flex-1 mb-4">
+                        {p.features.map(f => (
+                          <li key={f} className="flex items-center gap-2 text-xs" style={{ color: T.muted }}>
+                            <span style={{ color: '#22C55E' }}>✓</span> {f}
+                          </li>
+                        ))}
+                      </ul>
+                      <button
+                        onClick={() => handleUpgrade(planKey)}
+                        disabled={!!upgrading || isCurrent}
+                        className="flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all disabled:opacity-50"
+                        style={{
+                          background: isCurrent ? T.border : p.highlight ? '#8B5CF6' : '#EAB308',
+                          color: isCurrent ? T.muted : '#fff',
+                          cursor: isCurrent ? 'default' : 'pointer',
+                        }}>
+                        {upgrading === planKey
+                          ? <><RefreshCw className="h-3 w-3 animate-spin" /> A redirecionar…</>
+                          : isCurrent ? 'Plano actual'
+                          : <>Assinar agora <ArrowRight className="h-3 w-3" /></>
+                        }
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
               <p className="text-xs mt-3 text-center" style={{ color: T.faint }}>
-                Para upgrade ou dúvidas contacte <span style={{ color: T.muted }}>jhonatan.cieslak94@gmail.com</span>
+                Pagamento seguro via Stripe · Cancele quando quiser · Suporte: <span style={{ color: T.muted }}>jhonatan.cieslak94@gmail.com</span>
               </p>
             </div>
           )}
