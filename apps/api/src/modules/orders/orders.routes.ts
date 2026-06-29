@@ -14,6 +14,7 @@ import { join, extname } from 'path'
 import { randomUUID } from 'crypto'
 import { UPLOADS_DIR } from '../../shared/config.js'
 import { notifyOrderEvent } from '../notifications/notifications.service.js'
+import { checkPlanLimit } from '../../shared/utils/check-plan.js'
 
 export async function ordersRoutes(app: FastifyInstance): Promise<void> {
   // ── Admin routes ────────────────────────────────────────────────────────────
@@ -81,6 +82,9 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
 
   // POST /api/v1/orders
   app.post('/', { preHandler: [requireAuth, requireRole('admin', 'requester')] }, async (req, reply) => {
+    const planCheck = await checkPlanLimit(app.prisma, req.tenantId!, 'order')
+    if (!planCheck.allowed) return reply.status(402).send({ error: planCheck.error, code: planCheck.code })
+
     const body = createOrderSchema.safeParse(req.body)
     if (!body.success) return reply.status(400).send({ error: body.error.flatten() })
 

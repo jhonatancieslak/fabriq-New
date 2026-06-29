@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireAuth, requireRole } from '../../shared/middleware/auth.js'
 import { audit } from '../../shared/utils/audit.js'
+import { checkPlanLimit } from '../../shared/utils/check-plan.js'
 
 const MACHINE_TYPES = [
   'laser_cnc', 'cnc_router', 'plasma', 'waterjet',
@@ -50,6 +51,9 @@ export async function machinesRoutes(app: FastifyInstance): Promise<void> {
 
   // POST /api/v1/machines
   app.post('/', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const planCheck = await checkPlanLimit(app.prisma, req.tenantId!, 'machine')
+    if (!planCheck.allowed) return reply.status(402).send({ error: planCheck.error, code: planCheck.code })
+
     const body = machineSchema.safeParse(req.body)
     if (!body.success) return reply.status(400).send({ error: body.error.flatten() })
 

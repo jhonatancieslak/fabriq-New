@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { requireAuth, requireRole } from '../../shared/middleware/auth.js'
 import { hashPassword } from '../../shared/utils/crypto.js'
 import { audit } from '../../shared/utils/audit.js'
+import { checkPlanLimit } from '../../shared/utils/check-plan.js'
 
 const createUserSchema = z.object({
   name: z.string().min(1).max(100),
@@ -55,6 +56,9 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
 
   // Create user
   app.post('/', adminGuard, async (req, reply) => {
+    const planCheck = await checkPlanLimit(app.prisma, req.tenantId!, 'user')
+    if (!planCheck.allowed) return reply.status(402).send({ error: planCheck.error, code: planCheck.code })
+
     const body = createUserSchema.safeParse(req.body)
     if (!body.success) return reply.status(400).send({ error: body.error.flatten() })
 

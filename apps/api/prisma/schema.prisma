@@ -12,6 +12,7 @@ datasource db {
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
 enum TenantPlan {
+  trial
   starter
   pro
   factory
@@ -117,11 +118,13 @@ model Tenant {
   id           String     @id @default(uuid())
   slug         String     @unique
   name         String
-  plan         TenantPlan @default(starter)
+  plan         TenantPlan @default(trial)
   subdomain    String?    @unique
   customDomain String?    @unique @map("custom_domain")
   isActive     Boolean    @default(true) @map("is_active")
   settings     Json       @default("{}")
+  trialEndsAt  DateTime?  @map("trial_ends_at")
+  planExpiresAt DateTime? @map("plan_expires_at")
   createdAt    DateTime   @default(now()) @map("created_at")
 
   users        User[]

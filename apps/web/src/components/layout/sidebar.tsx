@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
-  Settings, LogOut, BarChart3, FileText, Zap, Cpu, UserCog, Package, ShieldAlert,
+  Settings, LogOut, BarChart3, FileText, Zap, Cpu, UserCog, Package, ShieldAlert, CreditCard,
 } from 'lucide-react'
 
 const nav = [
@@ -21,6 +21,7 @@ const nav = [
   { href: '/reports',      label: 'Relatórios',     icon: BarChart3 },
   { href: '/utilizadores', label: 'Utilizadores',   icon: UserCog },
   { href: '/security',     label: 'Segurança',      icon: ShieldAlert },
+  { href: '/billing',      label: 'Plano',          icon: CreditCard },
   { href: '/settings',     label: 'Configurações',  icon: Settings },
 ]
 
