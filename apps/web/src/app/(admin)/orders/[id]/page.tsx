@@ -4,9 +4,28 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ChevronLeft, Printer, X, Clock, CheckCircle2, CircleDot, AlertCircle, RefreshCw } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronLeft, Printer, X, Clock, CheckCircle2, CircleDot, AlertCircle, RefreshCw, FileText, Pencil, Ruler } from 'lucide-react'
 import { api, type Order } from '@/lib/api'
 import { T, Toast, Badge, Btn, ErrorMsg } from '@/components/ui/admin-ui'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.fabriq.pt'
+
+function authHeaders(): Record<string, string> {
+  const token  = typeof window !== 'undefined' ? localStorage.getItem('fabriq_token') : ''
+  const tenant = typeof window !== 'undefined' ? localStorage.getItem('fabriq_tenant') ?? '' : ''
+  return {
+    ...(token  ? { Authorization: `Bearer ${token}` } : {}),
+    ...(tenant ? { 'X-Tenant-Slug': tenant } : {}),
+  }
+}
+
+interface OrderFile {
+  id: string; originalName: string; storagePath: string; previewPath: string | null
+  fileType: string | null; sizeBytes: number; processed: boolean
+  areaM2: number | null; bboxWidthMm: number | null; bboxHeightMm: number | null
+  perimeterMm: number | null; previewUrl: string | null
+}
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendente', in_progress: 'Em execução', completed: 'Concluída',
@@ -43,6 +62,7 @@ export default function OrderDetailPage() {
   const [cancelling, setCancelling] = useState(false)
   const [fetchError, setFetchError] = useState('')
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+  const [itemFiles, setItemFiles] = useState<Record<string, OrderFile[]>>({})  // itemId → files
 
   function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3500)
@@ -50,7 +70,24 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     api.orders.get(id)
-      .then(setOrder)
+      .then(order => {
+        setOrder(order)
+        // carregar ficheiros de cada item
+        if (order.items?.length) {
+          Promise.all(
+            order.items.map(item =>
+              fetch(`${API_URL}/api/v1/orders/${id}/items/${item.id}/files`, { headers: authHeaders() })
+                .then(r => r.json())
+                .then(files => ({ itemId: item.id, files: Array.isArray(files) ? files : [] }))
+                .catch(() => ({ itemId: item.id, files: [] }))
+            )
+          ).then(results => {
+            const map: Record<string, OrderFile[]> = {}
+            results.forEach(r => { map[r.itemId] = r.files })
+            setItemFiles(map)
+          })
+        }
+      })
       .catch(() => setFetchError('Ordem não encontrada'))
       .finally(() => setLoading(false))
   }, [id])
@@ -174,25 +211,73 @@ export default function OrderDetailPage() {
       {/* Itens */}
       {order.items && order.items.length > 0 && (
         <SectionCard title={`Peças (${order.items.length})`}>
-          <table className="w-full">
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${T.divider}` }}>
-                {['Descrição', 'Material', 'Espessura', 'Qtd'].map(h => (
-                  <th key={h} className="pb-2 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: T.faint }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {order.items.map((item, i) => (
-                <tr key={item.id} style={i < order.items!.length - 1 ? { borderBottom: `1px solid ${T.divider}` } : {}}>
-                  <td className="py-2.5 pr-3 text-sm" style={{ color: T.text }}>{item.description}</td>
-                  <td className="py-2.5 pr-3 text-sm" style={{ color: T.muted }}>{item.material?.name ?? '—'}</td>
-                  <td className="py-2.5 pr-3 text-sm" style={{ color: T.muted }}>{item.thicknessMm} mm</td>
-                  <td className="py-2.5 text-sm font-semibold" style={{ color: T.text }}>{item.quantityPlanned}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="space-y-4">
+            {order.items.map((item) => {
+              const files = itemFiles[item.id] ?? []
+              const dxfFiles = files.filter(f => f.fileType === 'dxf' || f.fileType === 'dwg')
+              return (
+                <div key={item.id} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.divider}` }}>
+                  {/* Cabeçalho da peça */}
+                  <div className="flex items-center gap-4 px-4 py-3" style={{ background: T.bg }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: T.text }}>{item.description}</p>
+                      <p className="text-xs mt-0.5" style={{ color: T.subtle }}>
+                        {item.material?.name} · {item.thicknessMm} mm · {item.quantityPlanned} un.
+                      </p>
+                    </div>
+                    {dxfFiles.length > 0 && (
+                      <div className="flex items-center gap-2 text-xs" style={{ color: T.subtle }}>
+                        {dxfFiles[0].bboxWidthMm && (
+                          <span className="flex items-center gap-1">
+                            <Ruler className="h-3 w-3" style={{ color: '#EAB308' }} />
+                            {Number(dxfFiles[0].bboxWidthMm).toFixed(0)} × {Number(dxfFiles[0].bboxHeightMm).toFixed(0)} mm
+                          </span>
+                        )}
+                        {dxfFiles[0].perimeterMm && (
+                          <span>⌀ {(Number(dxfFiles[0].perimeterMm) / 1000).toFixed(2)} m</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ficheiros DXF */}
+                  {files.length > 0 && (
+                    <div className="divide-y" style={{ borderTop: `1px solid ${T.divider}`, '--tw-divide-opacity': 1 } as React.CSSProperties}>
+                      {files.map(f => (
+                        <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
+                          {/* Preview */}
+                          <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
+                            style={{ background: '#07080A' }}>
+                            {f.previewPath
+                              ? <img src={`${API_URL}/uploads/${f.previewPath}`} alt={f.originalName} className="w-full h-full object-contain" />
+                              : <FileText className="h-5 w-5" style={{ color: T.faint }} />}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold truncate" style={{ color: T.text }}>{f.originalName}</p>
+                            <p className="text-xs" style={{ color: T.subtle }}>
+                              {(f.sizeBytes / 1024).toFixed(0)} KB
+                              {f.fileType && ` · ${f.fileType.toUpperCase()}`}
+                              {!f.processed && ' · a processar…'}
+                            </p>
+                          </div>
+
+                          {/* Editar DXF */}
+                          {(f.fileType === 'dxf' || f.fileType === 'dwg') && f.processed && (
+                            <Link href={`/orders/${id}/dxf-editor/${f.id}`}
+                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all"
+                              style={{ background: T.yellowBg, color: T.yellow, border: `1px solid ${T.yellow}20` }}>
+                              <Pencil className="h-3 w-3" /> Editar
+                            </Link>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </SectionCard>
       )}
 

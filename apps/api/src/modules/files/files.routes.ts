@@ -8,7 +8,9 @@ import { join, extname, dirname, resolve } from 'path'
 import { randomUUID } from 'crypto'
 import { UPLOADS_DIR } from '../../shared/config.js'
 
-const DXF_PROCESSOR = resolve('/var/www/fabriq/services/dxf-processor/process_dxf.py')
+const DXF_PROCESSOR      = resolve('/var/www/fabriq/services/dxf-processor/process_dxf.py')
+const DXF_EXPORT_SCRIPT  = resolve('/var/www/fabriq/services/dxf-processor/export_entities.py')
+const DXF_CLEAN_SCRIPT   = resolve('/var/www/fabriq/services/dxf-processor/clean_dxf.py')
 const ALLOWED_EXTS  = new Set(['.dxf', '.dwg', '.pdf', '.png', '.jpg', '.jpeg'])
 const MAX_BYTES     = 50 * 1024 * 1024  // 50 MB
 
@@ -19,21 +21,22 @@ function fileType(ext: string): string {
   return 'image'
 }
 
-function runProcessor(inputPath: string, previewPath: string): Promise<DxfResult> {
-  return new Promise((resolve) => {
-    const py = spawn('python3', [DXF_PROCESSOR, inputPath, previewPath])
+function runPython(args: string[], timeoutMs = 60_000): Promise<unknown> {
+  return new Promise((res) => {
+    const py = spawn('python3', args)
     let out = ''
     py.stdout.on('data', d => (out += d))
     py.on('close', () => {
-      try { resolve(JSON.parse(out.trim())) }
-      catch { resolve({ ok: false, error: 'Resposta inválida do processador' }) }
+      try { res(JSON.parse(out.trim())) }
+      catch { res({ ok: false, error: 'Resposta inválida' }) }
     })
-    py.on('error', e => resolve({ ok: false, error: e.message }))
-    setTimeout(() => {
-      py.kill()
-      resolve({ ok: false, error: 'Timeout no processamento DXF' })
-    }, 60_000)
+    py.on('error', e => res({ ok: false, error: e.message }))
+    setTimeout(() => { py.kill(); res({ ok: false, error: 'Timeout' }) }, timeoutMs)
   })
+}
+
+function runProcessor(inputPath: string, previewPath: string): Promise<DxfResult> {
+  return runPython([DXF_PROCESSOR, inputPath, previewPath]) as Promise<DxfResult>
 }
 
 interface DxfResult {
@@ -199,6 +202,84 @@ export async function filesRoutes(app: FastifyInstance) {
 
       await app.prisma.orderFile.delete({ where: { id: fileId } })
       return { ok: true }
+    }
+  )
+
+  // ── Editor DXF ─────────────────────────────────────────────────────────────
+
+  // GET /api/v1/files/:fileId/entities — exporta entidades do DXF para o editor
+  app.get<{ Params: { fileId: string } }>(
+    '/files/:fileId/entities',
+    { preHandler: [requireAuth] },
+    async (req, reply) => {
+      const file = await app.prisma.orderFile.findFirst({
+        where: { id: req.params.fileId, tenantId: req.tenantId! },
+      })
+      if (!file) return reply.status(404).send({ error: 'Ficheiro não encontrado' })
+      if (file.fileType !== 'dxf' && file.fileType !== 'dwg') {
+        return reply.status(400).send({ error: 'Apenas ficheiros DXF/DWG são editáveis' })
+      }
+
+      const absPath = join(UPLOADS_DIR, file.storagePath)
+      const result  = await runPython([DXF_EXPORT_SCRIPT, absPath]) as any
+      if (!result.ok) return reply.status(500).send({ error: result.error })
+      return result
+    }
+  )
+
+  // POST /api/v1/files/:fileId/clean — remove entidades pelo handle e gera DXF limpo
+  app.post<{ Params: { fileId: string }; Body: { handles: string[] } }>(
+    '/files/:fileId/clean',
+    { preHandler: [requireAuth] },
+    async (req, reply) => {
+      const { handles } = req.body
+      if (!Array.isArray(handles)) return reply.status(400).send({ error: 'handles deve ser array' })
+
+      const file = await app.prisma.orderFile.findFirst({
+        where: { id: req.params.fileId, tenantId: req.tenantId! },
+      })
+      if (!file) return reply.status(404).send({ error: 'Ficheiro não encontrado' })
+      if (file.fileType !== 'dxf' && file.fileType !== 'dwg') {
+        return reply.status(400).send({ error: 'Apenas DXF/DWG podem ser limpos' })
+      }
+
+      const inputPath   = join(UPLOADS_DIR, file.storagePath)
+      const cleanedName = `${randomUUID()}_clean.dxf`
+      const cleanedDir  = join(UPLOADS_DIR, 'dxf', req.tenantId!)
+      const cleanedPath = join(cleanedDir, cleanedName)
+
+      await mkdir(cleanedDir, { recursive: true })
+      const result = await runPython([DXF_CLEAN_SCRIPT, inputPath, cleanedPath, ...handles]) as any
+      if (!result.ok) return reply.status(500).send({ error: result.error })
+
+      // regenerar preview do DXF limpo
+      const previewName = `${randomUUID()}_clean.png`
+      const previewPath = join(UPLOADS_DIR, 'previews', req.tenantId!, previewName)
+      await mkdir(join(UPLOADS_DIR, 'previews', req.tenantId!), { recursive: true })
+      const procResult  = await runProcessor(cleanedPath, previewPath) as DxfResult
+
+      // actualizar registo com o ficheiro limpo
+      const updated = await app.prisma.orderFile.update({
+        where: { id: file.id },
+        data: {
+          storagePath:  `dxf/${req.tenantId!}/${cleanedName}`,
+          previewPath:  procResult.ok ? `previews/${req.tenantId!}/${previewName}` : file.previewPath,
+          areaM2:       procResult.areaM2       ?? file.areaM2,
+          bboxWidthMm:  procResult.bboxWidthMm  ?? file.bboxWidthMm,
+          bboxHeightMm: procResult.bboxHeightMm ?? file.bboxHeightMm,
+          perimeterMm:  procResult.perimeterMm  ?? file.perimeterMm,
+        },
+      })
+
+      return {
+        ok:        true,
+        removed:   result.removed,
+        remaining: result.remaining,
+        fileId:    updated.id,
+        previewUrl: updated.previewPath ? `/uploads/${updated.previewPath}` : null,
+        areaM2:    updated.areaM2    ? Number(updated.areaM2)    : null,
+        perimeterMm: updated.perimeterMm ? Number(updated.perimeterMm) : null,
+      }
     }
   )
 }
