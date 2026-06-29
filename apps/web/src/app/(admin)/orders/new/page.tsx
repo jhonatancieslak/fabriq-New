@@ -2,18 +2,31 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft, Plus, Trash2, Check, FolderOpen } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Plus, Trash2, Check, FolderOpen, Upload, FileText, X } from 'lucide-react'
 import { api, type Client, type Project, type Machine, type Material, type Operator } from '@/lib/api'
 import { T, Field, Input, Select, Textarea, ErrorMsg, Btn, Combobox } from '@/components/ui/admin-ui'
 import { MACHINE_TYPE_LABELS } from './machine-types'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.fabriq.pt'
+
+function authHeadersUpload(): Record<string, string> {
+  const token  = typeof window !== 'undefined' ? localStorage.getItem('fabriq_token') : ''
+  const tenant = typeof window !== 'undefined' ? localStorage.getItem('fabriq_tenant') ?? '' : ''
+  return {
+    ...(token  ? { Authorization: `Bearer ${token}` } : {}),
+    ...(tenant ? { 'X-Tenant-Slug': tenant } : {}),
+  }
+}
 
 type StageType = string
 interface Stage { type: StageType; machineId?: string; operatorId?: string }
 interface Item {
   description: string; materialId: string
   thicknessMm: number; quantityPlanned: number; widthMm?: number; heightMm?: number
+  file?: File | null   // ficheiro DXF/DWG seleccionado (upload após criação da ordem)
+  notes?: string
 }
 
 const STEPS = ['Cliente & Obra', 'Etapas', 'Peças', 'Confirmar']
@@ -113,7 +126,26 @@ export default function NewOrderPage() {
   async function handleSubmit() {
     setSaving(true); setError('')
     try {
-      const order = await api.orders.create({ projectId, clientId, notes, stages, items })
+      const order = await api.orders.create({
+        projectId, clientId, notes, stages,
+        items: items.map(({ file: _f, notes: n, ...rest }) => ({ ...rest, notes: n })),
+      })
+
+      // upload de ficheiros DXF/DWG para cada item
+      const orderItems: { id: string }[] = (order as any).items ?? []
+      await Promise.all(
+        items.map(async (item, i) => {
+          if (!item.file || !orderItems[i]?.id) return
+          const fd = new FormData()
+          fd.append('file', item.file)
+          await fetch(`${API_URL}/api/v1/orders/${order.id}/items/${orderItems[i].id}/files`, {
+            method: 'POST',
+            headers: authHeadersUpload(),
+            body: fd,
+          })
+        })
+      )
+
       router.push(`/orders/${order.id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao criar ordem')
@@ -125,6 +157,35 @@ export default function NewOrderPage() {
     return (
       <div className="rounded-2xl p-5 space-y-4" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
         {children}
+      </div>
+    )
+  }
+
+  function DxfFilePicker({ file, onChange }: { file: File | null; onChange: (f: File | null) => void }) {
+    const ref = useRef<HTMLInputElement>(null)
+    return (
+      <div>
+        <p className="text-xs font-semibold mb-1.5" style={{ color: T.muted }}>Ficheiro DXF / DWG <span style={{ color: T.faint }}>— opcional</span></p>
+        {file ? (
+          <div className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+            style={{ background: T.border, border: `1px solid ${T.divider}` }}>
+            <FileText className="h-4 w-4 flex-shrink-0" style={{ color: '#EAB308' }} />
+            <span className="text-sm flex-1 truncate" style={{ color: T.text }}>{file.name}</span>
+            <span className="text-xs" style={{ color: T.faint }}>{(file.size / 1024).toFixed(0)} KB</span>
+            <button onClick={() => onChange(null)} className="flex-shrink-0 p-0.5"
+              style={{ color: T.subtle }}>
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => ref.current?.click()}
+            className="flex items-center gap-2 rounded-xl px-3 py-2.5 w-full text-sm transition-all"
+            style={{ background: T.bg, border: `1px dashed ${T.border}`, color: T.subtle }}>
+            <Upload className="h-4 w-4" /> Seleccionar DXF, DWG ou PDF
+          </button>
+        )}
+        <input ref={ref} type="file" accept=".dxf,.dwg,.pdf" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; onChange(f ?? null); e.target.value = '' }} />
       </div>
     )
   }
@@ -361,15 +422,30 @@ export default function NewOrderPage() {
                   <Input value={String(item.thicknessMm)} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, thicknessMm: parseFloat(v) || 0 } : x))} type="number" />
                 </Field>
                 <Field label="Largura (mm)" hint="— opcional">
-                  <Input value={item.widthMm != null ? String(item.widthMm) : ''} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, widthMm: v ? parseFloat(v) : undefined } : x))} type="number" placeholder="opcional" />
+                  <Input value={item.widthMm != null ? String(item.widthMm) : ''} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, widthMm: v ? parseFloat(v) : undefined } : x))} type="number" placeholder="auto via DXF" />
                 </Field>
                 <Field label="Altura (mm)" hint="— opcional">
-                  <Input value={item.heightMm != null ? String(item.heightMm) : ''} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, heightMm: v ? parseFloat(v) : undefined } : x))} type="number" placeholder="opcional" />
+                  <Input value={item.heightMm != null ? String(item.heightMm) : ''} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, heightMm: v ? parseFloat(v) : undefined } : x))} type="number" placeholder="auto via DXF" />
                 </Field>
                 <Field label="Quantidade *">
                   <Input value={String(item.quantityPlanned)} onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, quantityPlanned: parseInt(v) || 1 } : x))} type="number" />
                 </Field>
               </div>
+
+              {/* Upload DXF/DWG */}
+              <DxfFilePicker
+                file={item.file ?? null}
+                onChange={f => setItems(it => it.map((x, idx) => idx === i ? { ...x, file: f } : x))}
+              />
+
+              {/* Observação da peça */}
+              <Field label="Observação" hint="— opcional">
+                <Input
+                  value={item.notes ?? ''}
+                  onChange={v => setItems(it => it.map((x, idx) => idx === i ? { ...x, notes: v } : x))}
+                  placeholder="Obs. específica desta peça…"
+                />
+              </Field>
             </div>
           ))}
           <button onClick={() => setItems(it => [...it, { description: '', materialId: '', thicknessMm: 3, quantityPlanned: 1 }])}

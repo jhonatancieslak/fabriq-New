@@ -105,6 +105,25 @@ enum GasType {
   air
 }
 
+enum ProcessType {
+  laser_cut
+  guillotine
+  bending
+  other
+}
+
+enum SheetOrigin {
+  ours
+  offcut
+  client
+}
+
+enum BatchStatus {
+  planned
+  in_progress
+  completed
+}
+
 enum ProjectStatus {
   open
   in_progress
@@ -298,8 +317,9 @@ model Material {
   costPerKg Decimal?     @map("cost_per_kg")
   costPerM2 Decimal?     @map("cost_per_m2")
 
-  tenant     Tenant       @relation(fields: [tenantId], references: [id])
-  orderItems OrderItem[]
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  orderItems  OrderItem[]
+  orderSheets OrderSheet[]
 
   @@index([tenantId])
   @@map("materials")
@@ -324,12 +344,21 @@ model ServiceOrder {
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
 
+  // Nesting / produção
+  processes       Json?    @default("[]")  // ProcessType[]
+  drawingTimeSecs Int?     @map("drawing_time_secs")
+  sheetBatch      String?  @map("sheet_batch")      // número de colada
+  scheduledAt     DateTime? @map("scheduled_at")    // data prevista de corte
+  isUrgent        Boolean  @default(false) @map("is_urgent")
+
   tenant    Tenant      @relation(fields: [tenantId], references: [id])
   project   Project     @relation(fields: [projectId], references: [id])
   client    Client      @relation(fields: [clientId], references: [id])
   requester Requester?  @relation(fields: [requesterId], references: [id])
   stages    OrderStage[]
   items     OrderItem[]
+  sheets    OrderSheet[]
+  nestingJobs NestingJob[]
   invoicing Invoicing?
 
   @@index([tenantId])
@@ -386,6 +415,10 @@ model OrderItem {
   quantityDone   Int?    @map("quantity_done")
   sortOrder      Int      @default(0) @map("sort_order")
 
+  // Geometria (extraída do DXF)
+  perimeterMm    Decimal? @map("perimeter_mm")
+  notes          String?  // observação específica desta peça
+
   serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id])
   material     Material     @relation(fields: [materialId], references: [id])
   files        OrderFile[]
@@ -405,6 +438,13 @@ model OrderFile {
   previewPath  String?  @map("preview_path")
   sizeBytes    Int      @map("size_bytes")
   mimeType     String   @map("mime_type")
+  fileType     String?  @map("file_type")  // 'dxf' | 'dwg' | 'pdf' | 'image'
+  // Geometria extraída do DXF/DWG
+  areaM2       Decimal? @map("area_m2")
+  bboxWidthMm  Decimal? @map("bbox_width_mm")
+  bboxHeightMm Decimal? @map("bbox_height_mm")
+  perimeterMm  Decimal? @map("perimeter_mm")
+  processed    Boolean  @default(false)    // true após análise DXF concluída
   createdAt    DateTime @default(now()) @map("created_at")
 
   orderItem OrderItem @relation(fields: [orderItemId], references: [id])
@@ -475,6 +515,83 @@ model CuttingParamFeedback {
   orderStage OrderStage   @relation(fields: [orderStageId], references: [id])
 
   @@map("cutting_param_feedbacks")
+}
+
+// ─── Order Sheets (chapas por ordem) ─────────────────────────────────────────
+
+model OrderSheet {
+  id             String      @id @default(uuid())
+  tenantId       String      @map("tenant_id")
+  serviceOrderId String      @map("service_order_id")
+  materialId     String?     @map("material_id")
+  origin         SheetOrigin @default(ours)
+  widthMm        Decimal?    @map("width_mm")
+  lengthMm       Decimal?    @map("length_mm")
+  thicknessMm    Decimal?    @map("thickness_mm")
+  batchNumber    String?     @map("batch_number")  // número de colada
+  sortOrder      Int         @default(0) @map("sort_order")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  material     Material?    @relation(fields: [materialId], references: [id])
+
+  @@index([serviceOrderId])
+  @@map("order_sheets")
+}
+
+// ─── Nesting Jobs ─────────────────────────────────────────────────────────────
+
+model NestingJob {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  serviceOrderId  String   @map("service_order_id")
+  sheetWidthMm    Decimal  @map("sheet_width_mm")
+  sheetLengthMm   Decimal  @map("sheet_length_mm")
+  gapMm           Decimal  @default(2) @map("gap_mm")
+  piecesCount     Int      @map("pieces_count")
+  sheetsNeeded    Int      @map("sheets_needed")
+  piecesPerSheet  Int      @map("pieces_per_sheet")
+  unplacedPieces  Int      @default(0) @map("unplaced_pieces")
+  utilizationPct  Decimal  @map("utilization_pct")
+  previewPath     String?  @map("preview_path")  // PNG do layout
+  layoutJson      Json?    @map("layout_json")   // posições das peças
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+
+  @@index([serviceOrderId])
+  @@map("nesting_jobs")
+}
+
+// ─── Order Batch (agrupamento de produção) ────────────────────────────────────
+
+model OrderBatch {
+  id           String      @id @default(uuid())
+  tenantId     String      @map("tenant_id")
+  name         String
+  machineId    String?     @map("machine_id")
+  operatorId   String?     @map("operator_id")
+  scheduledAt  DateTime?   @map("scheduled_at")
+  status       BatchStatus @default(planned)
+  notes        String?
+  createdById  String      @map("created_by")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  orders OrderBatchOrder[]
+
+  @@index([tenantId])
+  @@map("order_batches")
+}
+
+model OrderBatchOrder {
+  batchId        String @map("batch_id")
+  serviceOrderId String @map("service_order_id")
+  sortOrder      Int    @default(0) @map("sort_order")
+
+  batch OrderBatch @relation(fields: [batchId], references: [id])
+
+  @@id([batchId, serviceOrderId])
+  @@map("order_batch_orders")
 }
 
 // ─── Invoicing ────────────────────────────────────────────────────────────────

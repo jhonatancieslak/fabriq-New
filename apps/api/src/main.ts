@@ -30,6 +30,7 @@ import { billingRoutes } from './modules/billing/billing.routes.js'
 import { superadminRoutes } from './modules/superadmin/superadmin.routes.js'
 import { settingsRoutes } from './modules/settings/settings.routes.js'
 import { reportsRoutes } from './modules/reports/reports.routes.js'
+import { filesRoutes } from './modules/files/files.routes.js'
 import { resolveTenant } from './shared/middleware/tenant.js'
 
 const prisma = new PrismaClient()
@@ -50,7 +51,7 @@ app.addContentTypeParser('application/json', { parseAs: 'buffer' }, function (re
 })
 
 async function bootstrap() {
-  await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } }) // 10 MB
+  await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } }) // 50 MB (DXF/DWG)
   await app.register(staticFiles, { root: UPLOADS_DIR, prefix: '/uploads/' })
   await app.register(helmet, { contentSecurityPolicy: false })
   await app.register(cors, {
@@ -93,6 +94,7 @@ async function bootstrap() {
   await app.register(superadminRoutes,       { prefix: '/api/v1/superadmin' })
   await app.register(settingsRoutes,         { prefix: '/api/v1/settings' })
   await app.register(reportsRoutes,          { prefix: '/api/v1/reports' })
+  await app.register(filesRoutes,            { prefix: '/api/v1' })
 
   const port = Number(process.env.PORT ?? 8190)
   const host = process.env.HOST ?? '127.0.0.1'
