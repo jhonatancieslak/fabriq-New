@@ -3,11 +3,12 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Users, Shield, DollarSign, Send, Eye, Pencil, KeyRound, Power } from 'lucide-react'
+import { Plus, Users, Shield, DollarSign, Send, Eye } from 'lucide-react'
 import { api, type AppUser } from '@/lib/api'
 import {
   T, Toast, Modal, Btn, Field, Input, Select, ErrorMsg,
-  PageHeader, SearchBar, Table, Tr, Td, Empty, Badge,
+  PageHeader, Table, Tr, Td, Empty, Badge,
+  ActionBtn, TableToolbar, exportCSV, printOrPDF,
 } from '@/components/ui/admin-ui'
 
 const ROLES: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -82,9 +83,15 @@ export default function UtilizadoresPage() {
       <PageHeader title="Utilizadores" sub={`${users.length} utilizador${users.length !== 1 ? 'es' : ''}`}
         action={<Btn onClick={openCreate}><Plus className="h-4 w-4" />Novo Utilizador</Btn>} />
 
-      <div className="max-w-sm">
-        <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por nome ou email…" />
-      </div>
+      <TableToolbar
+        search={search} onSearch={setSearch} placeholder="Pesquisar por nome ou email…"
+        onPrint={() => printOrPDF('Utilizadores', ['Nome', 'Email', 'Perfil', 'Estado'],
+          users.map(u => [u.name, u.email, ROLES[u.role]?.label ?? u.role, u.isActive ? 'Activo' : 'Inactivo']), 'print')}
+        onXLS={() => exportCSV('utilizadores', ['Nome', 'Email', 'Perfil', 'Estado'],
+          users.map(u => [u.name, u.email, ROLES[u.role]?.label ?? u.role, u.isActive ? 'Activo' : 'Inactivo']))}
+        onPDF={() => printOrPDF('Utilizadores', ['Nome', 'Email', 'Perfil', 'Estado'],
+          users.map(u => [u.name, u.email, ROLES[u.role]?.label ?? u.role, u.isActive ? 'Activo' : 'Inactivo']), 'pdf')}
+      />
 
       {/* Activos */}
       {active.length > 0 && (
@@ -180,16 +187,11 @@ function UserRow({ user, last, onEdit, onPassword, onToggle }: {
       </Td>
       <Td><span className="text-sm" style={{ color: T.subtle }}>{lastLogin}</span></Td>
       <Td>
-        <div className="flex items-center gap-1">
-          <button onClick={() => onEdit(user)} className="p-2 rounded-lg hover:bg-gray-100" title="Editar">
-            <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-          </button>
-          <button onClick={() => onPassword(user)} className="p-2 rounded-lg hover:bg-gray-100" title="Password">
-            <KeyRound className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-          </button>
-          <button onClick={() => onToggle(user)} className="p-2 rounded-lg hover:bg-red-500/10" title={user.isActive ? 'Desactivar' : 'Reactivar'}>
-            <Power className="h-3.5 w-3.5" style={{ color: user.isActive ? T.faint : '#22C55E' }} />
-          </button>
+        <div className="flex items-center gap-1.5">
+          <ActionBtn variant="edit"   onClick={() => onEdit(user)} title="Editar" />
+          <ActionBtn variant="view"   onClick={() => onPassword(user)} title="Redefinir password" label="Password" />
+          <ActionBtn variant={user.isActive ? 'disable' : 'enable'} onClick={() => onToggle(user)}
+            title={user.isActive ? 'Desactivar' : 'Reactivar'} label={user.isActive ? 'Desactivar' : 'Activar'} />
         </div>
       </Td>
     </Tr>

@@ -3,12 +3,12 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, ClipboardList, Eye } from 'lucide-react'
+import { Plus, ClipboardList } from 'lucide-react'
 import Link from 'next/link'
 import { api, type Order } from '@/lib/api'
 import {
-  T, Toast, PageHeader, SearchBar, Table, Tr, Td,
-  Pagination, Badge, Empty, Btn,
+  T, Toast, PageHeader, Table, Tr, Td,
+  Pagination, Badge, Empty, Btn, ActionBtn, TableToolbar, exportCSV, printOrPDF,
 } from '@/components/ui/admin-ui'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -84,21 +84,16 @@ export default function OrdersPage() {
         }
       />
 
-      {/* Status tabs */}
-      <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: T.surface, border: `1px solid ${T.border}`, width: 'fit-content' }}>
-        {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className="px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
-            style={tab === t.key ? { background: T.yellow, color: T.bg } : { color: T.subtle }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Search */}
-      <div className="max-w-sm">
-        <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por número, cliente ou obra…" />
-      </div>
+      <TableToolbar
+        search={search} onSearch={setSearch} placeholder="Pesquisar por número, cliente ou obra…"
+        filters={TABS} activeFilter={tab} onFilter={setTab}
+        onPrint={() => printOrPDF('Ordens de Serviço', ['Nº', 'Cliente', 'Obra', 'Estado', 'Data'],
+          filtered.map(o => [o.orderNumber, o.client?.name ?? '', o.project?.name ?? '', STATUS_LABEL[o.status] ?? o.status, fmtDate(o.createdAt)]), 'print')}
+        onXLS={() => exportCSV('ordens', ['Nº', 'Cliente', 'Obra', 'Estado', 'Data'],
+          filtered.map(o => [o.orderNumber, o.client?.name ?? '', o.project?.name ?? '', STATUS_LABEL[o.status] ?? o.status, fmtDate(o.createdAt)]))}
+        onPDF={() => printOrPDF('Ordens de Serviço', ['Nº', 'Cliente', 'Obra', 'Estado', 'Data'],
+          filtered.map(o => [o.orderNumber, o.client?.name ?? '', o.project?.name ?? '', STATUS_LABEL[o.status] ?? o.status, fmtDate(o.createdAt)]), 'pdf')}
+      />
 
       <Table
         headers={['Número', 'Cliente', 'Obra', 'Etapas', 'Estado', 'Data', 'Ações']}
@@ -138,9 +133,7 @@ export default function OrdersPage() {
             </Td>
             <Td>
               <Link href={`/orders/${o.id}`}>
-                <button className="p-2 rounded-lg hover:bg-gray-100" title="Ver detalhe">
-                  <Eye className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-                </button>
+                <ActionBtn variant="view" onClick={() => {}} title="Ver detalhe" label="Ver" />
               </Link>
             </Td>
           </Tr>

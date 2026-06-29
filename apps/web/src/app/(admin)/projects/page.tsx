@@ -3,11 +3,12 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, FolderOpen, Pencil, User } from 'lucide-react'
+import { Plus, FolderOpen, User } from 'lucide-react'
 import { api, type Project, type Client } from '@/lib/api'
 import {
   T, Toast, Modal, Btn, Field, Input, Select, Textarea, ErrorMsg,
-  PageHeader, SearchBar, Table, Tr, Td, Pagination, Badge, Empty, Combobox,
+  PageHeader, Table, Tr, Td, Pagination, Badge, Empty, Combobox,
+  ActionBtn, TableToolbar, exportCSV, printOrPDF,
 } from '@/components/ui/admin-ui'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -193,9 +194,15 @@ export default function ProjectsPage() {
       <PageHeader title="Obras" sub={`${filtered.length} obra${filtered.length !== 1 ? 's' : ''}`}
         action={<Btn onClick={() => setModal('new')}><Plus className="h-4 w-4" />Nova Obra</Btn>} />
 
-      <div className="max-w-sm">
-        <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por código, nome ou cliente…" />
-      </div>
+      <TableToolbar
+        search={search} onSearch={setSearch} placeholder="Pesquisar por código, nome ou cliente…"
+        onPrint={() => printOrPDF('Obras', ['Nome', 'Código', 'Cliente', 'Estado'],
+          filtered.map(p => [p.name, p.code, p.client?.name ?? '', STATUS_LABEL[p.status] ?? p.status]), 'print')}
+        onXLS={() => exportCSV('obras', ['Nome', 'Código', 'Cliente', 'Estado'],
+          filtered.map(p => [p.name, p.code, p.client?.name ?? '', STATUS_LABEL[p.status] ?? p.status]))}
+        onPDF={() => printOrPDF('Obras', ['Nome', 'Código', 'Cliente', 'Estado'],
+          filtered.map(p => [p.name, p.code, p.client?.name ?? '', STATUS_LABEL[p.status] ?? p.status]), 'pdf')}
+      />
 
       <Table headers={['Obra', 'Código', 'Cliente', 'Estado', 'Data', 'Ações']} loading={loading}>
         {paginated.length === 0 && !loading ? (
@@ -212,9 +219,7 @@ export default function ProjectsPage() {
               {(p as Project & { createdAt?: string }).createdAt ? fmtDate((p as Project & { createdAt?: string }).createdAt!) : '—'}
             </span></Td>
             <Td>
-              <button onClick={() => setModal(p)} className="p-2 rounded-lg hover:bg-gray-100" title="Editar">
-                <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-              </button>
+              <ActionBtn variant="edit" onClick={() => setModal(p)} title="Editar" />
             </Td>
           </Tr>
         ))}

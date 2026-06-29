@@ -3,11 +3,12 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Cpu, Pencil, Power, Settings2 } from 'lucide-react'
+import { Plus, Cpu, Settings2 } from 'lucide-react'
 import { api, type Machine } from '@/lib/api'
 import {
   T, Toast, Modal, Btn, Field, Input, Select, ErrorMsg,
-  PageHeader, SearchBar, Table, Tr, Td, Pagination, Badge, Empty,
+  PageHeader, Table, Tr, Td, Pagination, Badge, Empty,
+  ActionBtn, TableToolbar, exportCSV, printOrPDF,
 } from '@/components/ui/admin-ui'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -249,20 +250,17 @@ export default function MachinesPage() {
         }
       />
 
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 max-w-sm">
-          <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar máquinas…" />
-        </div>
-        <label className="flex items-center gap-2 cursor-pointer select-none">
-          <div className="w-5 h-5 rounded-md flex items-center justify-center"
-            style={{ background: includeInactive ? T.yellow : T.surface, border: `1px solid ${T.border}` }}
-            onClick={() => setIncludeInactive(v => !v)}>
-            {includeInactive && <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#07080A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-          </div>
-          <span className="text-sm" style={{ color: T.muted }}>Incluir inactivas</span>
-        </label>
-      </div>
+      <TableToolbar
+        search={search} onSearch={setSearch} placeholder="Pesquisar máquinas…"
+        filters={[{ key: 'false', label: 'Activas' }, { key: 'true', label: 'Todas' }]}
+        activeFilter={String(includeInactive)} onFilter={v => setIncludeInactive(v === 'true')}
+        onPrint={() => printOrPDF('Máquinas', ['Nome', 'Tipo', 'Modelo', 'Custo/h', 'Estado'],
+          machines.map(m => [m.name, MACHINE_TYPE_LABELS[m.type] ?? m.type, m.model ?? '', m.costPerHour != null ? `${m.costPerHour}€/h` : '', m.isActive !== false ? 'Activa' : 'Inactiva']), 'print')}
+        onXLS={() => exportCSV('maquinas', ['Nome', 'Tipo', 'Modelo', 'Custo/h', 'Estado'],
+          machines.map(m => [m.name, MACHINE_TYPE_LABELS[m.type] ?? m.type, m.model ?? '', m.costPerHour ?? '', m.isActive !== false ? 'Activa' : 'Inactiva']))}
+        onPDF={() => printOrPDF('Máquinas', ['Nome', 'Tipo', 'Modelo', 'Custo/h', 'Estado'],
+          machines.map(m => [m.name, MACHINE_TYPE_LABELS[m.type] ?? m.type, m.model ?? '', m.costPerHour != null ? `${m.costPerHour}€/h` : '', m.isActive !== false ? 'Activa' : 'Inactiva']), 'pdf')}
+      />
 
       {/* Table */}
       <Table
@@ -315,19 +313,9 @@ export default function MachinesPage() {
               />
             </Td>
             <Td>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setModal(m)}
-                  className="p-2 rounded-lg transition-colors hover:bg-gray-100"
-                  title="Editar">
-                  <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-                </button>
-                {m.isActive !== false && (
-                  <button onClick={() => deactivate(m)}
-                    className="p-2 rounded-lg transition-colors hover:bg-red-500/10"
-                    title="Desactivar">
-                    <Power className="h-3.5 w-3.5" style={{ color: T.faint }} />
-                  </button>
-                )}
+              <div className="flex items-center gap-1.5">
+                <ActionBtn variant="edit" onClick={() => setModal(m)} title="Editar" />
+                {m.isActive !== false && <ActionBtn variant="disable" onClick={() => deactivate(m)} title="Desactivar" />}
               </div>
             </Td>
           </Tr>

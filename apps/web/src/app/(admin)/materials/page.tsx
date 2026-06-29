@@ -3,11 +3,12 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Package, Pencil, Power } from 'lucide-react'
+import { Plus, Package } from 'lucide-react'
 import { api, type Material } from '@/lib/api'
 import {
   T, Toast, Modal, Btn, Field, Input, Select, ErrorMsg,
-  PageHeader, SearchBar, Table, Tr, Td, Pagination, Badge, Empty,
+  PageHeader, Table, Tr, Td, Pagination, Badge, Empty,
+  ActionBtn, TableToolbar, exportCSV, printOrPDF,
 } from '@/components/ui/admin-ui'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -121,19 +122,17 @@ export default function MaterialsPage() {
       <PageHeader title="Materiais" sub={data ? `${data.total} material${data.total !== 1 ? 'is' : ''}` : ''}
         action={<Btn onClick={() => setModal('new')}><Plus className="h-4 w-4" />Novo Material</Btn>} />
 
-      <div className="flex items-center gap-3">
-        <div className="flex-1 max-w-sm">
-          <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar materiais…" />
-        </div>
-        <label className="flex items-center gap-2 cursor-pointer select-none">
-          <div className="w-5 h-5 rounded-md flex items-center justify-center transition-colors"
-            style={{ background: includeInactive ? T.yellow : T.surface, border: `1px solid ${T.border}` }}
-            onClick={() => setIncludeInactive(v => !v)}>
-            {includeInactive && <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#07080A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-          </div>
-          <span className="text-sm" style={{ color: T.muted }}>Incluir inactivos</span>
-        </label>
-      </div>
+      <TableToolbar
+        search={search} onSearch={setSearch} placeholder="Pesquisar materiais…"
+        filters={[{ key: 'false', label: 'Activos' }, { key: 'true', label: 'Todos' }]}
+        activeFilter={String(includeInactive)} onFilter={v => setIncludeInactive(v === 'true')}
+        onPrint={() => printOrPDF('Materiais', ['Nome', 'Tipo', 'Custo/kg', 'Custo/m²', 'Estado'],
+          materials.map(m => [m.name, TYPE_LABELS[m.type] ?? m.type, m.costPerKg ?? '', m.costPerM2 ?? '', m.isActive !== false ? 'Activo' : 'Inactivo']), 'print')}
+        onXLS={() => exportCSV('materiais', ['Nome', 'Tipo', 'Custo/kg', 'Custo/m²', 'Estado'],
+          materials.map(m => [m.name, TYPE_LABELS[m.type] ?? m.type, m.costPerKg ?? '', m.costPerM2 ?? '', m.isActive !== false ? 'Activo' : 'Inactivo']))}
+        onPDF={() => printOrPDF('Materiais', ['Nome', 'Tipo', 'Custo/kg', 'Custo/m²', 'Estado'],
+          materials.map(m => [m.name, TYPE_LABELS[m.type] ?? m.type, m.costPerKg ?? '', m.costPerM2 ?? '', m.isActive !== false ? 'Activo' : 'Inactivo']), 'pdf')}
+      />
 
       <Table headers={['Material', 'Tipo', 'Custo / kg', 'Custo / m²', 'Estado', 'Ações']} loading={loading}>
         {materials.length === 0 && !loading ? (
@@ -167,15 +166,9 @@ export default function MaterialsPage() {
                 color={m.isActive !== false ? '#22C55E' : T.faint} />
             </Td>
             <Td>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setModal(m)} className="p-2 rounded-lg hover:bg-gray-100" title="Editar">
-                  <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-                </button>
-                {m.isActive !== false && (
-                  <button onClick={() => deactivate(m)} className="p-2 rounded-lg hover:bg-red-500/10" title="Desactivar">
-                    <Power className="h-3.5 w-3.5" style={{ color: T.faint }} />
-                  </button>
-                )}
+              <div className="flex items-center gap-1.5">
+                <ActionBtn variant="edit" onClick={() => setModal(m)} title="Editar" />
+                {m.isActive !== false && <ActionBtn variant="disable" onClick={() => deactivate(m)} title="Desactivar" />}
               </div>
             </Td>
           </Tr>

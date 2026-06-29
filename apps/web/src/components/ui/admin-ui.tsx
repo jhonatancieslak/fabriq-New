@@ -4,7 +4,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { X, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Search, RefreshCw, Plus } from 'lucide-react'
+import { X, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Search, RefreshCw, Plus, Eye, Pencil, Trash2, Power, QrCode, Copy, Printer, FileSpreadsheet, FileDown } from 'lucide-react'
 
 // ─── Tokens ──────────────────────────────────────────────────────────────────
 export const T = {
@@ -369,6 +369,168 @@ export function Badge({ label, color = T.subtle }: { label: string; color?: stri
       {label}
     </span>
   )
+}
+
+// ─── ActionBtn ────────────────────────────────────────────────────────────────
+type ActionVariant = 'view' | 'edit' | 'delete' | 'enable' | 'disable' | 'qr' | 'copy' | 'print'
+
+const ACTION_STYLES: Record<ActionVariant, { bg: string; color: string; hoverBg: string }> = {
+  view:    { bg: 'rgba(59,130,246,0.08)',  color: '#3B82F6', hoverBg: 'rgba(59,130,246,0.16)'  },
+  edit:    { bg: 'rgba(234,179,8,0.10)',   color: '#CA8A04', hoverBg: 'rgba(234,179,8,0.20)'   },
+  delete:  { bg: 'rgba(239,68,68,0.08)',   color: '#EF4444', hoverBg: 'rgba(239,68,68,0.16)'   },
+  enable:  { bg: 'rgba(34,197,94,0.08)',   color: '#16A34A', hoverBg: 'rgba(34,197,94,0.16)'   },
+  disable: { bg: 'rgba(249,115,22,0.08)',  color: '#EA580C', hoverBg: 'rgba(249,115,22,0.16)'  },
+  qr:      { bg: 'rgba(139,92,246,0.08)',  color: '#7C3AED', hoverBg: 'rgba(139,92,246,0.16)'  },
+  copy:    { bg: 'rgba(107,114,128,0.08)', color: '#6B7280', hoverBg: 'rgba(107,114,128,0.16)' },
+  print:   { bg: 'rgba(20,184,166,0.08)',  color: '#0D9488', hoverBg: 'rgba(20,184,166,0.16)'  },
+}
+const ACTION_ICONS: Record<ActionVariant, React.ComponentType<{ className?: string }>> = {
+  view: Eye, edit: Pencil, delete: Trash2, enable: Power, disable: Power,
+  qr: QrCode, copy: Copy, print: Printer,
+}
+
+export function ActionBtn({ variant, onClick, title, disabled, label }: {
+  variant: ActionVariant
+  onClick: () => void
+  title?: string
+  disabled?: boolean
+  label?: string
+}) {
+  const s    = ACTION_STYLES[variant]
+  const Icon = ACTION_ICONS[variant]
+  const [hovered, setHovered] = useState(false)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all disabled:opacity-40"
+      style={{ background: hovered ? s.hoverBg : s.bg, color: s.color }}
+    >
+      <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+      {label && <span>{label}</span>}
+    </button>
+  )
+}
+
+// ─── TableToolbar ─────────────────────────────────────────────────────────────
+export function TableToolbar({ search, onSearch, placeholder, filters, activeFilter, onFilter, onPrint, onXLS, onPDF, extra }: {
+  search: string
+  onSearch: (v: string) => void
+  placeholder?: string
+  filters?: { key: string; label: string }[]
+  activeFilter?: string
+  onFilter?: (key: string) => void
+  onPrint?: () => void
+  onXLS?: () => void
+  onPDF?: () => void
+  extra?: React.ReactNode
+}) {
+  return (
+    <div className="space-y-3">
+      {/* Filter tabs */}
+      {filters && filters.length > 0 && onFilter && (
+        <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: T.surface, border: `1px solid ${T.border}`, width: 'fit-content' }}>
+          {filters.map(f => (
+            <button key={f.key} onClick={() => onFilter(f.key)}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
+              style={activeFilter === f.key ? { background: T.yellow, color: '#FFF' } : { color: T.subtle }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Search + Export */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1 min-w-[200px] max-w-xs">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: T.subtle }} />
+            <input type="text" value={search} onChange={e => onSearch(e.target.value)}
+              placeholder={placeholder ?? 'Pesquisar…'}
+              className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition-colors"
+              style={{ background: '#F9FAFB', border: `1px solid ${T.border}`, color: T.text }} />
+          </div>
+        </div>
+
+        {extra}
+
+        <div className="flex items-center gap-1 ml-auto">
+          {onPrint && (
+            <button onClick={onPrint} title="Imprimir"
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-teal-50"
+              style={{ background: T.surface, border: `1px solid ${T.border}`, color: '#0D9488' }}>
+              <Printer className="h-3.5 w-3.5" /><span className="hidden sm:inline">Imprimir</span>
+            </button>
+          )}
+          {onXLS && (
+            <button onClick={onXLS} title="Exportar XLS"
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-green-50"
+              style={{ background: T.surface, border: `1px solid ${T.border}`, color: '#16A34A' }}>
+              <FileSpreadsheet className="h-3.5 w-3.5" /><span className="hidden sm:inline">XLS</span>
+            </button>
+          )}
+          {onPDF && (
+            <button onClick={onPDF} title="Exportar PDF"
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:bg-red-50"
+              style={{ background: T.surface, border: `1px solid ${T.border}`, color: '#DC2626' }}>
+              <FileDown className="h-3.5 w-3.5" /><span className="hidden sm:inline">PDF</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Export utilities ─────────────────────────────────────────────────────────
+export function exportCSV(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
+  const esc = (v: string | number | null | undefined) => {
+    const s = String(v ?? '')
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s
+  }
+  const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\r\n')
+  const bom  = '﻿'
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a'); a.href = url; a.download = `${filename}.csv`; a.click()
+  URL.revokeObjectURL(url)
+}
+
+export function printOrPDF(title: string, headers: string[], rows: (string | number | null | undefined)[][], mode: 'print' | 'pdf' = 'print') {
+  const tableRows = rows.map(r =>
+    `<tr>${r.map(c => `<td>${String(c ?? '—')}</td>`).join('')}</tr>`
+  ).join('')
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+  <style>
+    body{font-family:system-ui,sans-serif;font-size:12px;color:#111;margin:24px}
+    h2{font-size:16px;font-weight:800;margin:0 0 4px;letter-spacing:-0.3px}
+    p{font-size:11px;color:#6b7280;margin:0 0 16px}
+    table{width:100%;border-collapse:collapse}
+    th{background:#f3f4f6;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb}
+    td{padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:11px}
+    tr:last-child td{border-bottom:none}
+    .meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #e5e7eb}
+    @media print{body{margin:0}}
+  </style></head><body>
+  <div class="meta">
+    <div><h2>FABRIQ.IA — ${title}</h2><p>${rows.length} registo${rows.length !== 1 ? 's' : ''} · ${new Date().toLocaleDateString('pt-PT')}</p></div>
+  </div>
+  <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${tableRows}</tbody></table>
+  </body></html>`
+  const w = window.open('', '_blank', 'width=900,height=700')
+  if (!w) return
+  w.document.write(html)
+  w.document.close()
+  w.focus()
+  if (mode === 'pdf') {
+    w.onload = () => { w.print() }
+  } else {
+    setTimeout(() => w.print(), 400)
+  }
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────

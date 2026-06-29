@@ -3,11 +3,12 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, HardHat, Pencil, Power, QrCode, Copy, Check } from 'lucide-react'
+import { Plus, HardHat, QrCode, Copy, Check } from 'lucide-react'
 import { api, type Operator } from '@/lib/api'
 import {
   T, Toast, Modal, Btn, Field, Input, ErrorMsg,
-  PageHeader, SearchBar, Table, Tr, Td, Pagination, Badge, Empty,
+  PageHeader, Table, Tr, Td, Pagination, Badge, Empty,
+  ActionBtn, TableToolbar, exportCSV, printOrPDF,
 } from '@/components/ui/admin-ui'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8190'
@@ -177,9 +178,15 @@ export default function OperatorsPage() {
       <PageHeader title="Operadores" sub={`${filtered.length} operador${filtered.length !== 1 ? 'es' : ''}`}
         action={<Btn onClick={() => setModal('new')}><Plus className="h-4 w-4" />Novo Operador</Btn>} />
 
-      <div className="max-w-sm">
-        <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar operadores…" />
-      </div>
+      <TableToolbar
+        search={search} onSearch={setSearch} placeholder="Pesquisar operadores…"
+        onPrint={() => printOrPDF('Operadores', ['Nome', 'Username', 'Telemóvel', 'Email'],
+          all.map(o => [o.name, o.username, o.phone ?? '', o.email ?? '']), 'print')}
+        onXLS={() => exportCSV('operadores', ['Nome', 'Username', 'Telemóvel', 'Email'],
+          all.map(o => [o.name, o.username, o.phone ?? '', o.email ?? '']))}
+        onPDF={() => printOrPDF('Operadores', ['Nome', 'Username', 'Telemóvel', 'Email'],
+          all.map(o => [o.name, o.username, o.phone ?? '', o.email ?? '']), 'pdf')}
+      />
 
       <Table headers={['Operador', 'Username', 'Telemóvel', 'Ações']} loading={loading}>
         {visible.length === 0 && !loading ? (
@@ -204,16 +211,10 @@ export default function OperatorsPage() {
               </span>
             </Td>
             <Td>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPwaModal(op)} className="p-2 rounded-lg hover:bg-gray-100" title="Acesso PWA">
-                  <QrCode className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-                </button>
-                <button onClick={() => setModal(op)} className="p-2 rounded-lg hover:bg-gray-100" title="Editar">
-                  <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-                </button>
-                <button onClick={() => deactivate(op)} className="p-2 rounded-lg hover:bg-red-500/10" title="Desactivar">
-                  <Power className="h-3.5 w-3.5" style={{ color: T.faint }} />
-                </button>
+              <div className="flex items-center gap-1.5">
+                <ActionBtn variant="qr"      onClick={() => setPwaModal(op)} title="Acesso PWA" label="QR" />
+                <ActionBtn variant="edit"    onClick={() => setModal(op)} title="Editar" />
+                <ActionBtn variant="disable" onClick={() => deactivate(op)} title="Desactivar" />
               </div>
             </Td>
           </Tr>

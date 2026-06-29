@@ -3,21 +3,18 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Users, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Users } from 'lucide-react'
 import { api, type Client } from '@/lib/api'
 import {
   T, Toast, Modal, Btn, Field, Input, Textarea, ErrorMsg,
-  PageHeader, SearchBar, Table, Tr, Td, Pagination, Empty,
+  PageHeader, Table, Tr, Td, Pagination, Empty,
+  ActionBtn, TableToolbar, exportCSV, printOrPDF,
 } from '@/components/ui/admin-ui'
 
-interface FormState {
-  name: string; taxId: string; email: string; phone: string; address: string
-}
+interface FormState { name: string; taxId: string; email: string; phone: string; address: string }
 const EMPTY: FormState = { name: '', taxId: '', email: '', phone: '', address: '' }
 
-function ClientModal({ client, onClose, onDone }: {
-  client: Client | null; onClose: () => void; onDone: () => void
-}) {
+function ClientModal({ client, onClose, onDone }: { client: Client | null; onClose: () => void; onDone: () => void }) {
   const [form, setForm] = useState<FormState>(client
     ? { name: client.name, taxId: client.taxId ?? '', email: client.email ?? '', phone: client.phone ?? '', address: client.address ?? '' }
     : EMPTY)
@@ -92,6 +89,9 @@ export default function ClientsPage() {
     catch (e) { showToast(e instanceof Error ? e.message : 'Erro', 'err') }
   }
 
+  const HEADERS = ['Cliente', 'NIF', 'Email', 'Telefone']
+  function rows() { return filtered.map(c => [c.name, c.taxId ?? '', c.email ?? '', c.phone ?? '']) }
+
   return (
     <div className="p-6 space-y-5">
       {toast && <Toast msg={toast.msg} type={toast.type} />}
@@ -99,23 +99,22 @@ export default function ClientsPage() {
       <PageHeader title="Clientes" sub={`${filtered.length} cliente${filtered.length !== 1 ? 's' : ''}`}
         action={<Btn onClick={() => setModal('new')}><Plus className="h-4 w-4" />Novo Cliente</Btn>} />
 
-      <div className="max-w-sm">
-        <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por nome, email ou NIF…" />
-      </div>
+      <TableToolbar
+        search={search} onSearch={setSearch} placeholder="Pesquisar por nome, email ou NIF…"
+        onPrint={() => printOrPDF('Clientes', HEADERS, rows(), 'print')}
+        onXLS={() => exportCSV('clientes', HEADERS, rows())}
+        onPDF={() => printOrPDF('Clientes', HEADERS, rows(), 'pdf')}
+      />
 
-      <Table headers={['Cliente', 'NIF', 'Email', 'Telefone', 'Ações']} loading={loading}>
+      <Table headers={[...HEADERS, 'Ações']} loading={loading}>
         {paginated.length === 0 && !loading ? (
-          <tr><td colSpan={5}>
-            <Empty icon={Users} title="Nenhum cliente encontrado" sub="Crie o primeiro cliente para começar" />
-          </td></tr>
+          <tr><td colSpan={5}><Empty icon={Users} title="Nenhum cliente encontrado" sub="Crie o primeiro cliente para começar" /></td></tr>
         ) : paginated.map((c, i) => (
           <Tr key={c.id} last={i === paginated.length - 1}>
             <Td>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                  style={{ background: T.border, color: T.muted }}>
-                  {c.name[0].toUpperCase()}
-                </div>
+                  style={{ background: T.border, color: T.muted }}>{c.name[0].toUpperCase()}</div>
                 <span className="text-sm font-semibold" style={{ color: T.text }}>{c.name}</span>
               </div>
             </Td>
@@ -123,13 +122,9 @@ export default function ClientsPage() {
             <Td><span className="text-sm" style={{ color: T.muted }}>{c.email ?? '—'}</span></Td>
             <Td><span className="text-sm" style={{ color: T.muted }}>{c.phone ?? '—'}</span></Td>
             <Td>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setModal(c)} className="p-2 rounded-lg hover:bg-gray-100" title="Editar">
-                  <Pencil className="h-3.5 w-3.5" style={{ color: T.subtle }} />
-                </button>
-                <button onClick={() => handleDelete(c)} className="p-2 rounded-lg hover:bg-red-500/10" title="Remover">
-                  <Trash2 className="h-3.5 w-3.5" style={{ color: T.faint }} />
-                </button>
+              <div className="flex items-center gap-1.5">
+                <ActionBtn variant="edit"   onClick={() => setModal(c)} title="Editar" />
+                <ActionBtn variant="delete" onClick={() => handleDelete(c)} title="Remover" />
               </div>
             </Td>
           </Tr>
@@ -139,11 +134,8 @@ export default function ClientsPage() {
       <Pagination page={page} pages={pages} total={filtered.length} onPage={setPage} />
 
       {modal !== null && (
-        <ClientModal
-          client={modal === 'new' ? null : modal as Client}
-          onClose={() => setModal(null)}
-          onDone={() => { setModal(null); showToast(modal === 'new' ? 'Cliente criado' : 'Cliente actualizado'); load() }}
-        />
+        <ClientModal client={modal === 'new' ? null : modal as Client} onClose={() => setModal(null)}
+          onDone={() => { setModal(null); showToast(modal === 'new' ? 'Cliente criado' : 'Cliente actualizado'); load() }} />
       )}
     </div>
   )
