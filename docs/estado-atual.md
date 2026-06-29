@@ -144,6 +144,32 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 - Email HTML profissional com botão "Verificar Ordem" na conclusão
 - Variáveis `.env` necessárias: `RESEND_API_KEY`, `EMAIL_FROM`, `EVOLUTION_API_URL/KEY/INSTANCE`
 
+## Portal do Solicitador (concluído 2026-06-29 Sessão 7)
+
+### URLs
+| URL | Função |
+|---|---|
+| `https://sistema.fabriq.pt/req/login` | Login exclusivo para solicitadores |
+| `https://sistema.fabriq.pt/req/ordens` | Lista de ordens (só as suas) |
+| `https://sistema.fabriq.pt/req/ordens/[id]` | Detalhe da ordem |
+
+### O que o solicitador VÊ
+- Lista das suas ordens com estado, tabs por status, pesquisa
+- Barra de progresso global (etapas concluídas / total)
+- Detalhe: informações, etapas com ícone de estado, peças, fotos com lightbox
+
+### O que o solicitador NÃO VÊ
+- Nenhum valor financeiro (invoicing stripped na API para role `requester`)
+- Sem botão de cancelar, sem PDF de corte, sem acesso ao admin
+
+### Implementação
+- `/req/layout.tsx` — topbar + guard: sem token → `/req/login`; role ≠ requester → `/dashboard`
+- `/req/login/page.tsx` — valida role no frontend (recusa admins)
+- Login admin: salva `fabriq_role` no localStorage; redirect para `/req/ordens` se role = requester
+- Link "Portal do solicitador →" visível no login admin
+- `OrderStage` e `Order` em `api.ts` actualizados com `startedAt`, `completedAt`, `photos`, `completedAt`
+- API `GET /orders/:id`: strip do campo `invoicing` para role `requester`
+
 ## Próximos passos
 
 1. ~~**Gestão de utilizadores**~~ ✅
@@ -156,7 +182,7 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 8. ~~**Upload de fotos na PWA**~~ ✅
 9. ~~**Dashboard de segurança**~~ ✅
 10. ~~**Notificações email/WhatsApp**~~ ✅
-11. **Configurar RESEND_API_KEY** no `.env` do servidor para activar email
-12. **Portal do Solicitador** — login próprio para clientes externos verem as suas ordens
+11. ~~**Portal do Solicitador**~~ ✅
+12. **Configurar RESEND_API_KEY** no `.env` do servidor para activar email
 13. **QR Code** no PDF da ordem (link para `/verificar/[authCode]`)
 14. **Billing / planos** (fase futura)
