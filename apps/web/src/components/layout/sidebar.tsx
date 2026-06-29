@@ -44,6 +44,7 @@ export function Sidebar() {
 
   return (
     <aside
+      data-tour="sidebar"
       className={`relative flex h-screen flex-col flex-shrink-0 transition-all duration-200 ${w}`}
       style={{ background: '#07080A', borderRight: '1px solid #111318' }}
     >
@@ -79,6 +80,12 @@ export function Sidebar() {
           const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
           return (
             <Link key={item.href} href={item.href}
+              data-tour={
+                item.href === '/orders' ? 'orders-link' :
+                item.href === '/clients' ? 'clients-link' :
+                item.href === '/machines' ? 'machines-link' :
+                item.href === '/billing' ? 'billing-link' : undefined
+              }
               title={collapsed ? item.label : undefined}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
               style={active ? {

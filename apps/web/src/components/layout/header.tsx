@@ -89,7 +89,7 @@ export function Header() {
       <div className="flex items-center gap-2">
 
         {/* Bell */}
-        <div ref={bellRef} className="relative">
+        <div ref={bellRef} className="relative" data-tour="notifications-bell">
           <button
             onClick={() => setShowBell(v => !v)}
             className="relative flex items-center justify-center w-9 h-9 rounded-xl transition-colors hover:bg-gray-100"
@@ -137,7 +137,7 @@ export function Header() {
         </div>
 
         {/* User */}
-        <div ref={userRef} className="relative">
+        <div ref={userRef} className="relative" data-tour="user-menu">
           <button
             onClick={() => setShowUser(v => !v)}
             className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-colors hover:bg-gray-100"

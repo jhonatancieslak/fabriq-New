@@ -78,7 +78,7 @@ export default function OrdersPage() {
         title="Ordens de Serviço"
         sub={`${total} ordem${total !== 1 ? 's' : ''}`}
         action={
-          <Link href="/orders/new">
+          <Link href="/orders/new" data-tour="new-order-btn">
             <Btn><Plus className="h-4 w-4" />Nova Ordem</Btn>
           </Link>
         }

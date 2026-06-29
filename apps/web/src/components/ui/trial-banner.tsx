@@ -4,7 +4,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { X } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.fabriq.pt'
 
@@ -45,43 +44,31 @@ export function TrialBanner() {
   const urgent = trial.daysLeft <= 3
 
   return (
-    <div
-      className="flex items-center justify-between gap-4 px-5 py-3 text-sm font-medium"
-      style={{
-        background: urgent ? '#fef2f2' : '#fefce8',
-        borderBottom: `1px solid ${urgent ? '#fecaca' : '#fef08a'}`,
-        color: urgent ? '#991b1b' : '#713f12',
-      }}
-    >
-      <div className="flex items-center gap-2 flex-1">
-        <span>{urgent ? '🚨' : '⚡'}</span>
-        <span>
-          {urgent
-            ? `Apenas ${trial.daysLeft} dia${trial.daysLeft !== 1 ? 's' : ''} restante${trial.daysLeft !== 1 ? 's' : ''} no trial!`
-            : `O teu período de teste termina em ${trial.daysLeft} dias.`
-          }
-          {' '}Activa um plano para manter o acesso.
-        </span>
-      </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
+    <div className={`flex items-center justify-between gap-4 px-5 py-2.5 text-sm font-medium border-b ${
+      urgent
+        ? 'bg-[#07080A] border-red-800 text-white'
+        : 'bg-[#07080A] border-[#EAB308]/30 text-white/80'
+    }`}>
+      <span className="flex-1">
+        {urgent
+          ? `Trial a terminar — apenas ${trial.daysLeft} dia${trial.daysLeft !== 1 ? 's' : ''} restante${trial.daysLeft !== 1 ? 's' : ''}.`
+          : `Período de teste: ${trial.daysLeft} dias restantes.`
+        }
+        {' '}
         <button
           onClick={() => router.push('/billing')}
-          className="rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
-          style={{
-            background: urgent ? '#dc2626' : '#EAB308',
-            color: urgent ? '#fff' : '#07080A',
-          }}
+          className="underline underline-offset-2 font-bold text-[#EAB308] hover:text-[#CA8A04] transition-colors"
         >
-          Ver planos →
+          Activar plano →
         </button>
-        <button
-          onClick={() => setDismissed(true)}
-          className="opacity-50 hover:opacity-100 transition-opacity"
-          aria-label="Fechar"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+      </span>
+      <button
+        onClick={() => setDismissed(true)}
+        className="text-white/30 hover:text-white/60 transition-colors text-lg leading-none"
+        aria-label="Fechar"
+      >
+        ×
+      </button>
     </div>
   )
 }

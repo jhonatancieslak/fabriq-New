@@ -423,9 +423,45 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 ### Frontend — Landing Pricing
 - Botões dos planos fazem checkout Stripe se autenticado, ou redirect para /register?plan=X se não autenticado
 
+## Sessão 13 — 2026-06-29
+
+### Stripe — Produção activada
+- Webhook criado no Stripe Dashboard (produção): `https://api.fabriq.pt/api/v1/billing/webhook`
+- `STRIPE_WEBHOOK_SECRET`, `STRIPE_PUBLIC_KEY` (live), `STRIPE_SECRET_KEY` (live) configurados no `.env`
+- Price IDs de produção actualizados: Starter `price_1TnlJI...`, Pro `price_1TnlJJ...`, Factory `price_1TnlJJ...`
+
+### Landing page — fabriq.pt
+- Directório: `/var/www/fabriq-landing/` — Next.js standalone na porta 3290
+- 13 secções: Navbar, Hero, LogoBar, Problem, Solution, PwaSection, AiParams, Features, HowItWorks, SocialProof, Pricing, Faq, FinalCta, Footer
+- Animações scroll via IntersectionObserver nativo (sem dependências)
+- Count-up animado nas métricas; toggle mensal/anual nos preços
+- Pricing: autenticado → Stripe Checkout directo; não autenticado → `/register?plan=X`
+- Nginx: `location /` em `fabriq.pt` aponta para `127.0.0.1:3290`
+- PM2: processo `fabriq-landing`
+- Idioma PT-PT, foco Portugal; LogoBar inclui PipeSolutions
+- FAQ com pergunta sobre plano Customizado ("desenvolvemos conforme a vossa necessidade")
+
+### /orders/new — Criação de cliente inline
+- Quando não há clientes: aviso + botão "Criar primeiro cliente"
+- Form inline com nome (obrig.), email e telefone (opcionais)
+- Após criar, cliente seleccionado automaticamente e fluxo continua
+
+### Tour guiado (manual passo a passo)
+- Ficheiro: `apps/web/src/components/ui/tour.tsx`
+- Activa na primeira visita (guarda `fabriq_tour_done` no localStorage)
+- 8 passos: sidebar → ordens → nova ordem → clientes → máquinas → faturação → sino → perfil
+- Overlay SVG com recorte no elemento activo, borda amarela, tooltip com seta direccional
+- Barra de progresso visual; botões Anterior / Seguinte / Concluir / Saltar
+- `data-tour` adicionado em: sidebar, links nav (orders/clients/machines/billing), bell, user menu, botão nova ordem
+- Para re-activar: `localStorage.removeItem('fabriq_tour_done')` na consola
+
+### Trial Banner
+- Sem emojis nem ícones coloridos — fundo `#07080A`, texto branco, link amarelo da marca
+
 ## Próximos passos
 
-- **Configurar Webhook Stripe** (após criar endpoint no dashboard Stripe — ver instruções acima)
+- **Webhook Stripe** já configurado — testar fluxo completo de subscrição
+- **Evolution API por tenant** — UI para cada cliente configurar a sua instância WhatsApp
 - **Webhook Stripe** para activar/desactivar planos automaticamente
 - **Relatórios avançados** (PDF exportável, filtros por período)
 - **Gestão multi-máquina** (Starter só tem 1 máquina)

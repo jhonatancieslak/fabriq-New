@@ -8,16 +8,25 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { FeedbackWidget } from '@/components/ui/feedback-widget'
 import { TrialBanner } from '@/components/ui/trial-banner'
+import { Tour } from '@/components/ui/tour'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [ready, setReady] = useState(false)
+  const [showTour, setShowTour] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('fabriq_token')
     if (!token) { router.replace('/login'); return }
     setReady(true)
+    // Mostrar tour apenas na primeira visita
+    if (!localStorage.getItem('fabriq_tour_done')) setShowTour(true)
   }, [router])
+
+  function closeTour() {
+    setShowTour(false)
+    localStorage.setItem('fabriq_tour_done', '1')
+  }
 
   if (!ready) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -41,6 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </main>
         <FeedbackWidget />
       </div>
+      {showTour && <Tour onClose={closeTour} />}
     </div>
   )
 }

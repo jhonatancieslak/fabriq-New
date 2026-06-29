@@ -36,6 +36,12 @@ export default function NewOrderPage() {
   const [projectId, setProjectId] = useState('')
   const [notes,     setNotes]     = useState('')
 
+  // inline "novo cliente"
+  const [showNewClient, setShowNewClient] = useState(false)
+  const [newClientForm, setNewClientForm] = useState({ name: '', email: '', phone: '' })
+  const [clientLoading, setClientLoading] = useState(false)
+  const [clientError, setClientError]     = useState('')
+
   // inline "nova obra"
   const [showNewProject, setShowNewProject] = useState(false)
   const [newProjForm, setNewProjForm]       = useState({ code: '', name: '', description: '' })
@@ -69,6 +75,19 @@ export default function NewOrderPage() {
   useEffect(() => {
     if (projects.length === 1) setProjectId(projects[0].id)
   }, [projects])
+
+  async function createClient() {
+    if (!newClientForm.name.trim()) { setClientError('Nome obrigatório'); return }
+    setClientLoading(true); setClientError('')
+    try {
+      const c = await api.clients.create(newClientForm)
+      setClients(prev => [...prev, c])
+      setClientId(c.id)
+      setShowNewClient(false)
+      setNewClientForm({ name: '', email: '', phone: '' })
+    } catch (e) { setClientError(e instanceof Error ? e.message : 'Erro') }
+    finally { setClientLoading(false) }
+  }
 
   async function createProject() {
     if (!clientId) { setProjError('Seleccione um cliente primeiro'); return }
@@ -155,14 +174,51 @@ export default function NewOrderPage() {
           <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Cliente & Obra</h2>
 
           <Field label="Cliente *">
-            <Combobox
-              options={clientOptions}
-              value={clientId}
-              onChange={setClientId}
-              placeholder="Pesquisar cliente…"
-              label={selectedClient?.name}
-            />
+            {!showNewClient ? (
+              <Combobox
+                options={clientOptions}
+                value={clientId}
+                onChange={v => { setClientId(v); setShowNewClient(false) }}
+                onCreate={() => setShowNewClient(true)}
+                placeholder={clients.length === 0 ? 'Nenhum cliente — criar agora' : 'Pesquisar cliente…'}
+                label={selectedClient?.name}
+              />
+            ) : null}
+            {clients.length === 0 && !showNewClient && (
+              <p className="text-xs mt-1" style={{ color: T.subtle }}>
+                Ainda não tem clientes.{' '}
+                <button type="button" className="font-semibold underline" style={{ color: T.yellow }}
+                  onClick={() => setShowNewClient(true)}>
+                  Criar primeiro cliente
+                </button>
+              </p>
+            )}
           </Field>
+
+          {/* Inline: criar cliente novo */}
+          {showNewClient && (
+            <div className="rounded-xl p-4 space-y-3" style={{ background: T.yellowBg, border: `1px solid ${T.yellowBorder}` }}>
+              <p className="text-sm font-semibold" style={{ color: T.yellow }}>Novo cliente</p>
+              <Field label="Nome *">
+                <Input value={newClientForm.name} onChange={v => setNewClientForm(f => ({ ...f, name: v }))} placeholder="Ex: MetalPro Lda" />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Email" hint="— opcional">
+                  <Input value={newClientForm.email} onChange={v => setNewClientForm(f => ({ ...f, email: v }))} placeholder="geral@empresa.pt" />
+                </Field>
+                <Field label="Telefone" hint="— opcional">
+                  <Input value={newClientForm.phone} onChange={v => setNewClientForm(f => ({ ...f, phone: v }))} placeholder="+351 912 345 678" />
+                </Field>
+              </div>
+              {clientError && <ErrorMsg msg={clientError} />}
+              <div className="flex gap-2">
+                <Btn variant="ghost" onClick={() => { setShowNewClient(false); setClientError('') }} className="flex-1">Cancelar</Btn>
+                <Btn onClick={createClient} disabled={clientLoading} className="flex-1">
+                  {clientLoading ? 'A criar…' : 'Criar cliente'}
+                </Btn>
+              </div>
+            </div>
+          )}
 
           {/* Obras do cliente */}
           {clientId && (
