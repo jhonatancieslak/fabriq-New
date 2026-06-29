@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-06-26 (Sessão 3)
+**Última sessão:** 2026-06-29 (Sessão 7)
 
 ---
 
@@ -183,6 +183,6 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 9. ~~**Dashboard de segurança**~~ ✅
 10. ~~**Notificações email/WhatsApp**~~ ✅
 11. ~~**Portal do Solicitador**~~ ✅
-12. **Configurar RESEND_API_KEY** no `.env` do servidor para activar email
-13. **QR Code** no PDF da ordem (link para `/verificar/[authCode]`)
+12. ~~**QR Code no PDF**~~ ✅
+13. **Configurar RESEND_API_KEY** no `.env` do servidor para activar email
 14. **Billing / planos** (fase futura)
