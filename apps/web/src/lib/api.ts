@@ -153,6 +153,12 @@ export const api = {
     toggle: (id: string) => request<{ id: string; isActive: boolean }>(`/api/v1/users/${id}`, { method: 'DELETE' }),
   },
 
+  settings: {
+    getOrderNumbering: () => request<{ config: Record<string, unknown>; preview: string }>('/api/v1/settings/order-numbering'),
+    saveOrderNumbering: (data: Record<string, unknown>) =>
+      request<{ config: Record<string, unknown>; preview: string }>('/api/v1/settings/order-numbering', { method: 'PATCH', body: JSON.stringify(data) }),
+  },
+
   notifications: {
     badge: () => request<{ pendingOrders: number; recentNotifications: number; total: number }>('/api/v1/notifications/badge'),
     status: () => request<{ email: { configured: boolean; from: string | null; provider: string }; whatsapp: { configured: boolean; apiUrl: string | null; provider: string } }>('/api/v1/notifications/status'),

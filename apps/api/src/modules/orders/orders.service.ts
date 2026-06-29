@@ -3,17 +3,40 @@
 import { randomBytes } from 'crypto'
 import type { PrismaClient } from '@prisma/client'
 import type { CreateOrderInput, CompleteStageInput } from './orders.schema.js'
+import { generateOrderNumber, getNumberingConfig } from '../settings/settings.routes.js'
 
-function generateOrderNumber(tenantSlug: string): string {
-  const now = new Date()
-  const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-  const rand = randomBytes(2).toString('hex').toUpperCase()
-  return `OS-${ym}-${rand}`
+async function getNextOrderNumber(prisma: PrismaClient, tenantId: string): Promise<string> {
+  // Atomic: read config, generate number, increment nextSeq — all inside a serializable transaction
+  return await prisma.$transaction(async (tx) => {
+    const tenant  = await tx.tenant.findUnique({ where: { id: tenantId }, select: { settings: true } })
+    const settings = (tenant?.settings ?? {}) as Record<string, unknown>
+    const config   = getNumberingConfig(settings)
+
+    const currentYear = new Date().getFullYear()
+    if (config.resetYearly && config.lastResetYear < currentYear) {
+      config.nextSeq       = 1
+      config.lastResetYear = currentYear
+    }
+
+    const orderNumber = generateOrderNumber(config)
+
+    await tx.tenant.update({
+      where: { id: tenantId },
+      data: {
+        settings: {
+          ...(tenant?.settings as object ?? {}),
+          orderNumbering: { ...config, nextSeq: config.nextSeq + 1 },
+        },
+      },
+    })
+
+    return orderNumber
+  })
 }
 
 function generateAuthCode(orderNumber: string): string {
   const rand = randomBytes(3).toString('hex').toUpperCase()
-  return `FBRQ-${orderNumber.replace('OS-', '')}-${rand}`
+  return `FBRQ-${rand}`
 }
 
 export async function createOrder(
@@ -22,9 +45,8 @@ export async function createOrder(
   userId: string,
   input: CreateOrderInput,
 ) {
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } })
-  const orderNumber = generateOrderNumber(tenant?.slug ?? 'FBRQ')
-  const authCode = generateAuthCode(orderNumber)
+  const orderNumber = await getNextOrderNumber(prisma, tenantId)
+  const authCode    = generateAuthCode(orderNumber)
 
   const order = await prisma.serviceOrder.create({
     data: {

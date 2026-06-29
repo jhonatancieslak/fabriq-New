@@ -3,13 +3,19 @@
 'use client'
 
 import Link from 'next/link'
-import { Cpu, Package, HardHat, UserCog, MessageSquare, Mail, ArrowRight, Settings } from 'lucide-react'
+import { Cpu, Package, HardHat, UserCog, MessageSquare, Mail, ArrowRight, Settings, Hash } from 'lucide-react'
 import { T, PageHeader } from '@/components/ui/admin-ui'
 
 interface NavItem { href: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; desc: string; badge?: string }
 interface NavSection { title: string; items: NavItem[] }
 
 const sections: NavSection[] = [
+  {
+    title: 'Ordens de Serviço',
+    items: [
+      { href: '/settings/order-numbering', icon: Hash, label: 'Numeração de Ordens', desc: 'Prefixo, separador, ano/mês, dígitos, sequencial automático' },
+    ],
+  },
   {
     title: 'Produção',
     items: [
