@@ -184,5 +184,12 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 10. ~~**Notificações email/WhatsApp**~~ ✅
 11. ~~**Portal do Solicitador**~~ ✅
 12. ~~**QR Code no PDF**~~ ✅
-13. **Configurar RESEND_API_KEY** no `.env` do servidor para activar email
+13. ~~**Painel Resend / Email**~~ ✅
 14. **Billing / planos** (fase futura)
+
+## Email — Resend (concluído 2026-06-29)
+
+- `GET /api/v1/notifications/status` — estado email + WhatsApp
+- `POST /api/v1/notifications/test-email` — envia email de teste (requer RESEND_API_KEY)
+- `/settings/smtp` — painel visual: estado, instruções passo-a-passo, formulário de teste, lista de eventos
+- Para activar: obter API key em resend.com → colocar em `.env` → `pm2 restart fabriq-api --update-env`
