@@ -212,10 +212,23 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 - Processo `fabriq-demo-reset` activo no PM2 (estado `stopped` entre execuções = correcto)
 - Para forçar reset manual: `pm2 restart fabriq-demo-reset`
 
+## Painel Super-Admin (concluído 2026-06-29 Sessão 9)
+
+- Campo `is_super_admin` adicionado à tabela `users` (migration manual aplicada sem reset de BD)
+- `jhonatan.cieslak94@gmail.com` é super admin (tenant: pipesolutions)
+- JWT inclui `isSuperAdmin`; middleware `requireSuperAdmin` protege rotas
+- Rotas: `GET /api/v1/superadmin/tenants` (lista com uso), `PATCH /plan`, `PATCH /status`, `POST /extend-trial`
+- Frontend `/superadmin`: KPIs (activos, pagos, trial, expirados) + lista colapsável por tenant
+  - Edição de plano (botões), datas de trial/expiração, toggle activo/inactivo, extender trial N dias
+  - Layout isolado com guard `isSuperAdmin`
+- Sidebar: link "Super Admin" vermelho visível apenas para super admins
+- `fabriq_super_admin` guardado no localStorage no login
+
 ## Próximos passos
 
-- **Rota super-admin** para alterar plano de tenants (painel interno)
 - **Webhook Stripe** para activar/desactivar planos automaticamente
+- **Relatórios avançados** (PDF exportável, filtros por período)
+- **Gestão multi-máquina** (Starter só tem 1 máquina)
 
 ## Email — Resend (concluído 2026-06-29)
 
