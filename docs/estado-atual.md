@@ -338,8 +338,54 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 
 ---
 
+## Relatórios (concluído 2026-06-29 Sessão 11)
+
+- Rota `GET /api/v1/reports?from=YYYY-MM-DD&to=YYYY-MM-DD` — dados reais do período
+- KPIs: total ordens, concluídas, em execução, tempo de corte, receita faturada, receita pendente
+- Breakdown por estado, top 5 clientes (barras), top 5 máquinas (tempo de corte)
+- Tabela completa de ordens do período com estado, tempo, valor, data
+- Export XLS (CSV UTF-8) e PDF/impressão via `printOrPDF`
+- Filtro de período (date pickers) com botão Atualizar
+- Ficheiros: `apps/api/src/modules/reports/reports.routes.ts`, `apps/web/src/app/(admin)/reports/page.tsx`
+
+## Stripe Billing (concluído 2026-06-29 Sessão 11)
+
+- Chaves Stripe em `.env`: `STRIPE_PUBLIC_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (a preencher após criar webhook no dashboard)
+- Price IDs criados: `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_FACTORY`
+- `stripe.service.ts`: `getOrCreateCustomer`, `createCheckoutSession`, `createPortalSession`, `handleWebhookEvent`
+- Rotas billing: `POST /checkout` → Stripe Checkout · `POST /portal` → Customer Portal · `POST /webhook` → eventos
+- Webhook trata: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated/deleted`
+- Migration: campos `stripe_customer_id`, `stripe_subscription_id`, `stripe_price_id` adicionados ao Tenant
+- Billing page: botões "Assinar agora" com redirect Stripe · "Gerir subscrição" via Customer Portal
+
+### Para activar webhook Stripe em produção:
+1. Stripe Dashboard → Developers → Webhooks → Add endpoint: `https://api.fabriq.pt/api/v1/billing/webhook`
+2. Eventos a seleccionar: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, `customer.subscription.deleted`
+3. Copiar Signing Secret → `.env` → `STRIPE_WEBHOOK_SECRET=whsec_...`
+4. `pm2 restart fabriq-api --update-env`
+
+## Superadmin (actualizado Sessão 11)
+
+- Movido para layout admin normal (sidebar + header) — `/superadmin` usa `(admin)/superadmin/page.tsx`
+- Novo: **Acesso Gratuito** — conceder plano Pro por N meses sem pagamento (beta/parcerias)
+- Novo: **Criar utilizadores** por tenant — modal com lista de utilizadores actuais + formulário
+- Novo: **Listar utilizadores** por tenant via `GET /api/v1/superadmin/tenants/:id/users`
+
+## Widget de Feedback (concluído Sessão 11)
+
+- `components/ui/feedback-widget.tsx` — botão flutuante amarelo no canto inferior direito de todas as páginas admin
+- Avaliação por estrelas + mensagem livre
+- Enviado para `POST /api/v1/superadmin/feedback` (stored como AuditLog)
+- Visível em `GET /api/v1/superadmin/feedback` (super admin)
+
+## Fix orders/new — Obra inline (Sessão 11)
+
+- Combobox de obra ocultada quando form inline está aberto (evita conflito de eventos)
+- Combobox: `onFocus` não limpa query quando já tem valor seleccionado
+
 ## Próximos passos
 
+- **Configurar Webhook Stripe** (após criar endpoint no dashboard Stripe — ver instruções acima)
 - **Webhook Stripe** para activar/desactivar planos automaticamente
 - **Relatórios avançados** (PDF exportável, filtros por período)
 - **Gestão multi-máquina** (Starter só tem 1 máquina)
