@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-06-29 (Sessão 8)
+**Última sessão:** 2026-06-29 (Sessão 10)
 
 ---
 
@@ -246,11 +246,104 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 - `GET /api/v1/notifications/badge` — retorna `{ pendingOrders, recentNotifications, total }`
 - `api.notifications.badge()` adicionado ao api.ts do frontend
 
+## UI — Autocomplete + Criação Inline (concluído 2026-06-29 Sessão 10)
+
+### Componente `Combobox` (`components/ui/admin-ui.tsx`)
+- Filtra opções ao digitar em tempo real
+- Opção "Criar 'X'" aparece quando o texto digitado não corresponde a nenhuma opção existente
+- Fecha ao clicar fora; reseta query se utilizador não seleccionou nada
+
+### `/projects` — Modal de Obra
+- Campo "Cliente" substituído por `Combobox`
+- Ao digitar nome inexistente → aparece "Criar 'X'" → expande mini-form inline (nome, email, telefone)
+- Após criar cliente, fica automaticamente seleccionado e modal continua
+- Campo "Estado" só aparece em modo edição
+
+### `/orders/new` — Step 1: Cliente & Obra
+- Cliente: `Combobox` com pesquisa ao digitar
+- Obra: carrega automaticamente ao seleccionar cliente
+  - 0 obras → aviso + link "Criar agora" → form inline
+  - 1 obra → selecção automática
+  - N obras → `Combobox` com opção "+ Nova obra" → form inline
+- Obra criada inline fica imediatamente seleccionada
+
+---
+
+## UI — Padronização de Botões e Exports (concluído 2026-06-29 Sessão 10)
+
+### `ActionBtn` (8 variantes coloridas)
+| Variante | Cor | Uso |
+|---|---|---|
+| `view` | Azul | Ver detalhe |
+| `edit` | Amarelo | Editar |
+| `delete` | Vermelho | Remover |
+| `enable` | Verde | Activar |
+| `disable` | Laranja | Desactivar |
+| `qr` | Roxo | QR Code / PWA |
+| `copy` | Cinza | Copiar |
+| `print` | Teal | Imprimir |
+
+### `TableToolbar`
+- Campo de pesquisa integrado
+- Filter tabs por estado (pills amarelos)
+- Botões Imprimir / XLS / PDF agrupados à direita
+
+### Funções de export
+- `exportCSV(filename, headers, rows)` — CSV com BOM UTF-8 (Excel PT sem problemas)
+- `printOrPDF(title, headers, rows, mode)` — abre janela com tabela estilizada FABRIQ.IA; `mode='pdf'` activa diálogo de impressão automático
+
+### Páginas actualizadas
+`clients`, `orders`, `projects`, `machines`, `materials`, `operators`, `utilizadores`
+
+---
+
+## Numeração de Ordens Configurável (concluído 2026-06-29 Sessão 10)
+
+### Armazenamento
+- Config guardada em `tenant.settings.orderNumbering` (campo JSON já existente — sem migração)
+- Sequencial atómico via `prisma.$transaction` — sem duplicados em criação simultânea
+
+### Parâmetros disponíveis
+| Parâmetro | Tipo | Default | Descrição |
+|---|---|---|---|
+| `prefix` | string (max 10) | `OS` | Prefixo da ordem (ex: ORD, FAB) |
+| `separator` | `-` `/` `.` `_` `""` | `-` | Separador entre componentes |
+| `includeYear` | boolean | `true` | Incluir ano (ex: 2026) |
+| `includeMonth` | boolean | `false` | Incluir mês (ex: 06) — só se ano activo |
+| `padding` | 3 / 4 / 5 | `4` | Dígitos do sequencial (001 / 0001 / 00001) |
+| `resetYearly` | boolean | `false` | Reiniciar contador a 1 em 1 de Janeiro |
+| `nextSeq` | number | `1` | Próximo número (override manual para migrações) |
+
+### Exemplos de formatos
+`OS-2026-0001` · `FAB/2026/06/00001` · `ORD.2026.001` · `0001`
+
+### API
+- `GET /api/v1/settings/order-numbering` — config actual + preview da próxima ordem
+- `PATCH /api/v1/settings/order-numbering` — guardar config (admin only)
+
+### Frontend
+- `/settings/order-numbering` — página dedicada com:
+  - Preview em tempo real (card escuro com número grande)
+  - Toggles encadeados (mês só activo se ano activo)
+  - Pills de separador e dígitos
+  - Galeria de 6 exemplos de formatos
+  - Aviso info: alterações só afectam novas ordens
+  - Só admins podem guardar (não-admins vêem aviso amarelo)
+- Card na página `/settings` na nova secção "Ordens de Serviço"
+
+### Ficheiros-chave
+- `apps/api/src/modules/settings/settings.routes.ts` — módulo novo
+- `apps/api/src/modules/orders/orders.service.ts` — `getNextOrderNumber()` substituiu `generateOrderNumber()`
+- `apps/web/src/app/(admin)/settings/order-numbering/page.tsx` — página nova
+
+---
+
 ## Próximos passos
 
 - **Webhook Stripe** para activar/desactivar planos automaticamente
 - **Relatórios avançados** (PDF exportável, filtros por período)
 - **Gestão multi-máquina** (Starter só tem 1 máquina)
+- **Invoicing** — filtros por período e export XLS/PDF
 
 ## Email — Resend (concluído 2026-06-29)
 
