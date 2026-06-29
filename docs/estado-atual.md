@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-06-29 (Sessão 7)
+**Última sessão:** 2026-06-29 (Sessão 8)
 
 ---
 
@@ -185,7 +185,31 @@ Componentes: `Toast`, `Modal`, `Btn`, `Field`, `Input`, `Textarea`, `Select`, `E
 11. ~~**Portal do Solicitador**~~ ✅
 12. ~~**QR Code no PDF**~~ ✅
 13. ~~**Painel Resend / Email**~~ ✅
-14. **Billing / planos** (fase futura)
+14. ~~**Billing / planos**~~ ✅
+
+## Planos e Billing (concluído 2026-06-29 Sessão 8)
+
+| Plano | Preço | Ordens/mês | Operadores | Admins | Máquinas |
+|---|---|---|---|---|---|
+| Trial | grátis 14 dias | 20 total | 3 | 2 | 1 |
+| Starter | 49€/mês | 150 | 5 | 3 | 1 |
+| Pro | 99€/mês | ilimitado | 20 | 10 | 3 |
+| Factory | 199€/mês | ilimitado | ilimitado | ilimitado | ilimitado |
+| Enterprise | consulta | ilimitado | ilimitado | ilimitado | ilimitado |
+
+- Schema: enum `trial` adicionado + `trialEndsAt` + `planExpiresAt` no Tenant
+- `plan-limits.ts`: tabela de limites por plano
+- `check-plan.ts`: enforcement reutilizável (HTTP 402 com código de erro)
+- Enforcement activo em: criação de ordens, operadores, utilizadores, máquinas
+- `GET /api/v1/billing`: uso actual vs limites em tempo real
+- `/billing`: página com barras de uso, alerta de trial, cards de upgrade
+- Sidebar: link "Plano" com ícone de cartão
+
+## Próximos passos
+
+- **Rota super-admin** para alterar plano de tenants (painel interno)
+- **Webhook Stripe** para activar/desactivar planos automaticamente
+- **Reset automático da conta demo** (segunda-feira 08h00)
 
 ## Email — Resend (concluído 2026-06-29)
 
