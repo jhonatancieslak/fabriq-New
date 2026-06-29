@@ -69,6 +69,13 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
       },
     })
     if (!order) return reply.status(404).send({ error: 'Ordem não encontrada' })
+
+    // Solicitadores não vêem valores financeiros
+    if (req.userRole === 'requester') {
+      const { invoicing, ...safe } = order as typeof order & { invoicing: unknown }
+      return safe
+    }
+
     return order
   })
 

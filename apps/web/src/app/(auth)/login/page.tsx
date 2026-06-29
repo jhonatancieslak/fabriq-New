@@ -60,8 +60,10 @@ export default function LoginPage() {
       const data = await api.auth.login(email, password)
       localStorage.setItem('fabriq_token', data.tokens.accessToken)
       localStorage.setItem('fabriq_tenant', data.tenant.slug)
+      localStorage.setItem('fabriq_role', data.user.role)
       addToast('success', `Bem-vindo, ${data.user.name.split(' ')[0]}! A redirecionar…`)
-      setTimeout(() => router.replace('/dashboard'), 900)
+      const dest = data.user.role === 'requester' ? '/req/ordens' : '/dashboard'
+      setTimeout(() => router.replace(dest), 900)
     } catch (err) {
       addToast('error', err instanceof Error ? err.message : 'Credenciais inválidas')
     } finally {
@@ -263,11 +265,19 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-              <p className="text-xs text-slate-400 mb-1">É operador de máquina?</p>
-              <a href="/op/login" className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors">
-                Acesso à PWA do operador →
-              </a>
+            <div className="mt-8 pt-6 border-t border-slate-100 text-center space-y-3">
+              <div>
+                <p className="text-xs text-slate-400 mb-1">É operador de máquina?</p>
+                <a href="/op/login" className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors">
+                  Acesso à PWA do operador →
+                </a>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 mb-1">É solicitador?</p>
+                <a href="/req/login" className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors">
+                  Portal do solicitador →
+                </a>
+              </div>
             </div>
 
             <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-xs text-slate-500">

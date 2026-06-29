@@ -173,6 +173,8 @@ export interface Operator { id: string; name: string; username: string; phone?: 
 export interface OrderStage {
   id: string; stageNumber: number; type: string; status: string
   operator?: { name: string }; machine?: { name: string }
+  startedAt?: string; completedAt?: string
+  photos?: { id: string; filename: string }[]
 }
 export interface OrderItem {
   id: string; description: string; thicknessMm: number; quantityPlanned: number
@@ -182,8 +184,8 @@ export interface Order {
   id: string; orderNumber: string; status: string; authCode: string; accessToken: string
   notes?: string
   client: { name: string }; project: { name: string; code: string }
-  stages: (OrderStage & { startedAt?: string; completedAt?: string })[]; items?: OrderItem[]
-  createdAt: string
+  stages: OrderStage[]; items?: OrderItem[]
+  createdAt: string; completedAt?: string
 }
 export interface OrdersResponse { orders: Order[]; total: number; page: number; pages: number }
 export interface InvoicingRecord {
