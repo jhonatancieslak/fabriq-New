@@ -492,11 +492,67 @@ Ver plano detalhado: `docs/nesting-plano.md`
 - Campo de observação por peça adicionado
 - Largura/Altura com placeholder "auto via DXF"
 
+## Módulo de Nesting — Fase 2 (concluído 2026-06-30 Sessão 15)
+
+### Editor DXF no browser
+
+| Ficheiro | Função |
+|---|---|
+| `apps/web/src/app/(admin)/orders/[id]/dxf-editor/[fileId]/page.tsx` | Página do editor (SVG renderer) |
+| `apps/api/src/modules/files/files.routes.ts` | Endpoints entities + clean |
+| `services/dxf-processor/export_entities.py` | Exporta entidades DXF → JSON |
+| `services/dxf-processor/clean_dxf.py` | Remove entidades e gera DXF limpo |
+
+#### Funcionalidades do editor
+- Viewer SVG nativo (sem Three.js) — sem dependências pesadas
+- Pan com drag, zoom com scroll ou botões; indicador de % zoom
+- Ferramenta Seleccionar (clique / Shift+clique para múltiplas) e Mover (pan)
+- Tecla **Delete** / Backspace para remover entidades seleccionadas
+- Painel lateral: contagem por tipo de entidade (LINE, CIRCLE, ARC…), toggle de camadas
+- Botão "Desfazer" — restaura todas as remoções não guardadas
+- "Guardar DXF limpo" → ficheiro original substituído, preview e dimensões actualizadas na BD
+- Link "Editar" aparece na página de detalhe da ordem (só para DXF/DWG processados)
+
+#### Tipos de entidade suportados
+`LINE`, `CIRCLE`, `ARC`, `LWPOLYLINE`, `POLYLINE`, `SPLINE`, `ELLIPSE`, `TEXT`, `MTEXT`, `DIMENSION`, `INSERT`, `HATCH`, `SOLID`
+
+#### API
+- `GET  /api/v1/files/:fileId/entities` — exporta entidades + bbox para o editor
+- `POST /api/v1/files/:fileId/clean` — body: `{ handles: string[] }` — gera DXF limpo e actualiza registo
+
+---
+
+## Auditoria de Segurança / Qualidade — Sessão 15 (2026-06-30)
+
+### Bugs encontrados e corrigidos (8 ângulos × verificação independente)
+
+| Severidade | Ficheiro | Bug | Correcção |
+|---|---|---|---|
+| 🔴 Crítico | `main.ts` | `JSON.parse('')` em body vazio → 500 em DELETE/PUT (ex: apagar clientes) | `str ? JSON.parse(str) : {}` |
+| 🔴 Crítico | `files.routes.ts` | `py.stderr` não drenado → Python bloqueia quando warnings enchem pipe 64KB → timeout 60s | `py.stderr.on('data', ...)` |
+| 🟠 Alto | `export_entities.py` | SPLINE exportava `control_points` (off-curve) → geometria errada no editor | `ent.flattening(0.1)` |
+| 🟠 Alto | `orders/[id]/page.tsx` | N+1: 1 fetch por peça para ficheiros já incluídos na resposta da ordem | Usa `item.files` directamente |
+| 🟡 Médio | `files.routes.ts` | `setTimeout` nunca cancelado → closures (MBs de JSON) mantidos vivos 60s | `clearTimeout` em `close`/`error` |
+| 🟡 Médio | `files.routes.ts` | `const { handles } = req.body` sem guard → TypeError 500 sem Content-Type | Zod + `req.body ?? {}` |
+| 🟡 Médio | `export_entities.py` | `if v:` em Vec3(0,0,0) falsy → vértice SOLID na origem ignorado | `if v is not None` |
+| 🟡 Médio | `clean_dxf.py` | `remaining` incluía entidades sem handle → contagem inflada | Conta só entidades com handle |
+| 🟡 Médio | `dxf-editor/page.tsx` | UI indicava "pressione Delete" mas sem listener | `useEffect` + `window.addEventListener` |
+| 🟢 Baixo | `dxf-editor/page.tsx` | `setTimeout` de redirect não cancelado no unmount → navegação dupla | `useRef` + cleanup em unmount |
+
+### Melhorias adicionais
+- `api.ts`: tipo `OrderFile` e campo `files?: OrderFile[]` em `OrderItem` (dados já vinham da API)
+- `files.routes.ts`: `unlink()` do DXF original após clean (evita acumulação em disco)
+- `files.routes.ts`: validação Zod no body do `/clean` (max 10.000 handles, max 64 chars cada)
+- `dxf-editor`: `useCallback` desnecessário removido
+
+---
+
 ## Próximos passos (Nesting)
 
-- **Fase 2** — Editor DXF no browser: viewer (`dxf-viewer`/Three.js) + remoção de entidades + re-export DXF limpo
+- ~~**Fase 2**~~ ✅ Editor DXF no browser
 - **Fase 3** — Algoritmo de nesting: bin-packing, aproveitamento %, imagem PNG do layout
 - **Fase 4** — Agrupamento de ordens (OrderBatch), Kanban por máquina/data, QR por ordem
+- **Módulos de parâmetros por processo** — Laser CNC (potência, velocidade, gás, pressão), Quinagem (tonelagem, ângulo, raio), Guilhotina — campos específicos por tipo de máquina para alimentar o nesting
 
 ## Próximos passos (geral)
 
