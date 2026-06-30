@@ -34,11 +34,66 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
       where: { id, tenantId: req.tenantId! },
       include: {
         client: true,
-        serviceOrders: { orderBy: { createdAt: 'desc' }, select: { id: true, orderNumber: true, status: true, createdAt: true } },
+        serviceOrders: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            stages: { include: { machine: { select: { name: true } }, operator: { select: { name: true } } } },
+            items: { include: { material: { select: { name: true } }, files: { where: { processed: true } } } },
+            invoicing: { select: { costValue: true, status: true, type: true } },
+          },
+        },
       },
     })
     if (!project) return reply.status(404).send({ error: 'Obra não encontrada' })
-    return project
+
+    let totalCuttingTimeSecs = 0, totalAreaM2 = 0, totalCost = 0, totalPieces = 0
+    for (const order of project.serviceOrders) {
+      for (const stage of order.stages) totalCuttingTimeSecs += stage.cuttingTime ?? 0
+      for (const item of order.items) {
+        totalPieces += item.quantityPlanned
+        for (const file of item.files) {
+          if (file.areaM2) totalAreaM2 += Number(file.areaM2) * item.quantityPlanned
+        }
+      }
+      if (order.invoicing?.costValue) totalCost += Number(order.invoicing.costValue)
+    }
+
+    return {
+      ...project,
+      metrics: {
+        totalOrders: project.serviceOrders.length,
+        completedOrders: project.serviceOrders.filter(o => ['completed', 'invoiced'].includes(o.status)).length,
+        totalPieces,
+        totalCuttingTimeSecs,
+        totalAreaM2: Number(totalAreaM2.toFixed(6)),
+        totalCost: Number(totalCost.toFixed(2)),
+      },
+    }
+  })
+
+  // POST /projects/:id/complete — marca obra como concluída
+  app.post('/:id/complete', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const project = await app.prisma.project.findFirst({ where: { id, tenantId: req.tenantId! } })
+    if (!project) return reply.status(404).send({ error: 'Obra não encontrada' })
+    if (['completed', 'invoiced'].includes(project.status)) {
+      return reply.status(409).send({ error: 'Obra já está concluída ou faturada' })
+    }
+    const updated = await app.prisma.project.update({ where: { id }, data: { status: 'completed' } })
+    await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
+      action: 'project.completed', entityType: 'project', entityId: id })
+    return updated
+  })
+
+  // POST /projects/:id/reopen — reabre obra
+  app.post('/:id/reopen', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const project = await app.prisma.project.findFirst({ where: { id, tenantId: req.tenantId! } })
+    if (!project) return reply.status(404).send({ error: 'Obra não encontrada' })
+    const updated = await app.prisma.project.update({ where: { id }, data: { status: 'open' } })
+    await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
+      action: 'project.reopened', entityType: 'project', entityId: id })
+    return updated
   })
 
   app.post('/', { preHandler: [requireAuth, requireRole('admin', 'requester')] }, async (req, reply) => {

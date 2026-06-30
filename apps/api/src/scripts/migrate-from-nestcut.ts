@@ -82,7 +82,7 @@ async function main() {
         code:        oo.numero,
         name:        oo.nome,
         description: oo.descricao || null,
-        status:      statusProjectMap[oo.estado] ?? 'open' as never,
+        status:      (statusProjectMap[oo.estado] ?? 'open') as never,
         createdById: adminId,
         createdAt:   oo.criado_em ? new Date(oo.criado_em) : new Date(),
       },
@@ -118,7 +118,7 @@ async function main() {
     const existing = existingMats.find(m => m.name.toLowerCase().trim() === fullName.toLowerCase().trim())
     if (existing) { materialMap.set(om.id, existing.id); continue }
     if (DRY_RUN)  { materialMap.set(om.id, `dr-${om.id}`); console.log(`  [DRY] ${fullName}`); continue }
-    const nm = await prisma.material.create({ data: { tenantId, name: fullName, type: matTypeMap[om.tipo] ?? 'other' as never, isActive: om.ativo ?? true } })
+    const nm = await prisma.material.create({ data: { tenantId, name: fullName, type: (matTypeMap[om.tipo] ?? 'other') as never, isActive: om.ativo ?? true } })
     materialMap.set(om.id, nm.id)
     console.log(`  ✓ ${nm.name}`)
   }

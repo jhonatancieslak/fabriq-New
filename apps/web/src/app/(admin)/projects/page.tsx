@@ -3,6 +3,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { Plus, FolderOpen, User } from 'lucide-react'
 import { api, type Project, type Client } from '@/lib/api'
 import { confirmDelete } from '@/lib/confirm'
@@ -227,6 +228,7 @@ export default function ProjectsPage() {
             </span></Td>
             <Td>
               <div className="flex items-center gap-1.5">
+                <Link href={`/projects/${p.id}`}><ActionBtn variant="view" onClick={() => {}} title="Ver Detalhe" /></Link>
                 <ActionBtn variant="edit"   onClick={() => setModal(p)} title="Editar" />
                 <ActionBtn variant="delete" onClick={() => handleDelete(p)} title="Remover" />
               </div>

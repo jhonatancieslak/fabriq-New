@@ -200,7 +200,7 @@ export interface Requester { id: string; name: string; email?: string; phone?: s
 export interface OrderStage {
   id: string; stageNumber: number; type: string; status: string
   operator?: { name: string }; machine?: { name: string }
-  startedAt?: string; completedAt?: string
+  startedAt?: string; completedAt?: string; cuttingTime?: number; notes?: string
   photos?: { id: string; filename: string }[]
 }
 export interface OrderFile {
@@ -225,10 +225,12 @@ export interface Order {
   id: string; orderNumber: string; status: string; authCode: string; accessToken: string
   notes?: string; sheetBatch?: string; processes?: string[]
   requestedAt?: string; scheduledAt?: string; isUrgent?: boolean
-  client?: { name: string }; project?: { name: string; code: string }
+  clientId?: string; projectId?: string
+  client?: { name: string }; project?: { id: string; name: string; code: string }
   requester?: { name: string }
   stages: OrderStage[]; items?: OrderItem[]; sheets?: OrderSheet[]
   createdAt: string; completedAt?: string
+  invoicing?: { id: string; status: string; type: string; costValue?: number; noInvoice?: boolean }
 }
 export interface OrdersResponse { orders: Order[]; total: number; page: number; pages: number }
 export interface InvoicingRecord {

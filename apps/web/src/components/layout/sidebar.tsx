@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
   Settings, BarChart3, FileText, Zap, Cpu, UserCog, Package,
-  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight,
+  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, Library,
 } from 'lucide-react'
 
 const nav = [
@@ -16,6 +16,7 @@ const nav = [
   { href: '/orders',       label: 'Ordens',         icon: ClipboardList },
   { href: '/clients',      label: 'Clientes',       icon: Users },
   { href: '/projects',     label: 'Obras',          icon: FolderOpen },
+  { href: '/media',        label: 'Biblioteca',     icon: Library },
   { href: '/machines',     label: 'Máquinas',       icon: Cpu },
   { href: '/materials',    label: 'Materiais',      icon: Package },
   { href: '/operators',    label: 'Operadores',     icon: HardHat },

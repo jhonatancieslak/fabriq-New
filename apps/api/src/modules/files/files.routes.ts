@@ -2,7 +2,7 @@
 
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { requireAuth } from '../../shared/middleware/auth.js'
+import { requireAuth, requireRole } from '../../shared/middleware/auth.js'
 import { writeFile, mkdir, unlink } from 'fs/promises'
 import { spawn } from 'child_process'
 import { join, extname, dirname, resolve } from 'path'
@@ -294,4 +294,63 @@ export async function filesRoutes(app: FastifyInstance) {
       }
     }
   )
+
+  // GET /api/v1/media — biblioteca de ficheiros DXF cortados
+  app.get('/media', {
+    preHandler: [requireAuth, requireRole('admin', 'financial', 'viewer')],
+  }, async (req) => {
+    const { search, projectId, clientId, page = '1', limit = '30' } = req.query as Record<string, string>
+    const skip = (Number(page) - 1) * Number(limit)
+
+    const where = {
+      tenantId: req.tenantId!,
+      processed: true,
+      fileType: { in: ['dxf', 'dwg'] },
+      ...(search ? { originalName: { contains: search, mode: 'insensitive' as const } } : {}),
+      orderItem: {
+        ...(projectId ? { projectId } : {}),
+        ...(clientId ? { project: { clientId } } : {}),
+      },
+    }
+
+    const [files, total] = await Promise.all([
+      app.prisma.orderFile.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        orderBy: { createdAt: 'desc' },
+        include: {
+          orderItem: {
+            select: {
+              description: true,
+              quantityPlanned: true,
+              thicknessMm: true,
+              material: { select: { name: true } },
+              project: { select: { id: true, code: true, name: true, client: { select: { name: true } } } },
+            },
+          },
+        },
+      }),
+      app.prisma.orderFile.count({ where }),
+    ])
+
+    return {
+      files: files.map(f => ({
+        id: f.id,
+        originalName: f.originalName,
+        fileType: f.fileType,
+        sizeBytes: f.sizeBytes,
+        previewUrl: f.previewPath ? `/uploads/${f.previewPath}` : null,
+        areaM2: f.areaM2 ? Number(f.areaM2) : null,
+        bboxWidthMm: f.bboxWidthMm ? Number(f.bboxWidthMm) : null,
+        bboxHeightMm: f.bboxHeightMm ? Number(f.bboxHeightMm) : null,
+        perimeterMm: f.perimeterMm ? Number(f.perimeterMm) : null,
+        createdAt: f.createdAt,
+        item: f.orderItem,
+      })),
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / Number(limit)),
+    }
+  })
 }
