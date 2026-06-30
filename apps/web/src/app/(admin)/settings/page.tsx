@@ -3,7 +3,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Cpu, Package, HardHat, UserCog, MessageSquare, Mail, ArrowRight, Settings, Hash } from 'lucide-react'
+import { Cpu, Package, HardHat, UserCog, MessageSquare, Mail, ArrowRight, Settings, Hash, DollarSign } from 'lucide-react'
 import { T, PageHeader } from '@/components/ui/admin-ui'
 
 interface NavItem { href: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; desc: string; badge?: string }
@@ -19,9 +19,10 @@ const sections: NavSection[] = [
   {
     title: 'Produção',
     items: [
-      { href: '/machines',   icon: Cpu,     label: 'Máquinas',   desc: 'Equipamentos, tipos e parâmetros de custo' },
-      { href: '/materials',  icon: Package, label: 'Materiais',  desc: 'Catálogo de materiais e custos por kg / m²' },
-      { href: '/operators',  icon: HardHat, label: 'Operadores', desc: 'QR code de acesso à PWA do operador' },
+      { href: '/machines',              icon: Cpu,         label: 'Máquinas',          desc: 'Equipamentos, tipos e parâmetros de custo' },
+      { href: '/materials',             icon: Package,     label: 'Materiais',         desc: 'Catálogo de materiais e custos por kg / m²' },
+      { href: '/operators',             icon: HardHat,     label: 'Operadores',        desc: 'QR code de acesso à PWA do operador' },
+      { href: '/settings/cost-table',   icon: DollarSign,  label: 'Tabela de Custos',  desc: 'Preço €/m² por material e espessura — cálculo automático' },
     ],
   },
   {

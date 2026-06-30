@@ -363,9 +363,11 @@ export default function NewOrderPage() {
   // Execução
   const [operatorId,    setOperatorId]    = useState('')
   const [requesterId,   setRequesterId]   = useState('')
-  const [drawingTime,   setDrawingTime]   = useState('')
-  const [cuttingTime,   setCuttingTime]   = useState('')
-  const [sheetBatch,    setSheetBatch]    = useState('')
+  const [drawingTime,    setDrawingTime]    = useState('')
+  const [estimatedTime,  setEstimatedTime]  = useState('')  // tempo estimado CypeCut HH:MM:SS
+  const [cuttingTime,    setCuttingTime]    = useState('')
+  const [sheetBatch,     setSheetBatch]     = useState('')
+  const [sheetClientOwned, setSheetClientOwned] = useState(false)
   const [status,        setStatus]        = useState('pending')
   const [orderNotes,    setOrderNotes]    = useState('')
 
@@ -450,8 +452,10 @@ export default function NewOrderPage() {
         requestedAt:  requestedAt ? new Date(requestedAt).toISOString() : undefined,
         scheduledAt:  scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
         isUrgent,
-        notes:        orderNotes || undefined,
-        sheetBatch:   sheetBatch || undefined,
+        notes:             orderNotes || undefined,
+        sheetBatch:        sheetBatch || undefined,
+        sheetClientOwned:  sheetClientOwned || undefined,
+        estimatedTimeSecs: estimatedTime ? parseTime(estimatedTime) : undefined,
         processes,
         sheets: (sheet.materialId || sheet.widthMm || sheet.lengthMm) ? [{
           origin:      sheet.origin,
@@ -701,12 +705,26 @@ export default function NewOrderPage() {
           <Field label="Colada da Chapa" hint="— opcional">
             <Input value={sheetBatch} onChange={setSheetBatch} placeholder="ex: Colada A, Mesa 2…" />
           </Field>
-          <Field label="Tempo de Desenho" hint="HH:MM:SS">
+          <Field label="Tempo Estimado (CypeCut)" hint="HH:MM:SS — do software de nesting">
+            <input value={estimatedTime} onChange={e => setEstimatedTime(e.target.value)}
+              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+              style={{ background: T.bg, border: `1px solid ${T.border}`, color: T.text }}
+              placeholder="00:00:00" />
+          </Field>
+          <Field label="Tempo de Desenho/Programação" hint="HH:MM:SS">
             <input value={drawingTime} onChange={e => setDrawingTime(e.target.value)}
               className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
               style={{ background: T.bg, border: `1px solid ${T.border}`, color: T.text }}
               placeholder="00:00:00" />
           </Field>
+          <div className="col-span-2 flex items-center gap-3 p-3 rounded-xl border border-zinc-700 bg-zinc-900/50">
+            <input type="checkbox" id="sheetClientOwned" checked={sheetClientOwned}
+              onChange={e => setSheetClientOwned(e.target.checked)}
+              className="w-4 h-4 accent-yellow-500" />
+            <label htmlFor="sheetClientOwned" className="text-sm cursor-pointer" style={{ color: T.text }}>
+              Chapa fornecida pelo cliente (sem custo de material na faturação)
+            </label>
+          </div>
           <Field label="Tempo Real de Corte" hint="— preencher após conclusão">
             <Input value={cuttingTime} onChange={setCuttingTime} placeholder="00:00:00" disabled />
           </Field>

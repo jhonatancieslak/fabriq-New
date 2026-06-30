@@ -16,8 +16,13 @@ export const createOrderSchema = z.object({
   notes:       z.string().optional(),
   isUrgent:    z.boolean().optional(),
 
-  // Colada
-  sheetBatch: z.string().optional(),
+  // Colada / chapas
+  sheetBatch:       z.string().optional(),
+  sheetClientOwned: z.boolean().optional(),
+
+  // Tempos
+  estimatedTimeSecs: z.number().int().positive().optional(),
+  drawingTimeSecs:   z.number().int().positive().optional(),
 
   // Processos selecionados
   processes: z.array(z.enum(PROCESS_TYPES)).optional(),

@@ -8,25 +8,26 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
   Settings, BarChart3, FileText, Zap, Cpu, UserCog, Package,
-  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, Library, Kanban,
+  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, Library, Kanban, Factory,
 } from 'lucide-react'
 
 const nav = [
-  { href: '/dashboard',    label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/orders',       label: 'Ordens',         icon: ClipboardList },
-  { href: '/kanban',       label: 'Kanban',         icon: Kanban },
-  { href: '/clients',      label: 'Clientes',       icon: Users },
-  { href: '/projects',     label: 'Obras',          icon: FolderOpen },
-  { href: '/media',        label: 'Biblioteca',     icon: Library },
-  { href: '/machines',     label: 'Máquinas',       icon: Cpu },
-  { href: '/materials',    label: 'Materiais',      icon: Package },
-  { href: '/operators',    label: 'Operadores',     icon: HardHat },
-  { href: '/invoicing',    label: 'Faturação',      icon: FileText },
-  { href: '/reports',      label: 'Relatórios',     icon: BarChart3 },
-  { href: '/utilizadores', label: 'Utilizadores',   icon: UserCog },
-  { href: '/security',     label: 'Segurança',      icon: ShieldAlert },
-  { href: '/billing',      label: 'Plano',          icon: CreditCard },
-  { href: '/settings',     label: 'Configurações',  icon: Settings },
+  { href: '/dashboard',    label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/orders',       label: 'Ordens',           icon: ClipboardList },
+  { href: '/kanban',       label: 'Kanban',           icon: Kanban },
+  { href: '/clients',      label: 'Clientes',         icon: Users },
+  { href: '/projects',     label: 'Obras',            icon: FolderOpen },
+  { href: '/media',        label: 'Biblioteca',       icon: Library },
+  { href: '/machines',     label: 'Máquinas',         icon: Cpu },
+  { href: '/materials',    label: 'Materiais',        icon: Package },
+  { href: '/operators',    label: 'Operadores',       icon: HardHat },
+  { href: '/invoicing',    label: 'Faturação',        icon: FileText },
+  { href: '/production',   label: 'Produção',         icon: Factory },
+  { href: '/reports',      label: 'Relatórios',       icon: BarChart3 },
+  { href: '/utilizadores', label: 'Utilizadores',     icon: UserCog },
+  { href: '/security',     label: 'Segurança',        icon: ShieldAlert },
+  { href: '/billing',      label: 'Plano',            icon: CreditCard },
+  { href: '/settings',     label: 'Configurações',    icon: Settings },
 ]
 
 export function Sidebar() {
