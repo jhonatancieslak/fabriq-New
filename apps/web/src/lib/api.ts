@@ -120,6 +120,13 @@ export const api = {
     get:  (id: string) => request<Operator>(`/api/v1/operators/${id}`),
   },
 
+  requesters: {
+    list: () => request<Requester[]>('/api/v1/requesters'),
+    create: (data: Partial<Requester>) => request<Requester>('/api/v1/requesters', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Requester>) => request<Requester>(`/api/v1/requesters/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request<void>(`/api/v1/requesters/${id}`, { method: 'DELETE' }),
+  },
+
   dashboard: {
     stats: () => request<{
       orders: { total: number; pending: number; inProgress: number; completed: number; invoiced: number; createdToday: number; createdMonth: number }
@@ -189,6 +196,7 @@ export interface Machine {
 }
 export interface Material { id: string; name: string; type: string; isActive?: boolean; costPerKg?: number | null; costPerM2?: number | null }
 export interface Operator { id: string; name: string; username: string; phone?: string }
+export interface Requester { id: string; name: string; email?: string; phone?: string; notifyWhatsapp?: boolean; notifyEmail?: boolean }
 export interface OrderStage {
   id: string; stageNumber: number; type: string; status: string
   operator?: { name: string }; machine?: { name: string }
@@ -204,13 +212,22 @@ export interface OrderFile {
 export interface OrderItem {
   id: string; description: string; thicknessMm: number; quantityPlanned: number
   widthMm?: number; heightMm?: number; material?: { name: string }
+  notes?: string; projectId?: string; clientFreeText?: string
+  project?: { id: string; name: string; code: string; client?: { name: string } }
   files?: OrderFile[]
+}
+export interface OrderSheet {
+  id: string; origin: 'ours' | 'offcut' | 'client'
+  widthMm?: number; lengthMm?: number; thicknessMm?: number
+  material?: { name: string }
 }
 export interface Order {
   id: string; orderNumber: string; status: string; authCode: string; accessToken: string
-  notes?: string
-  client: { name: string }; project: { name: string; code: string }
-  stages: OrderStage[]; items?: OrderItem[]
+  notes?: string; sheetBatch?: string; processes?: string[]
+  requestedAt?: string; scheduledAt?: string; isUrgent?: boolean
+  client?: { name: string }; project?: { name: string; code: string }
+  requester?: { name: string }
+  stages: OrderStage[]; items?: OrderItem[]; sheets?: OrderSheet[]
   createdAt: string; completedAt?: string
 }
 export interface OrdersResponse { orders: Order[]; total: number; page: number; pages: number }

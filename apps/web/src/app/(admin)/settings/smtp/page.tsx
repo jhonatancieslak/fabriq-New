@@ -97,15 +97,13 @@ export default function SmtpSettingsPage() {
         ) : status ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              {status.email.configured
-                ? <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#22C55E' }} />
-                : <XCircle className="h-5 w-5 flex-shrink-0" style={{ color: '#EF4444' }} />
-              }
+              <div className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: status.email.configured ? '#22C55E' : '#6B7280' }} />
               <div>
                 <p className="text-sm font-semibold" style={{ color: T.text }}>
                   {status.email.configured ? 'Email configurado' : 'Email não configurado'}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: T.faint }}>
+                <p className="text-xs mt-0.5" style={{ color: T.muted }}>
                   {status.email.provider}
                   {status.email.from && <span> · Remetente: {status.email.from}</span>}
                 </p>

@@ -73,6 +73,17 @@ export async function clientsRoutes(app: FastifyInstance): Promise<void> {
     const exists = await app.prisma.client.findFirst({ where: { id, tenantId: req.tenantId! } })
     if (!exists) return reply.status(404).send({ error: 'Cliente não encontrado' })
 
+    // Verificar dependências
+    const [ordersCount, projectsCount] = await Promise.all([
+      app.prisma.serviceOrder.count({ where: { clientId: id, tenantId: req.tenantId! } }),
+      app.prisma.project.count({ where: { clientId: id, tenantId: req.tenantId! } }),
+    ])
+    if (ordersCount > 0 || projectsCount > 0) {
+      return reply.status(409).send({
+        error: `Não é possível remover: cliente tem ${ordersCount} ordem(ns) e ${projectsCount} obra(s) associadas. Remova-as primeiro.`,
+      })
+    }
+
     await app.prisma.client.delete({ where: { id } })
     await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
       action: 'client.deleted', entityType: 'client', entityId: id })

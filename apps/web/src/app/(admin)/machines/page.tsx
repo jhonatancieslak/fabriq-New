@@ -41,13 +41,17 @@ interface MachinesResponse { machines: MachineExt[]; total: number; page: number
 
 interface FormState {
   name: string; type: string; model: string; serial: string
-  costPerHour: string; minBilledMinutes: string; costPerMinAfterMin: string
+  costPerHour: string; costPerMinute: string
+  minBilledMinutes: string; minBilledCost: string
+  costPerMinAfterMin: string
   materialCostEnabled: boolean; marginPercent: string
 }
 
 const EMPTY_FORM: FormState = {
   name: '', type: 'laser_cnc', model: '', serial: '',
-  costPerHour: '', minBilledMinutes: '', costPerMinAfterMin: '',
+  costPerHour: '', costPerMinute: '',
+  minBilledMinutes: '', minBilledCost: '',
+  costPerMinAfterMin: '',
   materialCostEnabled: false, marginPercent: '',
 }
 
@@ -65,7 +69,9 @@ function MachineModal({ machine, onClose, onDone }: {
   const [form, setForm] = useState<FormState>(machine ? {
     name: machine.name, type: machine.type, model: machine.model ?? '', serial: machine.serial ?? '',
     costPerHour: machine.costPerHour != null ? String(machine.costPerHour) : '',
+    costPerMinute: (machine as MachineExt & { costPerMinute?: number }).costPerMinute != null ? String((machine as MachineExt & { costPerMinute?: number }).costPerMinute) : '',
     minBilledMinutes: machine.minBilledMinutes != null ? String(machine.minBilledMinutes) : '',
+    minBilledCost: (machine as MachineExt & { minBilledCost?: number }).minBilledCost != null ? String((machine as MachineExt & { minBilledCost?: number }).minBilledCost) : '',
     costPerMinAfterMin: machine.costPerMinAfterMin != null ? String(machine.costPerMinAfterMin) : '',
     materialCostEnabled: machine.materialCostEnabled ?? false,
     marginPercent: machine.marginPercent != null ? String(machine.marginPercent) : '',
@@ -82,14 +88,17 @@ function MachineModal({ machine, onClose, onDone }: {
     setLoading(true); setError('')
     try {
       const payload = {
-        name: form.name, type: form.type,
+        name: form.name.trim(), type: form.type,
         model: form.model || undefined, serial: form.serial || undefined,
         costPerHour: form.costPerHour ? Number(form.costPerHour) : null,
+        costPerMinute: form.costPerMinute ? Number(form.costPerMinute) : null,
         minBilledMinutes: form.minBilledMinutes ? Number(form.minBilledMinutes) : null,
+        minBilledCost: form.minBilledCost ? Number(form.minBilledCost) : null,
         costPerMinAfterMin: form.costPerMinAfterMin ? Number(form.costPerMinAfterMin) : null,
         materialCostEnabled: form.materialCostEnabled,
         marginPercent: form.marginPercent ? Number(form.marginPercent) : null,
       }
+      if (!payload.name) { setError('Nome é obrigatório'); return }
       if (isEdit && machine) {
         await api.machines.update(machine.id, payload)
       } else {
@@ -154,18 +163,35 @@ function MachineModal({ machine, onClose, onDone }: {
       {tab === 'cost' && (
         <>
           <div className="rounded-xl px-4 py-3 text-xs" style={{ background: T.bg, color: T.subtle }}>
-            Estes valores são usados para calcular automaticamente o custo sugerido na faturação com base no tempo de corte registado.
+            Usado para calcular automaticamente o custo sugerido na faturação.
+            Ex. PipeSolutions: até 4 min = €11 fixo; após 4 min = €2,65/min.
           </div>
+
+          {/* Custo base */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Custo / Hora (€)" hint="— opcional">
-              <Input value={form.costPerHour} onChange={set('costPerHour')} placeholder="Ex: 60.00" type="number" />
+              <Input value={form.costPerHour} onChange={v => { set('costPerHour')(v); if (v) set('costPerMinute')('') }}
+                placeholder="Ex: 60.00" type="number" />
             </Field>
-            <Field label="Tempo mínimo (min)" hint="— opcional">
-              <Input value={form.minBilledMinutes} onChange={set('minBilledMinutes')} placeholder="Ex: 15" type="number" />
+            <Field label="Custo / Minuto (€)" hint="— alternativa">
+              <Input value={form.costPerMinute} onChange={v => { set('costPerMinute')(v); if (v) set('costPerHour')('') }}
+                placeholder="Ex: 1.00" type="number" />
             </Field>
           </div>
+
+          {/* Mínimo */}
+          <p className="text-xs font-semibold mt-1" style={{ color: T.muted }}>Cobrança mínima</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Tempo mínimo (min)" hint="— opcional">
+              <Input value={form.minBilledMinutes} onChange={set('minBilledMinutes')} placeholder="Ex: 4" type="number" />
+            </Field>
+            <Field label="Custo fixo no mínimo (€)" hint="— opcional">
+              <Input value={form.minBilledCost} onChange={set('minBilledCost')} placeholder="Ex: 11.00" type="number" />
+            </Field>
+          </div>
+
           <Field label="Custo / min após mínimo (€)" hint="— opcional">
-            <Input value={form.costPerMinAfterMin} onChange={set('costPerMinAfterMin')} placeholder="Ex: 1.20" type="number" />
+            <Input value={form.costPerMinAfterMin} onChange={set('costPerMinAfterMin')} placeholder="Ex: 2.65" type="number" />
           </Field>
           <Field label="Margem (%)" hint="— opcional">
             <Input value={form.marginPercent} onChange={set('marginPercent')} placeholder="Ex: 20" type="number" />
@@ -198,11 +224,8 @@ export default function MachinesPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [includeInactive, setIncludeInactive] = useState(false)
-  const [modal, setModal] = useState<MachineExt | null | 'new'>('new' as never)
+  const [modal, setModal] = useState<MachineExt | null | 'new'>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
-
-  // fix initial state
-  useEffect(() => { setModal(null) }, [])
 
   function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
     setToast({ msg, type })
@@ -245,7 +268,7 @@ export default function MachinesPage() {
         title="Máquinas"
         sub={data ? `${data.total} máquina${data.total !== 1 ? 's' : ''}` : ''}
         action={
-          <Btn onClick={() => setModal({} as MachineExt)}>
+          <Btn onClick={() => setModal('new')}>
             <Plus className="h-4 w-4" /> Nova Máquina
           </Btn>
         }
@@ -329,9 +352,13 @@ export default function MachinesPage() {
 
       {modal !== null && (
         <MachineModal
-          machine={Object.keys(modal as object).length === 0 ? null : modal as MachineExt}
+          machine={modal === 'new' ? null : modal as MachineExt}
           onClose={() => setModal(null)}
-          onDone={() => { setModal(null); showToast(modal && Object.keys(modal as object).length > 0 ? 'Máquina actualizada' : 'Máquina criada'); load() }}
+          onDone={() => {
+            setModal(null)
+            showToast(modal !== 'new' ? 'Máquina actualizada' : 'Máquina criada')
+            load()
+          }}
         />
       )}
     </div>

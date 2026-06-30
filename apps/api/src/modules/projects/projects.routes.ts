@@ -75,8 +75,11 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
     const exists = await app.prisma.project.findFirst({ where: { id, tenantId: req.tenantId! } })
     if (!exists) return reply.status(404).send({ error: 'Obra não encontrada' })
 
-    // Desvincular ordens antes de apagar
-    await app.prisma.serviceOrder.updateMany({ where: { projectId: id, tenantId: req.tenantId! }, data: { projectId: null } })
+    // Desvincular ordens antes de apagar (notas de auditoria no campo notes)
+    const ordersToUpdate = await app.prisma.serviceOrder.findMany({ where: { projectId: id, tenantId: req.tenantId! }, select: { id: true } })
+    if (ordersToUpdate.length > 0) {
+      return reply.status(409).send({ error: `Não é possível remover: obra tem ${ordersToUpdate.length} ordem(ns) associada(s). Remova-as primeiro.` })
+    }
     await app.prisma.project.delete({ where: { id } })
     await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
       action: 'project.deleted', entityType: 'project', entityId: id })

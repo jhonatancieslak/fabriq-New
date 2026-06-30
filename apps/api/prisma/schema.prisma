@@ -109,6 +109,8 @@ enum ProcessType {
   laser_cut
   guillotine
   bending
+  welding
+  assembly
   other
 }
 
@@ -273,6 +275,7 @@ model Project {
   tenant        Tenant         @relation(fields: [tenantId], references: [id])
   client        Client         @relation(fields: [clientId], references: [id])
   serviceOrders ServiceOrder[]
+  orderItems    OrderItem[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -292,8 +295,10 @@ model Machine {
   createdAt DateTime    @default(now()) @map("created_at")
 
   // Parâmetros de custo para cálculo automático de faturação
-  costPerHour          Decimal? @map("cost_per_hour")           // €/hora base
+  costPerHour          Decimal? @map("cost_per_hour")           // €/hora base (alternativa ao por minuto)
+  costPerMinute        Decimal? @map("cost_per_minute")         // €/minuto base
   minBilledMinutes     Int?     @map("min_billed_minutes")      // tempo mínimo cobrado (min)
+  minBilledCost        Decimal? @map("min_billed_cost")         // custo fixo até ao mínimo (ex: €11)
   costPerMinAfterMin   Decimal? @map("cost_per_min_after_min")  // €/min após o mínimo
   materialCostEnabled  Boolean  @default(false) @map("material_cost_enabled")
   marginPercent        Decimal? @map("margin_percent")          // margem sobre o custo total (%)
@@ -331,9 +336,10 @@ model ServiceOrder {
   id           String      @id @default(uuid())
   tenantId     String      @map("tenant_id")
   orderNumber  String      @unique @map("order_number")
-  projectId    String      @map("project_id")
-  clientId     String      @map("client_id")
+  projectId    String?     @map("project_id")
+  clientId     String?     @map("client_id")
   requesterId  String?     @map("requester_id")
+  requestedAt  DateTime?   @map("requested_at")
   status       OrderStatus @default(draft)
   authCode     String      @unique @map("auth_code")
   accessToken  String      @unique @default(uuid()) @map("access_token")
@@ -352,8 +358,8 @@ model ServiceOrder {
   isUrgent        Boolean  @default(false) @map("is_urgent")
 
   tenant    Tenant      @relation(fields: [tenantId], references: [id])
-  project   Project     @relation(fields: [projectId], references: [id])
-  client    Client      @relation(fields: [clientId], references: [id])
+  project   Project?    @relation(fields: [projectId], references: [id])
+  client    Client?     @relation(fields: [clientId], references: [id])
   requester Requester?  @relation(fields: [requesterId], references: [id])
   stages    OrderStage[]
   items     OrderItem[]
@@ -419,8 +425,13 @@ model OrderItem {
   perimeterMm    Decimal? @map("perimeter_mm")
   notes          String?  // observação específica desta peça
 
+  // Override por peça
+  projectId      String?  @map("project_id")   // obra específica desta peça
+  clientFreeText String?  @map("client_free_text") // cliente avulso (sem obra)
+
   serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id])
   material     Material     @relation(fields: [materialId], references: [id])
+  project      Project?     @relation(fields: [projectId], references: [id])
   files        OrderFile[]
 
   @@index([serviceOrderId])

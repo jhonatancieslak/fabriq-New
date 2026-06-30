@@ -132,8 +132,8 @@ export async function generateCuttingSheetHtml(
 <div class="section">
   <div class="section-title">Cliente e Obra</div>
   <div class="grid-2">
-    <div class="field"><label>Cliente</label><span>${order.client.name}</span></div>
-    <div class="field"><label>Obra</label><span>${order.project.code} — ${order.project.name}</span></div>
+    <div class="field"><label>Cliente</label><span>${order.client?.name ?? '—'}</span></div>
+    <div class="field"><label>Obra</label><span>${order.project ? `${order.project.code} — ${order.project.name}` : '—'}</span></div>
     ${order.requester ? `<div class="field"><label>Solicitador</label><span>${order.requester.name}</span></div>` : ''}
     ${order.notes ? `<div class="field"><label>Observações gerais</label><span>${order.notes}</span></div>` : ''}
   </div>

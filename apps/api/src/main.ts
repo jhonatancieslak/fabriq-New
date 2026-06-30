@@ -13,6 +13,7 @@ import { UPLOADS_DIR } from './shared/config.js'
 
 import { authRoutes } from './modules/auth/auth.routes.js'
 import { registerRoutes } from './modules/auth/register.routes.js'
+import { requestersRoutes } from './modules/requesters/requesters.routes.js'
 import { clientsRoutes } from './modules/clients/clients.routes.js'
 import { projectsRoutes } from './modules/projects/projects.routes.js'
 import { operatorsRoutes } from './modules/operators/operators.routes.js'
@@ -80,6 +81,7 @@ async function bootstrap() {
   await app.register(registerRoutes,  { prefix: '/api/v1/auth' })
   await app.register(clientsRoutes,   { prefix: '/api/v1/clients' })
   await app.register(projectsRoutes,  { prefix: '/api/v1/projects' })
+await app.register(requestersRoutes, { prefix: '/api/v1/requesters' })
   await app.register(operatorsRoutes, { prefix: '/api/v1/operators' })
   await app.register(ordersRoutes,    { prefix: '/api/v1/orders' })
   await app.register(machinesRoutes,      { prefix: '/api/v1/machines' })

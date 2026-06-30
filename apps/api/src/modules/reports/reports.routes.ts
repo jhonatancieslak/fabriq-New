@@ -72,7 +72,7 @@ export async function reportsRoutes(app: FastifyInstance): Promise<void> {
     }
 
     // Top clientes — enriquecer com nome
-    const clientIds = [...new Set(orders.map(o => o.clientId))]
+    const clientIds = [...new Set(orders.map(o => o.clientId).filter((id): id is string => !!id))]
     const clientsData = await app.prisma.client.findMany({
       where: { id: { in: clientIds }, tenantId },
       select: { id: true, name: true },
@@ -81,7 +81,7 @@ export async function reportsRoutes(app: FastifyInstance): Promise<void> {
     const topClients = clients
       .sort((a, b) => b._count.id - a._count.id)
       .slice(0, 5)
-      .map(c => ({ name: clientMap[c.clientId] ?? 'Desconhecido', orders: c._count.id }))
+      .map(c => ({ name: c.clientId ? (clientMap[c.clientId] ?? 'Desconhecido') : 'Avulso', orders: c._count.id }))
 
     // Top máquinas
     const machineIds = machines.filter(m => m.machineId).map(m => m.machineId!)
