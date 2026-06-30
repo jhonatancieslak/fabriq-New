@@ -599,12 +599,64 @@ Ver plano detalhado: `docs/nesting-plano.md`
 
 ---
 
+## Módulo de Nesting — Fase 3 (concluído 2026-06-30 Sessão 17)
+
+### Algoritmo (`services/dxf-processor/nest.py`)
+- Shelf First-Fit Decreasing (SFFD) com rotação automática 90°
+- Input JSON: peças (w, h, qty, label, id), dimensões da chapa, gap
+- Output: sheetsNeeded, utilizationPct, unplacedPieces, layout com coordenadas (x, y, w, h) por chapa
+- Preview PNG via matplotlib: fundo preto, peças coloridas por tipo, labels
+
+### API
+- `POST /api/v1/orders/:orderId/nesting` — calcula e guarda NestingJob (substitui job anterior)
+- `GET  /api/v1/orders/:orderId/nesting` — busca último job
+
+### Frontend (`/orders/[id]/nesting`)
+- KPIs: chapas necessárias, aproveitamento %, peças/chapa, peças sem lugar
+- Barra de aproveitamento com cor dinâmica (verde/amarelo/vermelho)
+- Canvas SVG inline com layout proporcional por chapa (ou PNG do servidor)
+- Legenda de peças com cor por tipo
+- Tamanhos rápidos de chapa (1000×2000, 1250×2500, 1500×3000, 2000×4000)
+- Aviso se peças sem dimensões DXF
+- Botão "Nesting" adicionado ao detalhe da ordem
+
 ## Próximos passos (Nesting)
 
 - ~~**Fase 2**~~ ✅ Editor DXF no browser
-- **Fase 3** — Algoritmo de nesting: bin-packing, aproveitamento %, imagem PNG do layout
+- ~~**Fase 3**~~ ✅ Algoritmo de nesting: bin-packing, aproveitamento %, imagem PNG do layout
 - **Fase 4** — Agrupamento de ordens (OrderBatch), Kanban por máquina/data, QR por ordem
 - **Módulos de parâmetros por processo** — Laser CNC (potência, velocidade, gás, pressão), Quinagem (tonelagem, ângulo, raio), Guilhotina — campos específicos por tipo de máquina para alimentar o nesting
+
+## Caminho A — Produção & KPIs Reais (concluído 2026-06-30 Sessão 17)
+
+### Schema (db push aplicado)
+- `ServiceOrder`: campos `estimatedTimeSecs` (tempo CypeCut) e `sheetClientOwned` (chapa do cliente)
+- Novo modelo `CostTable`: preço €/m² por `materialType` + `thicknessMm` (unique por tenant+mat+esp)
+
+### Motor de Custo (`apps/api/src/shared/services/cost.service.ts`)
+- **Hierarquia de lookup**: CostTable exacta (mat+esp) → fallback (mat+esp=0) → Material.costPerM2
+- **Custo mínimo**: se tempo ≤ minBilledMinutes → cobra minBilledCost (ex: €11 mínimo)
+- **Margem %**: sobre o total corte+material
+- Funções: `calculateCost(input)` e `calculateOrderCost(tenantId, orderId)` reutilizáveis
+
+### API
+- `GET/POST/PATCH/DELETE /api/v1/cost-table` — CRUD tabela de custos
+- `POST /api/v1/cost-table/simulate` — simulador de custo instantâneo
+- `GET /api/v1/production?from=&to=` — relatório com 4 blocos:
+  - Produção por operador (ordens, peças, área, tempo, desvio %)
+  - Ocupação semanal da máquina (% de 8h/dia × 5 dias)
+  - Consumo de chapa por material+espessura (m² ranking)
+  - Top ordens fora do estimado (desvio % ordenado)
+
+### Frontend
+- `/production` — dashboard de produção com 4 tabs + export XLS/print
+- `/settings/cost-table` — CRUD agrupado por material, fallback visível
+- Nova ordem: campo "Tempo Estimado (CypeCut)" + checkbox "Chapa do cliente"
+- Sidebar: link "Produção" com ícone Factory
+
+### Para activar o relatório de desvio (Pipesolutions):
+As 179 ordens migradas não têm `estimatedTimeSecs`. A partir de agora, ao criar ordem, o operador preenche o tempo do CypeCut.
+Para retroactivo: pode-se fazer um import CSV com os tempos estimados históricos.
 
 ## Próximos passos (geral)
 
