@@ -178,6 +178,13 @@ export const api = {
     status: () => request<{ email: { configured: boolean; from: string | null; provider: string }; whatsapp: { configured: boolean; apiUrl: string | null; provider: string } }>('/api/v1/notifications/status'),
     sendTestEmail: (to: string) => request('/api/v1/notifications/test-email', { method: 'POST', body: JSON.stringify({ to }) }),
   },
+
+  nesting: {
+    calculate: (orderId: string, data: { sheetWidthMm: number; sheetLengthMm: number; gapMm: number }) =>
+      request<NestingJob>(`/api/v1/orders/${orderId}/nesting`, { method: 'POST', body: JSON.stringify(data) }),
+    get: (orderId: string) =>
+      request<NestingJob>(`/api/v1/orders/${orderId}/nesting`),
+  },
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -259,6 +266,21 @@ export interface FinancialStats {
   revenueLastMonth: number
   revenueGrowth: number | null
   revenueTotal: number
+}
+
+export interface NestingJob {
+  id: string
+  sheetsNeeded: number
+  utilizationPct: number
+  unplacedPieces: number
+  piecesCount: number
+  piecesPerSheet: number
+  previewUrl: string | null
+  layout: Array<{ sheet: number; x: number; y: number; w: number; h: number; label: string; id: string }>
+  sheetWidthMm: number
+  sheetLengthMm: number
+  gapMm: number
+  createdAt?: string
 }
 
 export interface AppUser {

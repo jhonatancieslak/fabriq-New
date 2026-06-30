@@ -172,10 +172,15 @@ export default function OrderDetailPage() {
             </div>
             <p className="text-xs font-mono mt-1" style={{ color: T.faint }}>{order.authCode}</p>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
             <Btn onClick={handlePrint} variant="ghost">
               <Printer className="h-4 w-4" /> Imprimir
             </Btn>
+            <Link href={`/orders/${id}/nesting`}>
+              <Btn variant="ghost">
+                <Layers className="h-4 w-4" /> Nesting
+              </Btn>
+            </Link>
             {order.project && order.projectId && (
               <Link href={`/projects/${order.projectId}`}>
                 <Btn variant="ghost">

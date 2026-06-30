@@ -32,6 +32,7 @@ import { superadminRoutes } from './modules/superadmin/superadmin.routes.js'
 import { settingsRoutes } from './modules/settings/settings.routes.js'
 import { reportsRoutes } from './modules/reports/reports.routes.js'
 import { filesRoutes } from './modules/files/files.routes.js'
+import { nestingRoutes } from './modules/nesting/nesting.routes.js'
 import { resolveTenant } from './shared/middleware/tenant.js'
 
 const prisma = new PrismaClient()
@@ -98,6 +99,7 @@ await app.register(requestersRoutes, { prefix: '/api/v1/requesters' })
   await app.register(settingsRoutes,         { prefix: '/api/v1/settings' })
   await app.register(reportsRoutes,          { prefix: '/api/v1/reports' })
   await app.register(filesRoutes,            { prefix: '/api/v1' })
+await app.register(nestingRoutes,          { prefix: '/api/v1' })
 
   const port = Number(process.env.PORT ?? 8190)
   const host = process.env.HOST ?? '127.0.0.1'
