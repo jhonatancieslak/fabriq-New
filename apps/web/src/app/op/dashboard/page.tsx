@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ClipboardList, CheckCircle2, Clock, QrCode } from 'lucide-react'
+import { ClipboardList, CheckCircle2, Clock, QrCode, ShieldCheck } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8190'
 
@@ -29,15 +29,21 @@ export default function OperadorDashboardPage() {
   const [stages, setStages] = useState<Stage[]>([])
   const [loading, setLoading] = useState(true)
   const [operatorName, setOperatorName] = useState('')
+  const [checklistBadge, setChecklistBadge] = useState(0)
 
   useEffect(() => {
     const token = localStorage.getItem('fabriq_op_token')
     const slug  = localStorage.getItem('fabriq_tenant') ?? 'demo'
     if (!token) { router.replace('/op/login'); return }
+    const headers = { Authorization: `Bearer ${token}`, 'X-Tenant-Slug': slug }
 
-    fetch(`${API_URL}/api/v1/orders/operator/mine`, {
-      headers: { Authorization: `Bearer ${token}`, 'X-Tenant-Slug': slug },
-    })
+    // Verificar pendências de checklist em paralelo
+    fetch(`${API_URL}/api/v1/checklist/pending`, { headers })
+      .then(r => r.ok ? r.json() : { pending: [] })
+      .then(data => setChecklistBadge(data.pending?.length ?? 0))
+      .catch(() => {})
+
+    fetch(`${API_URL}/api/v1/orders/operator/mine`, { headers })
       .then(r => {
         if (r.status === 401) { router.replace('/op/login'); return null }
         return r.json()
@@ -67,6 +73,19 @@ export default function OperadorDashboardPage() {
         <p className="text-slate-400 text-sm">Bom dia,</p>
         <h1 className="text-xl font-bold text-white">{operatorName || 'Operador'}</h1>
       </div>
+
+      {/* Banner de verificação pendente */}
+      {checklistBadge > 0 && (
+        <Link href="/op/verificacao"
+          className="flex items-center gap-3 rounded-xl border border-yellow-700 bg-yellow-900/20 p-3 active:bg-yellow-900/40 transition-colors">
+          <ShieldCheck className="h-5 w-5 text-yellow-400 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-yellow-300">Verificação da máquina pendente</p>
+            <p className="text-xs text-yellow-600 mt-0.5">{checklistBadge} tipo{checklistBadge !== 1 ? 's' : ''} em dívida — toca para verificar</p>
+          </div>
+          <span className="flex-shrink-0 text-xs bg-yellow-500 text-slate-900 font-bold px-2 py-0.5 rounded-full">{checklistBadge}</span>
+        </Link>
+      )}
 
       {/* Resumo */}
       <div className="grid grid-cols-3 gap-3">

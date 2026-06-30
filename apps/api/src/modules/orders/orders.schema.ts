@@ -64,9 +64,16 @@ export const startStageSchema = z.object({
 
 export const completeStageSchema = z.object({
   quantityDone:      z.number().int().nonnegative(),
-  cuttingTime:       z.number().int().positive(),
+  cuttingTime:       z.number().int().positive().optional(),
   notes:             z.string().optional(),
   operatorSignature: z.string().optional(),
+  incompleteItems:   z.array(z.object({
+    itemId:      z.string(),
+    description: z.string(),
+    qtyPlanned:  z.number().int(),
+    qtyMissing:  z.number().int(),
+    obs:         z.string().optional(),
+  })).optional(),
 })
 
 export const cancelOrderSchema = z.object({

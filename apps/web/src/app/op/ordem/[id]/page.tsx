@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Camera, CheckCircle2, Play, ChevronLeft, AlertCircle, Trash2, Loader2, ImageOff } from 'lucide-react'
+import { Camera, CheckCircle2, Play, ChevronLeft, AlertCircle, Trash2, Loader2, ImageOff, Clock } from 'lucide-react'
 import { confirmComplete } from '@/lib/confirm'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8190'
@@ -41,6 +41,9 @@ export default function OperadorOrdemPage() {
   const [photos, setPhotos]       = useState<StagePhoto[]>([])
   const [uploading, setUploading] = useState(false)
   const [lightbox, setLightbox]   = useState<string | null>(null)
+  const [showCompleteModal, setShowCompleteModal] = useState(false)
+  const [missingQtys, setMissingQtys] = useState<Record<string, number>>({})
+  const [realTime, setRealTime]   = useState('')
   const fileInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -78,13 +81,44 @@ export default function OperadorOrdemPage() {
     } finally { setActing(false) }
   }
 
+  function openCompleteModal() {
+    const init: Record<string, number> = {}
+    order?.items.forEach(i => { init[i.id] = 0 })
+    setMissingQtys(init)
+    setRealTime('')
+    setShowCompleteModal(true)
+  }
+
+  function parseHMS(s: string): number {
+    const parts = s.split(':').map(Number)
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    if (parts.length === 2) return parts[0] * 60 + parts[1]
+    return 0
+  }
+
   async function handleComplete() {
     if (!activeStage) return
-    if (!(await confirmComplete())) return
+    setShowCompleteModal(false)
     setActing(true); setActionMsg(''); setError('')
     try {
+      const incompleteItems = order?.items
+        .filter(i => (missingQtys[i.id] ?? 0) > 0)
+        .map(i => ({
+          itemId: i.id,
+          description: i.description,
+          qtyPlanned: i.quantityPlanned,
+          qtyMissing: missingQtys[i.id],
+        })) ?? []
+
+      const cuttingTimeSecs = realTime ? parseHMS(realTime) : undefined
+
       const r = await fetch(`${API_URL}/api/v1/orders/stages/${activeStage.id}/complete`, {
         method: 'POST', headers: { ...authHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quantityDone: order?.items.reduce((s, i) => s + i.quantityPlanned - (missingQtys[i.id] ?? 0), 0) ?? 0,
+          ...(cuttingTimeSecs ? { cuttingTime: cuttingTimeSecs } : {}),
+          ...(incompleteItems.length ? { incompleteItems } : {}),
+        }),
       })
       if (!r.ok) { const e = await r.json(); setError(e.error ?? 'Erro ao concluir'); return }
       const updated: Order = await fetch(`${API_URL}/api/v1/orders/${id}`, { headers: { ...authHeader(), 'Content-Type': 'application/json' } }).then(r => r.json())
@@ -124,6 +158,62 @@ export default function OperadorOrdemPage() {
 
   return (
     <div className="p-4 space-y-4 pb-10">
+      {/* Modal — Concluir Etapa */}
+      {showCompleteModal && order && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm" onClick={() => setShowCompleteModal(false)}>
+          <div className="mt-auto bg-slate-900 rounded-t-2xl border-t border-slate-700 p-5 max-h-[85vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-white mb-1">Concluir Etapa</h2>
+            <p className="text-xs text-slate-500 mb-4">Regista o tempo real e peças que ficaram por fazer.</p>
+
+            {/* Tempo real */}
+            <label className="block mb-1 text-xs text-slate-400">Tempo real de corte (HH:MM:SS)</label>
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="h-4 w-4 text-slate-500 flex-shrink-0" />
+              <input
+                value={realTime}
+                onChange={e => setRealTime(e.target.value)}
+                placeholder="ex: 00:25:30"
+                className="flex-1 rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white placeholder-slate-600"
+              />
+            </div>
+
+            {/* Peças incompletas */}
+            <p className="text-xs text-slate-400 mb-2">Peças que ficaram por cortar (0 = todas feitas):</p>
+            <div className="space-y-2 mb-5">
+              {order.items.map(item => (
+                <div key={item.id} className="flex items-center gap-3 bg-slate-800 rounded-xl p-3 border border-slate-700">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white font-medium truncate">{item.description}</p>
+                    <p className="text-xs text-slate-500">{item.material?.name} · {item.thicknessMm}mm · {item.quantityPlanned} un.</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button onClick={() => setMissingQtys(p => ({ ...p, [item.id]: Math.max(0, (p[item.id] ?? 0) - 1) }))}
+                      className="w-7 h-7 rounded-lg bg-slate-700 text-white font-bold text-sm active:bg-slate-600">−</button>
+                    <span className={`w-6 text-center text-sm font-bold ${(missingQtys[item.id] ?? 0) > 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                      {missingQtys[item.id] ?? 0}
+                    </span>
+                    <button onClick={() => setMissingQtys(p => ({ ...p, [item.id]: Math.min(item.quantityPlanned, (p[item.id] ?? 0) + 1) }))}
+                      className="w-7 h-7 rounded-lg bg-slate-700 text-white font-bold text-sm active:bg-slate-600">+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => setShowCompleteModal(false)}
+                className="flex-1 rounded-xl bg-slate-700 py-3 text-sm font-semibold text-slate-300 active:bg-slate-600">
+                Cancelar
+              </button>
+              <button onClick={handleComplete}
+                className="flex-1 rounded-xl bg-green-600 py-3 text-sm font-semibold text-white active:bg-green-700 flex items-center justify-center gap-2">
+                <CheckCircle2 className="h-4 w-4" /> Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lightbox */}
       {lightbox && (() => {
         const p = photos.find(x => x.id === lightbox)
@@ -189,7 +279,7 @@ export default function OperadorOrdemPage() {
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                   {uploading ? 'A enviar...' : 'Foto'}
                 </button>
-                <button onClick={handleComplete} disabled={acting}
+                <button onClick={openCompleteModal} disabled={acting}
                   className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white active:bg-green-700 disabled:opacity-60 transition-colors">
                   <CheckCircle2 className="h-4 w-4" /> {acting ? 'A concluir...' : 'Concluir Etapa'}
                 </button>

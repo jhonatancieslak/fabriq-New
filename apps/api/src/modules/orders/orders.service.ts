@@ -193,7 +193,11 @@ export async function completeStage(
   if (isLastStage) {
     await prisma.serviceOrder.update({
       where: { id: stage.serviceOrderId },
-      data: { status: 'completed', completedAt },
+      data: {
+        status: 'completed',
+        completedAt,
+        ...(input.incompleteItems?.length ? { incompleteItems: input.incompleteItems as any } : {}),
+      },
     })
 
     // create invoicing record ready to approve

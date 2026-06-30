@@ -35,6 +35,7 @@ import { filesRoutes } from './modules/files/files.routes.js'
 import { nestingRoutes } from './modules/nesting/nesting.routes.js'
 import { costTableRoutes } from './modules/cost-table/cost-table.routes.js'
 import { productionRoutes } from './modules/production/production.routes.js'
+import { checklistRoutes } from './modules/checklist/checklist.routes.js'
 import { resolveTenant } from './shared/middleware/tenant.js'
 
 const prisma = new PrismaClient()
@@ -104,6 +105,7 @@ await app.register(requestersRoutes, { prefix: '/api/v1/requesters' })
 await app.register(nestingRoutes,          { prefix: '/api/v1' })
 await app.register(costTableRoutes,        { prefix: '/api/v1' })
 await app.register(productionRoutes,       { prefix: '/api/v1' })
+await app.register(checklistRoutes,        { prefix: '/api/v1' })
 
   const port = Number(process.env.PORT ?? 8190)
   const host = process.env.HOST ?? '127.0.0.1'
