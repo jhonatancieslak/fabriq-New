@@ -5,6 +5,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Users } from 'lucide-react'
 import { api, type Client } from '@/lib/api'
+import { confirmDelete } from '@/lib/confirm'
 import {
   T, Toast, Modal, Btn, Field, Input, Textarea, ErrorMsg,
   PageHeader, Table, Tr, Td, Pagination, Empty,
@@ -84,7 +85,7 @@ export default function ClientsPage() {
   const pages = Math.ceil(filtered.length / PER_PAGE)
 
   async function handleDelete(c: Client) {
-    if (!confirm(`Remover "${c.name}"?`)) return
+    if (!(await confirmDelete(c.name, 'Esta acção não pode ser desfeita.'))) return
     try { await api.clients.delete(c.id); showToast('Cliente removido'); load() }
     catch (e) { showToast(e instanceof Error ? e.message : 'Erro', 'err') }
   }

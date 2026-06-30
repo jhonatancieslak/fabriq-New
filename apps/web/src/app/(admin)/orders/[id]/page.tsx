@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, Printer, X, Clock, CheckCircle2, CircleDot, AlertCircle, RefreshCw, FileText, Pencil, Ruler } from 'lucide-react'
 import { api, type Order, type OrderFile } from '@/lib/api'
+import { confirmCancel } from '@/lib/confirm'
 import { T, Toast, Badge, Btn, ErrorMsg } from '@/components/ui/admin-ui'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.fabriq.pt'
@@ -58,7 +59,7 @@ export default function OrderDetailPage() {
   }, [id])
 
   async function handleCancel() {
-    if (!confirm('Confirma o cancelamento desta ordem?')) return
+    if (!(await confirmCancel('Confirma o cancelamento desta ordem? Esta acção não pode ser desfeita.'))) return
     setCancelling(true)
     try {
       await api.orders.cancel(id)

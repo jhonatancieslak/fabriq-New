@@ -8,6 +8,7 @@ import {
   X, ChevronDown, AlertCircle, RefreshCw, Ban, Calculator,
 } from 'lucide-react'
 import { api, type InvoicingRecord, type FinancialStats } from '@/lib/api'
+import { confirmCancelInvoice } from '@/lib/confirm'
 import { T } from '@/components/ui/admin-ui'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -266,7 +267,7 @@ export default function InvoicingPage() {
   useEffect(() => { load() }, [load])
 
   async function handleCancel(id: string) {
-    if (!confirm('Cancelar esta faturação?')) return
+    if (!(await confirmCancelInvoice())) return
     try {
       await api.financial.cancel(id)
       showToast('Faturação cancelada')

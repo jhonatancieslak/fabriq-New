@@ -5,6 +5,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Cpu, Settings2 } from 'lucide-react'
 import { api, type Machine } from '@/lib/api'
+import { confirmDisable } from '@/lib/confirm'
 import {
   T, Toast, Modal, Btn, Field, Input, Select, ErrorMsg,
   PageHeader, Table, Tr, Td, Pagination, Badge, Empty,
@@ -224,7 +225,7 @@ export default function MachinesPage() {
   useEffect(() => { load() }, [load])
 
   async function deactivate(m: MachineExt) {
-    if (!confirm(`Desactivar "${m.name}"?`)) return
+    if (!(await confirmDisable(m.name))) return
     try {
       await api.machines.delete(m.id)
       showToast('Máquina desactivada')

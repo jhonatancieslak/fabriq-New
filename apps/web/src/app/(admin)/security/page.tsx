@@ -5,6 +5,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { ShieldAlert, ShieldOff, AlertTriangle, CheckCircle2, Ban, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { confirmUnblock } from '@/lib/confirm'
 import {
   T, Toast, Modal, Btn, Field, Input, PageHeader,
   Table, Tr, Td, Badge, Empty,
@@ -123,7 +124,7 @@ export default function SecurityPage() {
   useEffect(() => { load() }, [load])
 
   async function unblock(ip: string) {
-    if (!confirm(`Desbloquear ${ip}?`)) return
+    if (!(await confirmUnblock(ip))) return
     try {
       await fetch(`${BASE}/api/v1/security/block-ip/${ip}`, { method: 'DELETE', headers: authHeaders() })
       showToast('IP desbloqueado'); load()

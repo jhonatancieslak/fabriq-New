@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Camera, CheckCircle2, Play, ChevronLeft, AlertCircle, Trash2, Loader2, ImageOff } from 'lucide-react'
+import { confirmComplete } from '@/lib/confirm'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8190'
 
@@ -79,7 +80,7 @@ export default function OperadorOrdemPage() {
 
   async function handleComplete() {
     if (!activeStage) return
-    if (!confirm('Confirma a conclusão desta etapa?')) return
+    if (!(await confirmComplete())) return
     setActing(true); setActionMsg(''); setError('')
     try {
       const r = await fetch(`${API_URL}/api/v1/orders/stages/${activeStage.id}/complete`, {

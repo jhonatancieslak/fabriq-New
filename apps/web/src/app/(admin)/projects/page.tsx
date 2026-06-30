@@ -5,6 +5,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, FolderOpen, User } from 'lucide-react'
 import { api, type Project, type Client } from '@/lib/api'
+import { confirmDelete } from '@/lib/confirm'
 import {
   T, Toast, Modal, Btn, Field, Input, Select, Textarea, ErrorMsg,
   PageHeader, Table, Tr, Td, Pagination, Badge, Empty, Combobox,
@@ -187,6 +188,12 @@ export default function ProjectsPage() {
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
   const pages = Math.ceil(filtered.length / PER_PAGE)
 
+  async function handleDelete(p: Project) {
+    if (!(await confirmDelete(p.name, 'Todas as ordens associadas serão desvinculadas.'))) return
+    try { await api.projects.delete(p.id); showToast('Obra removida'); load() }
+    catch (e) { showToast(e instanceof Error ? e.message : 'Erro', 'err') }
+  }
+
   return (
     <div className="p-6 space-y-5">
       {toast && <Toast msg={toast.msg} type={toast.type} />}
@@ -219,7 +226,10 @@ export default function ProjectsPage() {
               {(p as Project & { createdAt?: string }).createdAt ? fmtDate((p as Project & { createdAt?: string }).createdAt!) : '—'}
             </span></Td>
             <Td>
-              <ActionBtn variant="edit" onClick={() => setModal(p)} title="Editar" />
+              <div className="flex items-center gap-1.5">
+                <ActionBtn variant="edit"   onClick={() => setModal(p)} title="Editar" />
+                <ActionBtn variant="delete" onClick={() => handleDelete(p)} title="Remover" />
+              </div>
             </Td>
           </Tr>
         ))}

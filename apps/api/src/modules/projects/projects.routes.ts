@@ -69,4 +69,17 @@ export async function projectsRoutes(app: FastifyInstance): Promise<void> {
       action: 'project.updated', entityType: 'project', entityId: id })
     return project
   })
+
+  app.delete('/:id', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const exists = await app.prisma.project.findFirst({ where: { id, tenantId: req.tenantId! } })
+    if (!exists) return reply.status(404).send({ error: 'Obra não encontrada' })
+
+    // Desvincular ordens antes de apagar
+    await app.prisma.serviceOrder.updateMany({ where: { projectId: id, tenantId: req.tenantId! }, data: { projectId: null } })
+    await app.prisma.project.delete({ where: { id } })
+    await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
+      action: 'project.deleted', entityType: 'project', entityId: id })
+    return reply.status(204).send()
+  })
 }

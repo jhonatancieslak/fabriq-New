@@ -70,6 +70,8 @@ export const api = {
       request<Project>('/api/v1/projects', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Project>) =>
       request<Project>(`/api/v1/projects/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) =>
+      request<void>(`/api/v1/projects/${id}`, { method: 'DELETE' }),
   },
 
   orders: {

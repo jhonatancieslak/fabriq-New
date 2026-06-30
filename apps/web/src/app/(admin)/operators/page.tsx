@@ -5,6 +5,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, HardHat, QrCode, Copy, Check } from 'lucide-react'
 import { api, type Operator } from '@/lib/api'
+import { confirmDisable } from '@/lib/confirm'
 import {
   T, Toast, Modal, Btn, Field, Input, ErrorMsg,
   PageHeader, Table, Tr, Td, Pagination, Badge, Empty,
@@ -163,7 +164,7 @@ export default function OperatorsPage() {
   const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   async function deactivate(op: OperatorExt) {
-    if (!confirm(`Desactivar "${op.name}"?`)) return
+    if (!(await confirmDisable(op.name))) return
     try {
       const r = await fetch(`${BASE}/api/v1/operators/${op.id}`, { method: 'DELETE', headers: authHeaders() })
       if (!r.ok) throw new Error()
