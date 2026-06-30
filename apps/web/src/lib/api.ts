@@ -185,6 +185,26 @@ export const api = {
     get: (orderId: string) =>
       request<NestingJob>(`/api/v1/orders/${orderId}/nesting`),
   },
+
+  batches: {
+    kanban: (machineId?: string) =>
+      request<{ planned: any[]; in_progress: any[]; completed: any[] }>(
+        `/api/v1/batches/kanban${machineId ? `?machineId=${machineId}` : ''}`
+      ),
+    list: (params?: { status?: string; machineId?: string }) => {
+      const q = new URLSearchParams(params as any).toString()
+      return request<any[]>(`/api/v1/batches${q ? `?${q}` : ''}`)
+    },
+    get: (id: string) => request<any>(`/api/v1/batches/${id}`),
+    create: (data: any) => request<any>('/api/v1/batches', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request<any>(`/api/v1/batches/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/api/v1/batches/${id}`, { method: 'DELETE' }),
+    updateStatus: (id: string, status: string) => request<any>(`/api/v1/batches/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    addOrders: (id: string, orderIds: string[]) => request<any>(`/api/v1/batches/${id}/orders`, { method: 'POST', body: JSON.stringify({ orderIds }) }),
+    removeOrder: (id: string, orderId: string) => request(`/api/v1/batches/${id}/orders/${orderId}`, { method: 'DELETE' }),
+    unassigned: () => request<any[]>('/api/v1/batches/orders/unassigned'),
+  },
+
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

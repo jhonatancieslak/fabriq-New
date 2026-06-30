@@ -58,7 +58,7 @@ export default function CostTablePage() {
   const [fCost, setFCost] = useState('')
   const [fDesc, setFDesc] = useState('')
 
-  const showToast = (msg: string, type: 'ok' | 'err' = 'success') => {
+  const showToast = (msg: string, type: 'ok' | 'err' = 'ok') => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 4000)
   }
 
@@ -66,7 +66,7 @@ export default function CostTablePage() {
     try {
       const data: CostEntry[] = await request('/api/v1/cost-table')
       setEntries(data)
-    } catch { showToast('Erro ao carregar tabela', 'error') }
+    } catch { showToast('Erro ao carregar tabela', 'err') }
     finally { setLoading(false) }
   }, [])
 
@@ -80,7 +80,7 @@ export default function CostTablePage() {
   }
 
   const save = async () => {
-    if (!fCost) return showToast('Preencha o custo €/m²', 'error')
+    if (!fCost) return showToast('Preencha o custo €/m²', 'err')
     setSaving(true)
     const body = {
       materialType: fMat,
@@ -103,7 +103,7 @@ export default function CostTablePage() {
         showToast('Entrada criada')
       }
       setModal(null)
-    } catch (e: any) { showToast(e.message, 'error') }
+    } catch (e: any) { showToast(e.message, 'err') }
     finally { setSaving(false) }
   }
 
@@ -113,7 +113,7 @@ export default function CostTablePage() {
       await request(`/api/v1/cost-table/${entry.id}`, { method: 'DELETE' })
       setEntries(prev => prev.filter(e => e.id !== entry.id))
       showToast('Entrada removida')
-    } catch (e: any) { showToast(e.message, 'error') }
+    } catch (e: any) { showToast(e.message, 'err') }
   }
 
   // Agrupar por material
@@ -128,7 +128,7 @@ export default function CostTablePage() {
 
       <PageHeader
         title="Tabela de Custos de Material"
-        subtitle="Preço €/m² por tipo de material e espessura — usado no cálculo automático de custo de corte"
+        sub="Preço €/m² por tipo de material e espessura — usado no cálculo automático de custo de corte"
         action={<Btn variant="primary" onClick={openCreate}><Plus size={16} /> Nova Entrada</Btn>}
       />
 
@@ -145,7 +145,7 @@ export default function CostTablePage() {
       {loading ? (
         <div className="text-center py-12 text-zinc-500">A carregar…</div>
       ) : entries.length === 0 ? (
-        <Empty message="Sem entradas na tabela de custos. Clique em 'Nova Entrada' para começar." />
+        <Empty icon={Info} title="Sem entradas na tabela de custos" sub="Clique em 'Nova Entrada' para começar." />
       ) : (
         <div className="space-y-5">
           {grouped.map(g => (
@@ -211,30 +211,23 @@ export default function CostTablePage() {
         >
           <div className="space-y-4">
             <Field label="Material">
-              <Select value={fMat} onChange={e => setFMat(e.target.value)}>
+              <Select value={fMat} onChange={v => setFMat(v)}>
                 {Object.entries(MATERIAL_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </Select>
             </Field>
             <Field label="Espessura (mm) — deixe vazio para fallback genérico">
-              <Input
-                type="number" min="0" max="100" step="0.5"
-                placeholder="ex: 3 — ou deixe vazio para fallback"
-                value={fThick} onChange={e => setFThick(e.target.value)}
-              />
+              <Input type="number" placeholder="ex: 3 — ou deixe vazio para fallback"
+                value={fThick} onChange={v => setFThick(v)} />
             </Field>
             <Field label="Custo €/m²">
-              <Input
-                type="number" min="0" step="0.01"
-                placeholder="ex: 45.00"
-                value={fCost} onChange={e => setFCost(e.target.value)}
-              />
+              <Input type="number" placeholder="ex: 45.00" value={fCost} onChange={v => setFCost(v)} />
             </Field>
             <Field label="Descrição (opcional)">
               <Input
                 placeholder="ex: Inox 304 — fornecedor X"
-                value={fDesc} onChange={e => setFDesc(e.target.value)}
+                value={fDesc} onChange={v => setFDesc(v)}
               />
             </Field>
           </div>

@@ -20,7 +20,7 @@ interface Order {
   orderNumber: string; notes?: string
   project: { name: string; code: string }
   client: { name: string }
-  stages: { id: string; stageNumber: number; type: string; status: string; machine?: { name: string } }[]
+  stages: { id: string; stageNumber: number; type: string; status: string; machine?: { id: string; name: string } }[]
   items: { id: string; description: string; thicknessMm: number; quantityPlanned: number; material?: { name: string } }[]
 }
 
