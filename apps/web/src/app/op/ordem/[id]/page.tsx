@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Camera, CheckCircle2, Play, ChevronLeft, AlertCircle, Trash2, Loader2, ImageOff, Clock } from 'lucide-react'
+import { Camera, CheckCircle2, Play, ChevronLeft, AlertCircle, Trash2, Loader2, ImageOff, Clock, Wrench, X } from 'lucide-react'
 import { confirmComplete } from '@/lib/confirm'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8190'
@@ -44,6 +44,13 @@ export default function OperadorOrdemPage() {
   const [showCompleteModal, setShowCompleteModal] = useState(false)
   const [missingQtys, setMissingQtys] = useState<Record<string, number>>({})
   const [realTime, setRealTime]   = useState('')
+  const [showBreakdownModal, setShowBreakdownModal] = useState(false)
+  const [bdTitle, setBdTitle]     = useState('')
+  const [bdComponent, setBdComponent] = useState('other')
+  const [bdSeverity, setBdSeverity] = useState('medium')
+  const [bdDesc, setBdDesc]       = useState('')
+  const [bdSaving, setBdSaving]   = useState(false)
+  const [bdSuccess, setBdSuccess] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -153,11 +160,82 @@ export default function OperadorOrdemPage() {
     if (lightbox === photoId) setLightbox(null)
   }
 
+  async function handleReportBreakdown() {
+    if (!bdTitle) return
+    setBdSaving(true)
+    const machineId = order?.stages.find(s => s.machine)?.machine?.id
+    // se não tiver máquina associada, usa o operador
+    const slug = localStorage.getItem('fabriq_tenant') ?? 'demo'
+    const token = localStorage.getItem('fabriq_op_token') ?? ''
+    await fetch(`${API_URL}/api/v1/breakdowns/operator`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'X-Tenant-Slug': slug, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ machineId, component: bdComponent, severity: bdSeverity, title: bdTitle, description: bdDesc }),
+    })
+    setBdSaving(false); setBdSuccess(true)
+    setTimeout(() => { setShowBreakdownModal(false); setBdTitle(''); setBdDesc(''); setBdSuccess(false) }, 1500)
+  }
+
   if (loading) return <div className="p-6 text-sm text-slate-500 animate-pulse">A carregar...</div>
   if (!order) return <div className="p-6 text-sm text-red-400">{error || 'Ordem não encontrada'}</div>
 
   return (
     <div className="p-4 space-y-4 pb-10">
+      {/* Modal — Reportar Avaria */}
+      {showBreakdownModal && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm">
+          <div className="mt-auto bg-slate-900 rounded-t-2xl border-t border-red-900 p-5 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-white">Reportar Avaria</h2>
+              <button onClick={() => setShowBreakdownModal(false)}><X className="h-5 w-5 text-slate-400" /></button>
+            </div>
+
+            {bdSuccess ? (
+              <div className="text-center py-8">
+                <CheckCircle2 className="h-10 w-10 text-green-400 mx-auto mb-2" />
+                <p className="text-sm text-green-300 font-semibold">Avaria reportada!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Título da avaria *</label>
+                  <input value={bdTitle} onChange={e => setBdTitle(e.target.value)}
+                    placeholder="ex: Bico entupido, chiller sem pressão..."
+                    className="w-full rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white placeholder-slate-600" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Componente</label>
+                    <select value={bdComponent} onChange={e => setBdComponent(e.target.value)}
+                      className="w-full rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-xs text-white">
+                      {[['laser_source','Fonte Laser'],['cutting_head','Cabeça'],['axis_xy','Eixos XY'],['axis_z','Eixo Z'],['cooling','Refrigeração'],['pneumatics','Pneumática'],['electrical','Elétrica'],['software','Software'],['other','Outro']].map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Gravidade</label>
+                    <select value={bdSeverity} onChange={e => setBdSeverity(e.target.value)}
+                      className="w-full rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-xs text-white">
+                      {[['low','Baixa'],['medium','Média'],['high','Alta'],['critical','Crítica']].map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Descrição</label>
+                  <textarea rows={2} value={bdDesc} onChange={e => setBdDesc(e.target.value)}
+                    placeholder="O que aconteceu..."
+                    className="w-full rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm text-white placeholder-slate-600 resize-none" />
+                </div>
+                <button onClick={handleReportBreakdown} disabled={bdSaving || !bdTitle}
+                  className="w-full rounded-xl bg-red-600 py-3 text-sm font-semibold text-white active:bg-red-700 disabled:opacity-60 flex items-center justify-center gap-2">
+                  <Wrench className="h-4 w-4" />
+                  {bdSaving ? 'A reportar...' : 'Reportar avaria'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Modal — Concluir Etapa */}
       {showCompleteModal && order && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm" onClick={() => setShowCompleteModal(false)}>
@@ -265,7 +343,7 @@ export default function OperadorOrdemPage() {
             </div>
           )}
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4 flex-wrap">
             {activeStage.status === 'pending' && (
               <button onClick={handleStart} disabled={acting}
                 className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white active:bg-blue-700 disabled:opacity-60 transition-colors">
@@ -286,6 +364,13 @@ export default function OperadorOrdemPage() {
               </>
             )}
           </div>
+
+          {activeStage.status === 'in_progress' && (
+            <button onClick={() => setShowBreakdownModal(true)}
+              className="w-full mt-2 flex items-center justify-center gap-2 rounded-lg border border-red-800 bg-red-900/20 px-4 py-2 text-sm font-medium text-red-400 active:bg-red-900/40">
+              <Wrench className="h-4 w-4" /> Reportar avaria
+            </button>
+          )}
 
           <input ref={fileInput} type="file" accept="image/*" capture="environment" onChange={handlePhoto} className="hidden" />
 

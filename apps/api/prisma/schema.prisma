@@ -163,9 +163,12 @@ model Tenant {
   materials    Material[]
   serviceOrders ServiceOrder[]
   cuttingParams CuttingParam[]
-  costTable        CostTable[]
-  checklistItems   ChecklistItem[]
-  checklistRecords ChecklistRecord[]
+  costTable           CostTable[]
+  checklistItems      ChecklistItem[]
+  checklistRecords    ChecklistRecord[]
+  maintenanceTasks    MaintenanceTask[]
+  maintenanceRecords  MaintenanceRecord[]
+  breakdowns          Breakdown[]
   auditLogs     AuditLog[]
   loginAttempts LoginAttempt[]
   blockedIps    BlockedIp[]
@@ -216,8 +219,10 @@ model Operator {
   refreshTokens RefreshToken[]
   orderStages   OrderStage[]
   orderPhotos   OrderPhoto[]
-  paramFeedbacks   CuttingParamFeedback[]
-  checklistRecords ChecklistRecord[]
+  paramFeedbacks       CuttingParamFeedback[]
+  checklistRecords     ChecklistRecord[]
+  maintenanceRecords   MaintenanceRecord[]
+  breakdowns           Breakdown[]
 
   @@unique([tenantId, username])
   @@index([tenantId])
@@ -307,9 +312,11 @@ model Machine {
   materialCostEnabled  Boolean  @default(false) @map("material_cost_enabled")
   marginPercent        Decimal? @map("margin_percent")          // margem sobre o custo total (%)
 
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
-  operators   Operator[]
-  orderStages OrderStage[]
+  tenant             Tenant              @relation(fields: [tenantId], references: [id])
+  operators          Operator[]
+  orderStages        OrderStage[]
+  maintenanceTasks   MaintenanceTask[]
+  breakdowns         Breakdown[]
 
   @@index([tenantId])
   @@map("machines")
@@ -734,6 +741,120 @@ model BlockedIp {
 }
 
 // ─── Notification Log ─────────────────────────────────────────────────────────
+
+// ─── Manutenção Preventiva + Avarias ──────────────────────────────────────────
+
+enum MaintenancePeriodicity {
+  hours    // por horas de uso
+  days     // por dias
+  weeks    // por semanas
+  months   // por meses
+  orders   // por nº de ordens concluídas
+}
+
+enum MaintenanceCategory {
+  optics         // Óptica (lentes, espelhos)
+  cutting_head   // Cabeça de Corte (bicos, cerâmica)
+  cooling        // Refrigeração (filtros, água)
+  laser_source   // Fonte Laser
+  mechanics      // Mecânica (lubrificação, eixos)
+  electrical     // Elétrica / Electrónica
+  cleaning       // Limpeza geral
+  other          // Outro
+}
+
+enum BreakdownSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum BreakdownStatus {
+  open
+  in_progress
+  resolved
+}
+
+enum BreakdownComponent {
+  laser_source
+  cutting_head
+  axis_xy
+  axis_z
+  cooling
+  pneumatics
+  electrical
+  software
+  other
+}
+
+model MaintenanceTask {
+  id            String                   @id @default(uuid())
+  tenantId      String                   @map("tenant_id")
+  machineId     String                   @map("machine_id")
+  title         String
+  category      MaintenanceCategory      @default(other)
+  description   String?
+  periodicity   MaintenancePeriodicity   @default(days)
+  interval      Int                      @default(30)
+  isActive      Boolean                  @default(true) @map("is_active")
+  createdAt     DateTime                 @default(now()) @map("created_at")
+
+  tenant  Tenant             @relation(fields: [tenantId], references: [id])
+  machine Machine            @relation(fields: [machineId], references: [id])
+  records MaintenanceRecord[]
+
+  @@index([tenantId])
+  @@index([machineId])
+  @@map("maintenance_tasks")
+}
+
+model MaintenanceRecord {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  taskId          String   @map("task_id")
+  executedAt      DateTime @default(now()) @map("executed_at")
+  notes           String?
+  machineHours    Decimal? @map("machine_hours")
+  ordersCompleted Int?     @map("orders_completed")
+  operatorId      String?  @map("operator_id")
+  userId          String?  @map("user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  task     MaintenanceTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  operator Operator? @relation(fields: [operatorId], references: [id])
+
+  @@index([tenantId])
+  @@index([taskId])
+  @@map("maintenance_records")
+}
+
+model Breakdown {
+  id              String              @id @default(uuid())
+  tenantId        String              @map("tenant_id")
+  machineId       String              @map("machine_id")
+  component       BreakdownComponent  @default(other)
+  severity        BreakdownSeverity   @default(medium)
+  status          BreakdownStatus     @default(open)
+  title           String
+  description     String?
+  solution        String?
+  downtimeMinutes Int?                @map("downtime_minutes")
+  reportedAt      DateTime            @default(now()) @map("reported_at")
+  resolvedAt      DateTime?           @map("resolved_at")
+  operatorId      String?             @map("operator_id")
+  resolvedById    String?             @map("resolved_by_id")
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  machine     Machine   @relation(fields: [machineId], references: [id])
+  operator    Operator? @relation(fields: [operatorId], references: [id])
+
+  @@index([tenantId])
+  @@index([machineId])
+  @@map("breakdowns")
+}
 
 // ─── Checklist de Verificação da Máquina ──────────────────────────────────────
 

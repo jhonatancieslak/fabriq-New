@@ -23,6 +23,7 @@ const nav = [
   { href: '/operators',    label: 'Operadores',       icon: HardHat },
   { href: '/invoicing',    label: 'Faturação',        icon: FileText },
   { href: '/production',   label: 'Produção',         icon: Factory },
+  { href: '/maintenance', label: 'Manutenção',       icon: Wrench },
   { href: '/reports',      label: 'Relatórios',       icon: BarChart3 },
   { href: '/utilizadores', label: 'Utilizadores',     icon: UserCog },
   { href: '/security',     label: 'Segurança',        icon: ShieldAlert },
