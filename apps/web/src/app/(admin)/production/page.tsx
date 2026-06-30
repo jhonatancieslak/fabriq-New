@@ -88,7 +88,7 @@ export default function ProductionPage() {
   const [to, setTo] = useState(defaultTo)
   const [data, setData] = useState<ProductionData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
   const [tab, setTab] = useState<'operator' | 'week' | 'material' | 'overtime'>('operator')
 
   const load = useCallback(async () => {
@@ -97,7 +97,7 @@ export default function ProductionPage() {
       const d = await request(`/api/v1/production?from=${from}&to=${to}`)
       setData(d)
     } catch {
-      setToast({ msg: 'Erro ao carregar relatório', type: 'error' })
+      setToast({ msg: 'Erro ao carregar relatório', type: 'err' })
     } finally { setLoading(false) }
   }, [from, to])
 
@@ -120,7 +120,7 @@ export default function ProductionPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-      {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && <Toast msg={toast.msg} type={toast.type}/>}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">

@@ -47,7 +47,7 @@ const request = async (path: string, opts?: RequestInit) => {
 export default function CostTablePage() {
   const [entries, setEntries] = useState<CostEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
   const [modal, setModal] = useState<'create' | 'edit' | null>(null)
   const [editing, setEditing] = useState<CostEntry | null>(null)
   const [saving, setSaving] = useState(false)
@@ -58,7 +58,7 @@ export default function CostTablePage() {
   const [fCost, setFCost] = useState('')
   const [fDesc, setFDesc] = useState('')
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+  const showToast = (msg: string, type: 'ok' | 'err' = 'success') => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 4000)
   }
 
@@ -124,7 +124,7 @@ export default function CostTablePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
 
       <PageHeader
         title="Tabela de Custos de Material"

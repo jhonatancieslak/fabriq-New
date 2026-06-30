@@ -125,13 +125,13 @@ export default function NestingPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [job, setJob] = useState<NestingJob | null>(null)
   const [loading, setLoading] = useState(false)
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
 
   const [sheetW, setSheetW] = useState('1500')
   const [sheetH, setSheetH] = useState('3000')
   const [gap, setGap] = useState('2')
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+  const showToast = (msg: string, type: 'ok' | 'err' = 'ok') => {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 4000)
   }
@@ -162,14 +162,14 @@ export default function NestingPage() {
     const w = parseFloat(sheetW)
     const h = parseFloat(sheetH)
     const g = parseFloat(gap)
-    if (!w || !h) return showToast('Preencha as dimensões da chapa', 'error')
+    if (!w || !h) return showToast('Preencha as dimensões da chapa', 'err')
     setLoading(true)
     try {
       const result = await api.nesting.calculate(orderId, { sheetWidthMm: w, sheetLengthMm: h, gapMm: g || 2 })
       setJob(result)
       showToast('Nesting calculado com sucesso')
     } catch (e: any) {
-      showToast(e.message ?? 'Erro ao calcular nesting', 'error')
+      showToast(e.message ?? 'Erro ao calcular nesting', 'err')
     } finally {
       setLoading(false)
     }
@@ -182,7 +182,7 @@ export default function NestingPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">

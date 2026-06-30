@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
   Settings, BarChart3, FileText, Zap, Cpu, UserCog, Package,
-  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, Library, Kanban, Factory,
+  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, Library, Kanban, Factory, Wrench,
 } from 'lucide-react'
 
 const nav = [
@@ -23,7 +23,8 @@ const nav = [
   { href: '/operators',    label: 'Operadores',       icon: HardHat },
   { href: '/invoicing',    label: 'Faturação',        icon: FileText },
   { href: '/production',   label: 'Produção',         icon: Factory },
-  { href: '/maintenance', label: 'Manutenção',       icon: Wrench },
+  { href: '/maintenance',  label: 'Manutenção',       icon: Wrench },
+  { href: '/consumables',  label: 'Consumíveis',      icon: Package },
   { href: '/reports',      label: 'Relatórios',       icon: BarChart3 },
   { href: '/utilizadores', label: 'Utilizadores',     icon: UserCog },
   { href: '/security',     label: 'Segurança',        icon: ShieldAlert },

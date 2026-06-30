@@ -169,6 +169,8 @@ model Tenant {
   maintenanceTasks    MaintenanceTask[]
   maintenanceRecords  MaintenanceRecord[]
   breakdowns          Breakdown[]
+  consumables         Consumable[]
+  stockMovements      StockMovement[]
   auditLogs     AuditLog[]
   loginAttempts LoginAttempt[]
   blockedIps    BlockedIp[]
@@ -223,6 +225,7 @@ model Operator {
   checklistRecords     ChecklistRecord[]
   maintenanceRecords   MaintenanceRecord[]
   breakdowns           Breakdown[]
+  stockMovements       StockMovement[]
 
   @@unique([tenantId, username])
   @@index([tenantId])
@@ -741,6 +744,66 @@ model BlockedIp {
 }
 
 // ─── Notification Log ─────────────────────────────────────────────────────────
+
+// ─── Consumíveis & Stock ──────────────────────────────────────────────────────
+
+enum ConsumableCategory {
+  lens          // Lente
+  nozzle        // Bico de corte
+  ceramic       // Cerâmica
+  protection    // Janela de protecção
+  fiber         // Fibra ótica
+  filter        // Filtro
+  gas           // Gás (N₂, O₂, Ar)
+  accessory     // Acessório
+  other
+}
+
+enum StockMovementType {
+  in    // entrada (compra, reposição)
+  out   // saída (uso, quebra)
+}
+
+model Consumable {
+  id           String              @id @default(uuid())
+  tenantId     String              @map("tenant_id")
+  name         String
+  category     ConsumableCategory  @default(other)
+  reference    String?             // código fabricante
+  unit         String              @default("un")   // un, cx, m, kg
+  stockCurrent Int                 @default(0) @map("stock_current")
+  stockMin     Int                 @default(1) @map("stock_min")
+  description  String?
+  isActive     Boolean             @default(true) @map("is_active")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  tenant    Tenant           @relation(fields: [tenantId], references: [id])
+  movements StockMovement[]
+
+  @@index([tenantId])
+  @@map("consumables")
+}
+
+model StockMovement {
+  id           String              @id @default(uuid())
+  tenantId     String              @map("tenant_id")
+  consumableId String              @map("consumable_id")
+  type         StockMovementType
+  quantity     Int
+  reason       String?
+  notes        String?
+  operatorId   String?             @map("operator_id")
+  userId       String?             @map("user_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  consumable  Consumable  @relation(fields: [consumableId], references: [id], onDelete: Cascade)
+  operator    Operator?   @relation(fields: [operatorId], references: [id])
+
+  @@index([tenantId])
+  @@index([consumableId])
+  @@map("stock_movements")
+}
 
 // ─── Manutenção Preventiva + Avarias ──────────────────────────────────────────
 

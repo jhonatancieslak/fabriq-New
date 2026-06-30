@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, Sliders, LogOut, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Sliders, LogOut, ShieldCheck, Package } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/layout/logo'
 
@@ -12,7 +12,8 @@ const navItems = [
   { href: '/op/dashboard',  icon: LayoutDashboard, label: 'Início' },
   { href: '/op/ordens',     icon: ClipboardList,   label: 'Ordens' },
   { href: '/op/parametros', icon: Sliders,         label: 'Parâm. IA' },
-  { href: '/op/verificacao', icon: ShieldCheck, label: 'Verificar' },
+  { href: '/op/verificacao',  icon: ShieldCheck, label: 'Verificar' },
+  { href: '/op/consumibles',  icon: Package,     label: 'Stock' },
 ]
 
 export default function OperadorLayout({ children }: { children: React.ReactNode }) {
