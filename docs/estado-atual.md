@@ -620,11 +620,37 @@ Ver plano detalhado: `docs/nesting-plano.md`
 - Aviso se peças sem dimensões DXF
 - Botão "Nesting" adicionado ao detalhe da ordem
 
+## Módulo Consumíveis (concluído Sessão 18)
+
+- Schema: `Consumable`, `StockMovement`, enums `ConsumableCategory`/`StockMovementType`
+- API: CRUD consumíveis, movimentos entrada/saída (admin + operador PWA)
+- Admin `/consumables`: lista agrupada por categoria, alertas stock baixo, histórico movimentos
+- PWA `/op/consumibles`: registo de saída com motivo e contador, grupos por categoria
+- Sidebar admin + menu inferior PWA actualizados
+
+## Fase 4 — Kanban de Produção (concluído Sessão 19 — 2026-06-30)
+
+### API (`apps/api/src/modules/batches/batches.routes.ts`)
+- `GET /batches/kanban` — dados agrupados por estado (planned/in_progress/completed)
+- `GET /batches/orders/unassigned` — ordens sem batch para adicionar
+- CRUD completo: `GET/POST/PATCH/DELETE /batches/:id`
+- `POST /batches/:id/orders` — adicionar ordens; `DELETE /batches/:id/orders/:orderId`
+- `PATCH /batches/:id/status` — mover entre colunas
+
+### Frontend (`/production/kanban`)
+- Kanban 3 colunas: Planeado / Em Execução / Concluído
+- Cards de batch: KPIs (ordens, peças, m²), ordens expandíveis, data agendada
+- Modal criar/editar batch (nome, máquina, data, notas)
+- Modal "Adicionar Ordens" com checkbox múltiplo (só ordens sem batch)
+- Botões Iniciar/Concluir para transição de estado
+- Filtro por máquina; botão X por hover para remover ordem
+- Sidebar: link "Kanban" → `/production/kanban`
+
 ## Próximos passos (Nesting)
 
 - ~~**Fase 2**~~ ✅ Editor DXF no browser
 - ~~**Fase 3**~~ ✅ Algoritmo de nesting: bin-packing, aproveitamento %, imagem PNG do layout
-- **Fase 4** — Agrupamento de ordens (OrderBatch), Kanban por máquina/data, QR por ordem
+- ~~**Fase 4**~~ ✅ Kanban de produção (OrderBatch)
 - **Módulos de parâmetros por processo** — Laser CNC (potência, velocidade, gás, pressão), Quinagem (tonelagem, ângulo, raio), Guilhotina — campos específicos por tipo de máquina para alimentar o nesting
 
 ## Caminho A — Produção & KPIs Reais (concluído 2026-06-30 Sessão 17)
