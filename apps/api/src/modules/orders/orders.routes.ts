@@ -274,6 +274,83 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send()
   })
 
+  // GET /api/v1/orders/kanban — orders grouped by kanban column
+  app.get('/kanban', { preHandler: [requireAuth, requireRole('admin', 'financial', 'viewer')] }, async (req) => {
+    const tenantId = req.tenantId!
+    const base = {
+      include: {
+        client:   { select: { name: true } },
+        project:  { select: { id: true, code: true, name: true } },
+        requester:{ select: { name: true } },
+        stages: {
+          orderBy: { stageNumber: 'asc' as const },
+          include: { machine: { select: { name: true } }, operator: { select: { name: true } } },
+          take: 1,
+        },
+        items: { select: { id: true } },
+      },
+    }
+
+    const [pendente, programado, emCorte, concluido] = await Promise.all([
+      app.prisma.serviceOrder.findMany({
+        where: { tenantId, status: 'pending', scheduledAt: null },
+        orderBy: [{ isUrgent: 'desc' }, { createdAt: 'asc' }],
+        ...base,
+      }),
+      app.prisma.serviceOrder.findMany({
+        where: { tenantId, status: 'pending', scheduledAt: { not: null } },
+        orderBy: [{ isUrgent: 'desc' }, { scheduledAt: 'asc' }],
+        ...base,
+      }),
+      app.prisma.serviceOrder.findMany({
+        where: { tenantId, status: 'in_progress' },
+        orderBy: [{ isUrgent: 'desc' }, { updatedAt: 'desc' }],
+        ...base,
+      }),
+      app.prisma.serviceOrder.findMany({
+        where: { tenantId, status: 'completed' },
+        orderBy: { completedAt: 'desc' },
+        take: 30,
+        ...base,
+      }),
+    ])
+
+    return { pendente, programado, emCorte, concluido }
+  })
+
+  // PATCH /api/v1/orders/:id/kanban-move — move order between columns
+  app.patch('/:id/kanban-move', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const { coluna, scheduledAt } = req.body as { coluna: string; scheduledAt?: string | null }
+
+    const order = await app.prisma.serviceOrder.findFirst({ where: { id, tenantId: req.tenantId! } })
+    if (!order) return reply.status(404).send({ error: 'Ordem não encontrada' })
+
+    const validCols = ['pendente', 'programado', 'em_corte', 'concluido']
+    if (!validCols.includes(coluna)) return reply.status(400).send({ error: 'Coluna inválida' })
+
+    const statusMap: Record<string, string> = {
+      pendente: 'pending', programado: 'pending', em_corte: 'in_progress', concluido: 'completed',
+    }
+
+    const updated = await app.prisma.serviceOrder.update({
+      where: { id },
+      data: {
+        status: statusMap[coluna] as never,
+        scheduledAt: coluna === 'programado'
+          ? (scheduledAt ? new Date(scheduledAt) : order.scheduledAt ?? new Date())
+          : coluna === 'pendente' ? null
+          : undefined,
+        completedAt: coluna === 'concluido' ? new Date() : coluna === 'em_corte' ? null : undefined,
+        updatedAt: new Date(),
+      },
+    })
+
+    await audit({ prisma: app.prisma, req, action: 'order.kanban_move', tenantId: req.tenantId!, userId: req.userId!, entityType: 'order', entityId: id, payload: { coluna } })
+
+    return updated
+  })
+
   // GET /api/v1/orders/auth/:authCode — verificação pública por código
   app.get('/auth/:authCode', async (req, reply) => {
     const { authCode } = req.params as { authCode: string }

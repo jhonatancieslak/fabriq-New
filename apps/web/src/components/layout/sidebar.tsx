@@ -8,12 +8,13 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, FolderOpen, ClipboardList, HardHat,
   Settings, BarChart3, FileText, Zap, Cpu, UserCog, Package,
-  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, Library,
+  ShieldAlert, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, Library, Kanban,
 } from 'lucide-react'
 
 const nav = [
   { href: '/dashboard',    label: 'Dashboard',     icon: LayoutDashboard },
   { href: '/orders',       label: 'Ordens',         icon: ClipboardList },
+  { href: '/kanban',       label: 'Kanban',         icon: Kanban },
   { href: '/clients',      label: 'Clientes',       icon: Users },
   { href: '/projects',     label: 'Obras',          icon: FolderOpen },
   { href: '/media',        label: 'Biblioteca',     icon: Library },
