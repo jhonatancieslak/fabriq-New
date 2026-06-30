@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-06-29 (Sessão 12)
+**Última sessão:** 2026-06-30 (Sessão 18)
 
 ---
 
@@ -657,6 +657,33 @@ Ver plano detalhado: `docs/nesting-plano.md`
 ### Para activar o relatório de desvio (Pipesolutions):
 As 179 ordens migradas não têm `estimatedTimeSecs`. A partir de agora, ao criar ordem, o operador preenche o tempo do CypeCut.
 Para retroactivo: pode-se fazer um import CSV com os tempos estimados históricos.
+
+## Caminho B — PWA Operacional (concluído 2026-06-30 Sessão 18)
+
+### Schema (db push aplicado)
+- `ChecklistItem`: itens de verificação por tipo (daily/biweekly/quarterly) — 14 itens padrão
+- `ChecklistRecord`: histórico de verificações por operador + data
+
+### API (/api/v1/checklist)
+- `GET /pending` — tipos em dívida (daily sem verificação hoje, quinzenal sem nos últimos 15 dias, trimestral sem nos últimos 90 dias)
+- `POST /submit` — submeter verificação com `{itemId, name, ok, obs?}[]`
+- `GET /history` — histórico admin com filtros
+- `GET /items` — listagem com auto-seed na primeira chamada
+- `PATCH /items/:id` — activar/desactivar item
+
+### PWA (`/op`)
+- **`/op/verificacao`** — página de checklist interactivo (conforme/não conforme, obs obrigatório para NÃO conforme, multi-tipo na mesma sessão)
+- **Dashboard** — banner amarelo com badge numérico quando há verificações pendentes
+- **Conclusão de Etapa** — substituído o `confirmComplete()` por modal personalizado com:
+  - Campo "Tempo real HH:MM:SS"
+  - Contador ± de peças incompletas por item
+  - Envia `incompleteItems[]` e `cuttingTime` para a API
+- **Menu inferior** — tab "Verificar" com ícone ShieldCheck
+
+### Tabela de Custos Pipesolutions (preenchida manualmente via SQL)
+- 40 entradas: Aço 1-20mm, Inox 1-12mm, Alumínio 1-10mm, Cobre 1-5mm
+- Laser 1 - 6000w: €2.65/min, 4 min mínimo, €11 custo mínimo
+- Validado: Inox 3mm/25min = €80.65; corte 90s = €11 (mínimo aplicado)
 
 ## Próximos passos (geral)
 
