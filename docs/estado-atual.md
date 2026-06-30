@@ -737,6 +737,28 @@ Para retroactivo: pode-se fazer um import CSV com os tempos estimados histórico
 - Modal bottom-sheet com componente + gravidade + descrição
 - Enviado para `POST /breakdowns/operator` com token de operador
 
+## Sessão 19 — 2026-06-30 (continuação)
+
+### Fix: sistema.fabriq.pt → login (não landing page)
+- `apps/web/src/app/page.tsx` alterado: `/` agora redireciona para `/login`
+- Landing page exclusiva de `fabriq.pt` (porta 3290, processo `fabriq-landing`)
+- `sistema.fabriq.pt` → processo `fabriq-web` (porta 3191) → `/login`
+
+### Máquina Pipesolutions actualizada
+- Nome actualizado de "Laser 1 - 6000w" → **"Fiber Laser 6000W — CypeCut"** (via DB directo)
+- Máquina de teste "sss" apagada
+- Operador **Jhonatan Cieslak** associado à máquina (antes sem máquina)
+- Operador **Fábio Silva** já estava associado
+- Parâmetros de corte: 0 registados — a preencher via `/machines` no admin UI
+
+### Script de migração DXF (sistema antigo → novo)
+- `scripts/migrate-dxf-files.js` — migra ficheiros DXF + previews PNG do NestCut
+- Fonte: `/var/www/pipesolutions/app/static/uploads/dxf/` (259 DXFs + 73 PNGs)
+- Destino: `/var/www/fabriq/apps/api/uploads/dxf/{tenantId}/` e `uploads/previews/{tenantId}/`
+- BD fonte: `postgresql://nesting@localhost/nesting_db` (tabela `ficheiros_dxf`)
+- Cria registos `OrderFile` standalone (sem serviceOrderId) visíveis na Biblioteca `/media`
+- Para executar: `node scripts/migrate-dxf-files.js` (pasta `/var/www/fabriq`)
+
 ## Próximos passos (geral)
 
 - **Webhook Stripe** já configurado — testar fluxo completo de subscrição
