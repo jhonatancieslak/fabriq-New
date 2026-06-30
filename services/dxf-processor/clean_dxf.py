@@ -34,10 +34,12 @@ def clean(input_path: str, output_path: str, handles_to_remove: set) -> dict:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         doc.saveas(output_path)
 
+        # contar apenas entidades com handle (visíveis no editor)
+        remaining = sum(1 for e in msp if e.dxf.get('handle', None))
         return {
             'ok': True,
             'removed': removed,
-            'remaining': len(list(msp)),
+            'remaining': remaining,
         }
     except Exception as e:
         return {'ok': False, 'error': str(e)}

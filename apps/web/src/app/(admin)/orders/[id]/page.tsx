@@ -6,26 +6,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, Printer, X, Clock, CheckCircle2, CircleDot, AlertCircle, RefreshCw, FileText, Pencil, Ruler } from 'lucide-react'
-import { api, type Order } from '@/lib/api'
+import { api, type Order, type OrderFile } from '@/lib/api'
 import { T, Toast, Badge, Btn, ErrorMsg } from '@/components/ui/admin-ui'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.fabriq.pt'
-
-function authHeaders(): Record<string, string> {
-  const token  = typeof window !== 'undefined' ? localStorage.getItem('fabriq_token') : ''
-  const tenant = typeof window !== 'undefined' ? localStorage.getItem('fabriq_tenant') ?? '' : ''
-  return {
-    ...(token  ? { Authorization: `Bearer ${token}` } : {}),
-    ...(tenant ? { 'X-Tenant-Slug': tenant } : {}),
-  }
-}
-
-interface OrderFile {
-  id: string; originalName: string; storagePath: string; previewPath: string | null
-  fileType: string | null; sizeBytes: number; processed: boolean
-  areaM2: number | null; bboxWidthMm: number | null; bboxHeightMm: number | null
-  perimeterMm: number | null; previewUrl: string | null
-}
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendente', in_progress: 'Em execução', completed: 'Concluída',
@@ -62,32 +46,13 @@ export default function OrderDetailPage() {
   const [cancelling, setCancelling] = useState(false)
   const [fetchError, setFetchError] = useState('')
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
-  const [itemFiles, setItemFiles] = useState<Record<string, OrderFile[]>>({})  // itemId → files
-
   function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3500)
   }
 
   useEffect(() => {
     api.orders.get(id)
-      .then(order => {
-        setOrder(order)
-        // carregar ficheiros de cada item
-        if (order.items?.length) {
-          Promise.all(
-            order.items.map(item =>
-              fetch(`${API_URL}/api/v1/orders/${id}/items/${item.id}/files`, { headers: authHeaders() })
-                .then(r => r.json())
-                .then(files => ({ itemId: item.id, files: Array.isArray(files) ? files : [] }))
-                .catch(() => ({ itemId: item.id, files: [] }))
-            )
-          ).then(results => {
-            const map: Record<string, OrderFile[]> = {}
-            results.forEach(r => { map[r.itemId] = r.files })
-            setItemFiles(map)
-          })
-        }
-      })
+      .then(setOrder)
       .catch(() => setFetchError('Ordem não encontrada'))
       .finally(() => setLoading(false))
   }, [id])
@@ -213,7 +178,7 @@ export default function OrderDetailPage() {
         <SectionCard title={`Peças (${order.items.length})`}>
           <div className="space-y-4">
             {order.items.map((item) => {
-              const files = itemFiles[item.id] ?? []
+              const files: OrderFile[] = item.files ?? []
               const dxfFiles = files.filter(f => f.fileType === 'dxf' || f.fileType === 'dwg')
               return (
                 <div key={item.id} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.divider}` }}>

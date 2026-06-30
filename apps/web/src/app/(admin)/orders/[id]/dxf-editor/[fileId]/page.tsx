@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ChevronLeft, Loader2, Trash2, RotateCcw, Save, ZoomIn, ZoomOut, Move, MousePointer } from 'lucide-react'
 import { T, Btn } from '@/components/ui/admin-ui'
@@ -131,12 +131,16 @@ export default function DxfEditorPage() {
   const [pan,     setPan]     = useState({ x: 0, y: 0 })
   const [tool,    setTool]    = useState<'select' | 'pan'>('select')
   const [panning, setPanning] = useState(false)
-  const panStart = useRef({ x: 0, y: 0, px: 0, py: 0 })
-  const svgRef   = useRef<SVGSVGElement>(null)
+  const panStart     = useRef({ x: 0, y: 0, px: 0, py: 0 })
+  const svgRef       = useRef<SVGSVGElement>(null)
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [svgSize, setSvgSize] = useState({ w: 800, h: 600 })
 
   // layer visibility
   const [layers, setLayers] = useState<Record<string, boolean>>({})
+
+  // cleanup redirect timer on unmount
+  useEffect(() => () => { if (redirectTimer.current) clearTimeout(redirectTimer.current) }, [])
 
   useEffect(() => {
     fetch(`${API_URL}/api/v1/files/${fileId}/entities`, { headers: authHeaders() })
@@ -176,6 +180,19 @@ export default function DxfEditorPage() {
     return () => obs.disconnect()
   }, [])
 
+  // Delete key listener
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if ((e.target as HTMLElement).tagName === 'INPUT') return
+        setDeleted(prev => new Set([...prev, ...selected]))
+        setSelected(new Set())
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selected])
+
   function toggleSelect(handle: string) {
     if (tool !== 'select') return
     setSelected(prev => {
@@ -208,7 +225,7 @@ export default function DxfEditorPage() {
       const data = await res.json()
       if (!res.ok || !data.ok) throw new Error(data.error ?? 'Erro ao guardar')
       setSuccess(`DXF limpo guardado — ${data.removed} entidade(s) removida(s), ${data.remaining} restantes.`)
-      setTimeout(() => router.push(`/orders/${orderId}`), 2000)
+      redirectTimer.current = setTimeout(() => router.push(`/orders/${orderId}`), 2000)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro')
     } finally {

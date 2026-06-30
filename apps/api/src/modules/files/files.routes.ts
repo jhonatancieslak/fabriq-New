@@ -1,12 +1,17 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
 
 import type { FastifyInstance } from 'fastify'
+import { z } from 'zod'
 import { requireAuth } from '../../shared/middleware/auth.js'
-import { writeFile, mkdir } from 'fs/promises'
+import { writeFile, mkdir, unlink } from 'fs/promises'
 import { spawn } from 'child_process'
 import { join, extname, dirname, resolve } from 'path'
 import { randomUUID } from 'crypto'
 import { UPLOADS_DIR } from '../../shared/config.js'
+
+const cleanBodySchema = z.object({
+  handles: z.array(z.string().max(64)).max(10_000),
+})
 
 const DXF_PROCESSOR      = resolve('/var/www/fabriq/services/dxf-processor/process_dxf.py')
 const DXF_EXPORT_SCRIPT  = resolve('/var/www/fabriq/services/dxf-processor/export_entities.py')
@@ -24,14 +29,16 @@ function fileType(ext: string): string {
 function runPython(args: string[], timeoutMs = 60_000): Promise<unknown> {
   return new Promise((res) => {
     const py = spawn('python3', args)
-    let out = ''
-    py.stdout.on('data', d => (out += d))
+    let out = '', err = ''
+    py.stdout.on('data', (d: Buffer) => (out += d))
+    py.stderr.on('data', (d: Buffer) => (err += d))  // drain stderr so Python never blocks
+    const timer = setTimeout(() => { py.kill(); res({ ok: false, error: 'Timeout' }) }, timeoutMs)
     py.on('close', () => {
+      clearTimeout(timer)
       try { res(JSON.parse(out.trim())) }
-      catch { res({ ok: false, error: 'Resposta inválida' }) }
+      catch { res({ ok: false, error: err.trim() || 'Resposta inválida' }) }
     })
-    py.on('error', e => res({ ok: false, error: e.message }))
-    setTimeout(() => { py.kill(); res({ ok: false, error: 'Timeout' }) }, timeoutMs)
+    py.on('error', e => { clearTimeout(timer); res({ ok: false, error: e.message }) })
   })
 }
 
@@ -232,8 +239,10 @@ export async function filesRoutes(app: FastifyInstance) {
     '/files/:fileId/clean',
     { preHandler: [requireAuth] },
     async (req, reply) => {
-      const { handles } = req.body
-      if (!Array.isArray(handles)) return reply.status(400).send({ error: 'handles deve ser array' })
+      const parsed = cleanBodySchema.safeParse(req.body ?? {})
+      if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() })
+      const { handles } = parsed.data
+      if (!handles.length) return reply.status(400).send({ error: 'Nenhum handle fornecido' })
 
       const file = await app.prisma.orderFile.findFirst({
         where: { id: req.params.fileId, tenantId: req.tenantId! },
@@ -252,7 +261,7 @@ export async function filesRoutes(app: FastifyInstance) {
       const result = await runPython([DXF_CLEAN_SCRIPT, inputPath, cleanedPath, ...handles]) as any
       if (!result.ok) return reply.status(500).send({ error: result.error })
 
-      // regenerar preview do DXF limpo
+      // regenerar preview em background (não bloqueia resposta)
       const previewName = `${randomUUID()}_clean.png`
       const previewPath = join(UPLOADS_DIR, 'previews', req.tenantId!, previewName)
       await mkdir(join(UPLOADS_DIR, 'previews', req.tenantId!), { recursive: true })
@@ -270,6 +279,9 @@ export async function filesRoutes(app: FastifyInstance) {
           perimeterMm:  procResult.perimeterMm  ?? file.perimeterMm,
         },
       })
+
+      // remover ficheiro original do disco (agora substituído pelo limpo)
+      unlink(inputPath).catch(() => {})
 
       return {
         ok:        true,

@@ -82,9 +82,12 @@ def export(input_path: str) -> dict:
                     upd_bounds(c.x - r_maj, c.y - r_maj); upd_bounds(c.x + r_maj, c.y + r_maj)
 
                 elif t == 'SPLINE':
-                    pts = [{'x': p.x, 'y': p.y} for p in ent.control_points]
+                    # flattening() devolve pontos na curva real (não no polígono de controlo)
+                    pts = [{'x': p.x, 'y': p.y} for p in ent.flattening(0.1)]
+                    if not pts:
+                        pts = [{'x': p.x, 'y': p.y} for p in ent.control_points]
                     for p in pts: upd_bounds(p['x'], p['y'])
-                    geo = {'points': pts, 'closed': False, 'isSpline': True}
+                    geo = {'points': pts, 'closed': False}
 
                 elif t == 'TEXT':
                     ip = ent.dxf.insert
@@ -116,7 +119,8 @@ def export(input_path: str) -> dict:
                     pts = []
                     for attr in ['vtx0', 'vtx1', 'vtx2', 'vtx3']:
                         v = ent.dxf.get(attr, None)
-                        if v: pts.append({'x': v.x, 'y': v.y}); upd_bounds(v.x, v.y)
+                        if v is not None:  # Vec3(0,0,0) é falsy — usar 'is not None'
+                            pts.append({'x': v.x, 'y': v.y}); upd_bounds(v.x, v.y)
                     geo = {'points': pts}
 
                 if geo is not None:

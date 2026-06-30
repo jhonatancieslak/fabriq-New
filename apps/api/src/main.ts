@@ -44,7 +44,8 @@ const app = Fastify({
 app.addContentTypeParser('application/json', { parseAs: 'buffer' }, function (req, body, done) {
   try {
     ;(req as any).rawBody = body
-    done(null, JSON.parse(body.toString()))
+    const str = body.toString()
+    done(null, str ? JSON.parse(str) : {})
   } catch (err: any) {
     done(err, undefined)
   }

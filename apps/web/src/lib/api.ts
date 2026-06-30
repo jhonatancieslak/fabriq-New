@@ -193,9 +193,16 @@ export interface OrderStage {
   startedAt?: string; completedAt?: string
   photos?: { id: string; filename: string }[]
 }
+export interface OrderFile {
+  id: string; originalName: string; storagePath: string; previewPath: string | null
+  fileType: string | null; sizeBytes: number; processed: boolean
+  areaM2: number | null; bboxWidthMm: number | null; bboxHeightMm: number | null
+  perimeterMm: number | null
+}
 export interface OrderItem {
   id: string; description: string; thicknessMm: number; quantityPlanned: number
   widthMm?: number; heightMm?: number; material?: { name: string }
+  files?: OrderFile[]
 }
 export interface Order {
   id: string; orderNumber: string; status: string; authCode: string; accessToken: string
