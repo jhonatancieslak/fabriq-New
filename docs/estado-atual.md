@@ -547,6 +547,58 @@ Ver plano detalhado: `docs/nesting-plano.md`
 
 ---
 
+## Sessão 16 — 2026-06-30
+
+### Máquina e Operador (Pipesolutions)
+- Máquina **"Laser 1 - 6000w"** criada (tipo: laser_cnc)
+- Operador **fabio.silva** / fabio1234 criado, vinculado à Laser 1
+- 179 ordens migradas: etapas reais do NestCut vinculadas à Laser 1 + Fábio Silva
+  - Tempo real do NestCut preservado (ex: 11min, 15:25→15:49)
+  - Etapas duplicadas (criadas por erro) removidas
+  - Todas as ordens marcadas como `completed`
+
+### Folha de Corte — Redesenhada
+- **A4 landscape** (horizontal)
+- **2 páginas**: Folha de Corte + Retirada de Material
+- Observações da ordem em destaque (amarelo)
+- Campos operacionais: colada da chapa, material verificado, nozzle, gás, pressão
+- Tolerância em mm (campo para preencher à mão)
+- Preview DXF embebido por peça (PNG em base64)
+- **Fix QR Code no print**: `print-color-adjust: exact` + timeout antes de `w.print()`
+- Folha 2: qtd prevista / retirada / falta / data retirada / assinatura
+
+### Tela de Detalhe da Ordem — Melhorada
+- KPIs: total peças, tempo de corte, área total, custo estimado
+- Ficha resumo: cliente, obra, operador, data corte, tempo real
+- Etapas com máquina, operador, tempo, início→fim (sem emojis)
+- Peças com thumbnail DXF, área unitária, área total, perímetro
+- Botão "Ver Obra" → link para detalhe da obra
+- Custo estimado detalhado (corte / material / total)
+
+### Detalhe de Obra (nova página /projects/[id])
+- KPIs: ordens concluídas/total, peças, tempo total, área, custo acumulado
+- Barra de progresso visual
+- Lista de todas as ordens com status, máquina, operador, tempo, custo
+- Botão **"Concluir Obra"** → `POST /projects/:id/complete`
+- Botão **"Reabrir"** para reverter
+- Totais acumulados no rodapé da lista
+
+### Biblioteca de Ficheiros (/media)
+- Grid de ficheiros DXF/DWG processados
+- Preview thumbnail (fundo preto, linhas amber)
+- Info: nome, tipo, tamanho, obra, cliente, área, dimensão, espessura
+- Link para obra correspondente
+- Pesquisa por nome, paginação
+- Sidebar: link "Biblioteca" adicionado
+
+### API — Novos endpoints
+- `GET /api/v1/projects/:id` — métricas agregadas (tempo, área, custo, peças)
+- `POST /api/v1/projects/:id/complete` — concluir obra
+- `POST /api/v1/projects/:id/reopen` — reabrir obra
+- `GET /api/v1/media` — biblioteca de ficheiros DXF/DWG processados
+
+---
+
 ## Próximos passos (Nesting)
 
 - ~~**Fase 2**~~ ✅ Editor DXF no browser
