@@ -685,6 +685,32 @@ Para retroactivo: pode-se fazer um import CSV com os tempos estimados histórico
 - Laser 1 - 6000w: €2.65/min, 4 min mínimo, €11 custo mínimo
 - Validado: Inox 3mm/25min = €80.65; corte 90s = €11 (mínimo aplicado)
 
+## Caminho C — Manutenção Preventiva + Avarias (concluído 2026-06-30 Sessão 18)
+
+### Schema (db push aplicado)
+- `MaintenanceTask`: tarefas por máquina — 5 periodicidades (horas/dias/semanas/meses/ordens), 8 categorias
+- `MaintenanceRecord`: histórico de execuções com horas e ordens da máquina no momento
+- `Breakdown`: avarias — 9 componentes, 4 gravidades, 3 estados (open/in_progress/resolved)
+
+### API
+- `GET /maintenance` + `POST/PATCH/DELETE /maintenance/:id` — CRUD tarefas
+- `POST /maintenance/:id/execute` — registar execução
+- `GET /maintenance/summary` — KPIs: overdue/urgent/soon/ok/openBreakdowns
+- `GET/POST/PATCH/DELETE /breakdowns` — CRUD avarias (admin)
+- `POST /breakdowns/operator` — reportar via PWA (token de operador)
+- Estado calculado em runtime: progress % + nextDue (data ou horas/ordens)
+
+### Frontend Admin (/maintenance)
+- 4 KPIs no topo
+- Tab "Preventiva": lista semáforo com barra de progresso, próxima execução, modal "Executar"
+- Tab "Avarias": fluxo open→em resolução→resolvida, modal "Resolver" com solução + downtime
+- Sidebar: link "Manutenção" com ícone Wrench
+
+### PWA (/op/ordem)
+- Botão "Reportar Avaria" visível durante etapa em curso
+- Modal bottom-sheet com componente + gravidade + descrição
+- Enviado para `POST /breakdowns/operator` com token de operador
+
 ## Próximos passos (geral)
 
 - **Webhook Stripe** já configurado — testar fluxo completo de subscrição
