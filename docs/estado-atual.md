@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-06-30 (Sessão 18)
+**Última sessão:** 2026-07-01 (Sessão 20)
 
 ---
 
@@ -651,7 +651,26 @@ Ver plano detalhado: `docs/nesting-plano.md`
 - ~~**Fase 2**~~ ✅ Editor DXF no browser
 - ~~**Fase 3**~~ ✅ Algoritmo de nesting: bin-packing, aproveitamento %, imagem PNG do layout
 - ~~**Fase 4**~~ ✅ Kanban de produção (OrderBatch)
-- **Módulos de parâmetros por processo** — Laser CNC (potência, velocidade, gás, pressão), Quinagem (tonelagem, ângulo, raio), Guilhotina — campos específicos por tipo de máquina para alimentar o nesting
+- ~~**Módulos de parâmetros por processo**~~ ✅ (ver Sessão 20)
+
+## Parâmetros por Processo — Laser/Quinagem/Guilhotina (concluído 2026-07-01 Sessão 20)
+
+### Schema (`CuttingParam`, db push aplicado)
+- Campos laser (`speedMmMin`, `powerPercent`, `gasPressureBar`, `gasType`, `nozzleMm`) tornados opcionais
+- Novos campos quinagem: `tonnageT`, `bendAngleDeg`, `bendRadiusMm`, `backGaugeMm`
+- Novos campos guilhotina: `bladeClearanceMm`, `maxSheetThicknessMm`
+- Validação condicional por `machineType` (`validateProcessFields`): corte (laser_cnc/cnc_router/plasma/waterjet) exige campos laser; `bending` exige tonelagem/ângulo/raio; `guillotine` exige folga de lâmina
+
+### API (`apps/api/src/modules/cutting-params/cutting-params.routes.ts`)
+- `GET /cutting-params/list` — listagem admin paginada, filtro por machineType/materialType/pesquisa (nova, não interfere com `GET /` usado pelo PWA operador)
+- `POST /cutting-params` · `PATCH /cutting-params/:id` · `DELETE /cutting-params/:id` — CRUD admin com auditoria
+- `GET /cutting-params` (lookup por material+espessura+machineType, com interpolação) e `/feedback`, `/materials` mantidos sem quebra
+
+### Frontend
+- Nova página `/settings/cutting-params` — tabs Corte Laser / Quinagem / Guilhotina, tabela por grupo, modal com campos dinâmicos conforme tipo de máquina seleccionado, apagar com confirmação
+- `api.ts`: interface `CuttingParam` + módulo `api.cuttingParams` (list/create/update/delete)
+- Sidebar + header: link "Parâmetros de Corte" (ícone Sliders) acima de "Configurações"
+- Build de `apps/api` e `apps/web` sem erros de tipo; serviços `fabriq-api`/`fabriq-web` reiniciados em produção
 
 ## Caminho A — Produção & KPIs Reais (concluído 2026-06-30 Sessão 17)
 

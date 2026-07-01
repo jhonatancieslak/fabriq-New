@@ -22,6 +22,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/security':     'Segurança',
   '/billing':      'Plano & Billing',
   '/settings':     'Configurações',
+  '/settings/cutting-params': 'Parâmetros de Corte',
   '/superadmin':   'Super Admin',
 }
 

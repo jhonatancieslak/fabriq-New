@@ -101,6 +101,20 @@ export const api = {
     delete: (id: string) => request(`/api/v1/machines/${id}`, { method: 'DELETE' }),
   },
 
+  cuttingParams: {
+    list: (params?: { search?: string; machineType?: string; materialType?: string; page?: number }) => {
+      const q = new URLSearchParams(params as never).toString()
+      return request<{ params: CuttingParam[]; total: number; page: number; pages: number }>(
+        `/api/v1/cutting-params/list${q ? `?${q}` : ''}`
+      )
+    },
+    create: (data: Partial<CuttingParam>) =>
+      request<CuttingParam>('/api/v1/cutting-params', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<CuttingParam>) =>
+      request<CuttingParam>(`/api/v1/cutting-params/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/api/v1/cutting-params/${id}`, { method: 'DELETE' }),
+  },
+
   materials: {
     list: (params?: { search?: string; page?: number; includeInactive?: boolean }) => {
       const q = new URLSearchParams(params as never).toString()
@@ -222,6 +236,14 @@ export interface Machine {
   costPerMinAfterMin?: number | null; materialCostEnabled?: boolean; marginPercent?: number | null
 }
 export interface Material { id: string; name: string; type: string; isActive?: boolean; costPerKg?: number | null; costPerM2?: number | null }
+export interface CuttingParam {
+  id: string; materialType: string; thicknessMm: number; machineType: string
+  speedMmMin?: number | null; powerPercent?: number | null; gasPressureBar?: number | null
+  gasType?: string | null; nozzleMm?: number | null; frequency?: number | null
+  tonnageT?: number | null; bendAngleDeg?: number | null; bendRadiusMm?: number | null; backGaugeMm?: number | null
+  bladeClearanceMm?: number | null; maxSheetThicknessMm?: number | null
+  notes?: string | null; source?: string; confidence?: number; tenantId?: string | null; createdAt?: string
+}
 export interface Operator { id: string; name: string; username: string; phone?: string }
 export interface Requester { id: string; name: string; email?: string; phone?: string; notifyWhatsapp?: boolean; notifyEmail?: boolean }
 export interface OrderStage {
