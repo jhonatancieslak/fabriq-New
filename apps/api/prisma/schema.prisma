@@ -460,7 +460,7 @@ model OrderItem {
 model OrderFile {
   id           String   @id @default(uuid())
   tenantId     String   @map("tenant_id")
-  orderItemId  String   @map("order_item_id")
+  orderItemId  String?  @map("order_item_id")
   originalName String   @map("original_name")
   storagePath  String   @map("storage_path")
   previewPath  String?  @map("preview_path")
@@ -475,7 +475,7 @@ model OrderFile {
   processed    Boolean  @default(false)    // true após análise DXF concluída
   createdAt    DateTime @default(now()) @map("created_at")
 
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  orderItem OrderItem? @relation(fields: [orderItemId], references: [id])
 
   @@map("order_files")
 }

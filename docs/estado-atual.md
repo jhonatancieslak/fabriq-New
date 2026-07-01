@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-07-01 (Sessão 20)
+**Última sessão:** 2026-07-01 (Sessão 21)
 
 ---
 
@@ -777,6 +777,19 @@ Para retroactivo: pode-se fazer um import CSV com os tempos estimados histórico
 - BD fonte: `postgresql://nesting@localhost/nesting_db` (tabela `ficheiros_dxf`)
 - Cria registos `OrderFile` standalone (sem serviceOrderId) visíveis na Biblioteca `/media`
 - Para executar: `node scripts/migrate-dxf-files.js` (pasta `/var/www/fabriq`)
+
+## Migração DXF NestCut → Biblioteca (concluído 2026-07-01 Sessão 21)
+
+### Bug de schema encontrado e corrigido
+- `OrderFile.orderItemId` era obrigatório (relação não-nula) — **não existia suporte real a ficheiros standalone** na Biblioteca `/media`, apesar da documentação de sessões anteriores sugerir o contrário
+- Schema alterado: `orderItemId` e a relação `orderItem` tornados opcionais (`String?` / `OrderItem?`) — aplicado via `prisma db push` (sem perda de dados, só relaxa constraint)
+- `scripts/migrate-dxf-files.js` corrigido: path do require do Prisma Client (`./apps/api/...` → `../apps/api/...`, relativo ao ficheiro), campo `mimeType` obrigatório adicionado (inferido pela extensão), campo inexistente `serviceOrderId` removido do payload
+
+### Execução
+- Rodado com `NODE_PATH=/var/www/fabriq/apps/api/node_modules node scripts/migrate-dxf-files.js`
+- Resultado: **82 ficheiros migrados**, 119 ignorados (ficheiros originais já não existiam em disco no sistema antigo — não recuperáveis), 0 erros
+- Ficheiros visíveis na Biblioteca `/media` do tenant `pipesolutions`, standalone (sem ordem associada)
+- `apps/api` rebuilded e `pm2 restart fabriq-api --update-env` aplicado
 
 ## Próximos passos (geral)
 

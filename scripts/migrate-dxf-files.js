@@ -2,7 +2,7 @@
 // Script: Migrar ficheiros DXF do sistema NestCut → FABRIQ biblioteca de ficheiros
 // Uso: node scripts/migrate-dxf-files.js
 
-const { PrismaClient } = require('./apps/api/node_modules/@prisma/client')
+const { PrismaClient } = require('../apps/api/node_modules/@prisma/client')
 const { Client } = require('pg')
 const fs = require('fs')
 const path = require('path')
@@ -98,13 +98,13 @@ async function main() {
       await prisma.orderFile.create({
         data: {
           tenantId:       tenant.id,
-          serviceOrderId: null,        // standalone na biblioteca
-          orderItemId:    null,
+          orderItemId:    null,        // standalone na biblioteca
           originalName:   f.nome_original ?? f.nome_ficheiro,
           storagePath:    path.join(NEW_DXF_DIR, tenant.id, newFile),
           previewPath:    newPrevDest ?? null,
           sizeBytes:      f.tamanho ?? 0,
           fileType:       (f.tipo ?? 'dxf').toLowerCase(),
+          mimeType:       ext === '.dwg' ? 'application/acad' : ext === '.pdf' ? 'application/pdf' : ext === '.png' ? 'image/png' : 'application/dxf',
           areaM2:         f.area_m2 ? parseFloat(f.area_m2) : null,
           bboxWidthMm:    f.bbox_largura_mm ? parseFloat(f.bbox_largura_mm) : null,
           bboxHeightMm:   f.bbox_altura_mm ? parseFloat(f.bbox_altura_mm) : null,
