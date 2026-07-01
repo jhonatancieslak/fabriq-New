@@ -2,6 +2,12 @@
 
 import type { FastifyInstance } from 'fastify'
 import { requireAuth, requireRole } from '../../shared/middleware/auth.js'
+import { audit } from '../../shared/utils/audit.js'
+import { WhatsAppAdmin } from '../../shared/services/whatsapp-admin.service.js'
+
+function evolutionInstanceFor(tenantId: string): string {
+  return `fabriq-${tenantId}`
+}
 
 export interface OrderNumberingConfig {
   prefix: string          // 'OS', 'ORD', 'FAB', '' — máx 10 chars
@@ -159,5 +165,59 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
     } catch (e) {
       return reply.status(500).send({ error: e instanceof Error ? e.message : 'Erro ao contactar Evolution API' })
     }
+  })
+
+  // POST /api/v1/settings/whatsapp/connect — garante a instância Evolution do tenant e devolve o QR code
+  app.post('/whatsapp/connect', { preHandler: [requireAuth, requireRole('admin')] }, async (req, reply) => {
+    const tenantId = req.tenantId!
+    const instance = evolutionInstanceFor(tenantId)
+
+    try {
+      const qr = await WhatsAppAdmin.createInstance(instance)
+
+      await app.prisma.tenant.update({
+        where: { id: tenantId },
+        data: {
+          evolutionApiUrl: process.env.EVOLUTION_API_URL,
+          evolutionApiKey: process.env.EVOLUTION_API_KEY,
+          evolutionInstance: instance,
+        },
+      })
+
+      await audit({ prisma: app.prisma, req, tenantId, userId: req.userId,
+        action: 'whatsapp.connect', entityType: 'tenant', entityId: tenantId })
+
+      const state = await WhatsAppAdmin.connectionState(instance)
+      return { instance, state, qrcode: qr.base64 ?? null, pairingCode: qr.code ?? null }
+    } catch (e) {
+      return reply.status(500).send({ error: e instanceof Error ? e.message : 'Erro ao ligar WhatsApp' })
+    }
+  })
+
+  // GET /api/v1/settings/whatsapp/state — estado da conexão da instância do tenant
+  app.get('/whatsapp/state', { preHandler: [requireAuth, requireRole('admin')] }, async (req) => {
+    const tenant = await app.prisma.tenant.findUnique({
+      where: { id: req.tenantId! },
+      select: { evolutionInstance: true },
+    })
+    const instance = tenant?.evolutionInstance
+    if (!instance) return { instance: null, state: 'close', connected: false }
+
+    const state = await WhatsAppAdmin.connectionState(instance)
+    return { instance, state, connected: state === 'open' }
+  })
+
+  // POST /api/v1/settings/whatsapp/disconnect — desliga (logout) sem apagar a instância
+  app.post('/whatsapp/disconnect', { preHandler: [requireAuth, requireRole('admin')] }, async (req) => {
+    const tenant = await app.prisma.tenant.findUnique({
+      where: { id: req.tenantId! },
+      select: { evolutionInstance: true },
+    })
+    if (tenant?.evolutionInstance) {
+      await WhatsAppAdmin.logout(tenant.evolutionInstance)
+      await audit({ prisma: app.prisma, req, tenantId: req.tenantId!, userId: req.userId,
+        action: 'whatsapp.disconnect', entityType: 'tenant', entityId: req.tenantId! })
+    }
+    return { ok: true }
   })
 }

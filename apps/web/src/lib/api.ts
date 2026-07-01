@@ -182,6 +182,17 @@ export const api = {
       request<{ config: Record<string, unknown>; preview: string }>('/api/v1/settings/order-numbering', { method: 'PATCH', body: JSON.stringify(data) }),
   },
 
+  whatsapp: {
+    connect: () =>
+      request<{ instance: string; state: string; qrcode: string | null; pairingCode: string | null }>(
+        '/api/v1/settings/whatsapp/connect', { method: 'POST' }
+      ),
+    state: () =>
+      request<{ instance: string | null; state: string; connected: boolean }>('/api/v1/settings/whatsapp/state'),
+    disconnect: () =>
+      request<{ ok: boolean }>('/api/v1/settings/whatsapp/disconnect', { method: 'POST' }),
+  },
+
   reports: {
     get: (from: string, to: string) =>
       request<any>(`/api/v1/reports?from=${from}&to=${to}`),

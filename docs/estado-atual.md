@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-07-01 (Sessão 21)
+**Última sessão:** 2026-07-01 (Sessão 22)
 
 ---
 
@@ -790,6 +790,26 @@ Para retroactivo: pode-se fazer um import CSV com os tempos estimados histórico
 - Resultado: **82 ficheiros migrados**, 119 ignorados (ficheiros originais já não existiam em disco no sistema antigo — não recuperáveis), 0 erros
 - Ficheiros visíveis na Biblioteca `/media` do tenant `pipesolutions`, standalone (sem ordem associada)
 - `apps/api` rebuilded e `pm2 restart fabriq-api --update-env` aplicado
+
+## WhatsApp — Instância Evolution por Tenant (concluído 2026-07-01 Sessão 22)
+
+### Infra
+- Evolution API partilhada já corria em Docker (`evolution-evolution-api-1`), acessível internamente em `http://127.0.0.1:8765` (porta pública 8080 é só docker-proxy)
+- Domínio público `evo.estruturasmetalicasviana.com` **não tem vhost nginx** — não usar (serve o certificado errado, cai no default_server). Ficou registado como pendente, não resolvido nesta sessão (decisão: usar URL interna em vez de criar vhost novo)
+- `apps/api/.env`: `EVOLUTION_API_URL=http://127.0.0.1:8765`, `EVOLUTION_API_KEY` = key global admin da Evolution partilhada (mesma usada por outros projectos no servidor, ex: solarnest)
+
+### Backend
+- Novo `apps/api/src/shared/services/whatsapp-admin.service.ts` — porta do padrão já usado em `/var/www/solar` (`WhatsAppAdmin`): `createInstance`, `connect`, `connectionState`, `logout`, `deleteInstance`, via `fetch` nativo contra a apikey global
+- Novas rotas em `settings.routes.ts`: `POST /whatsapp/connect` (cria/garante instância `fabriq-{tenantId}`, devolve QR code base64 + pairing code, persiste em `tenant.evolutionInstance/evolutionApiUrl/evolutionApiKey`), `GET /whatsapp/state`, `POST /whatsapp/disconnect`
+- Rotas manuais antigas (`GET/PATCH /whatsapp`, `POST /whatsapp/test`) mantidas intactas para configuração avançada (instância própria fora deste servidor)
+
+### Frontend
+- `/settings/whatsapp` reescrita: secção principal "Conectar WhatsApp" com botão gerar QR code, polling de estado a cada 3.5s, badge "Ligado" quando confirmado + botão desligar
+- Formulário manual antigo movido para secção colapsável "Configuração manual (avançado)"
+
+### Testado
+- `POST /whatsapp/connect` chamado com JWT real do admin Pipesolutions → QR code gerado com sucesso, instância `fabriq-11643ce0-427f-4849-9975-d6ef8f99e5b0` persistida na BD
+- **Falta**: escanear o QR real no telemóvel para confirmar ligação end-to-end (ninguém escaneou ainda — próximo passo é o utilizador abrir `/settings/whatsapp` e ligar o WhatsApp do Pipesolutions)
 
 ## Próximos passos (geral)
 

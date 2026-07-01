@@ -2,10 +2,11 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, Loader2 } from 'lucide-react'
-import { T, Toast, Btn, Field, Input, PageHeader } from '@/components/ui/admin-ui'
+import { ChevronLeft, ChevronDown, Loader2, QrCode } from 'lucide-react'
+import { T, Toast, Btn, Field, Input, PageHeader, Badge } from '@/components/ui/admin-ui'
+import { api } from '@/lib/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.fabriq.pt'
 
@@ -27,10 +28,40 @@ export default function WhatsappSettingsPage() {
 
   const [form, setForm] = useState({ apiUrl: '', apiKey: '', instance: '' })
   const [testPhone, setTestPhone] = useState('')
+  const [showManual, setShowManual] = useState(false)
+
+  // Ligação automática (QR code)
+  const [connecting, setConnecting] = useState(false)
+  const [qrcode, setQrcode] = useState<string | null>(null)
+  const [pairingCode, setPairingCode] = useState<string | null>(null)
+  const [connected, setConnected] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 4000)
+  }
+
+  function stopPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }
+
+  async function refreshState() {
+    try {
+      const state = await api.whatsapp.state()
+      setConnected(state.connected)
+      if (state.connected) {
+        setQrcode(null)
+        setPairingCode(null)
+        stopPolling()
+      }
+    } catch {
+      // ignora erros de polling
+    }
   }
 
   useEffect(() => {
@@ -41,7 +72,48 @@ export default function WhatsappSettingsPage() {
         setConfigured(d.configured)
       })
       .finally(() => setLoading(false))
+    refreshState()
+    return () => stopPolling()
   }, [])
+
+  async function handleConnect() {
+    setConnecting(true)
+    try {
+      const res = await api.whatsapp.connect()
+      if (res.state === 'open') {
+        setConnected(true)
+        setQrcode(null)
+        setPairingCode(null)
+        showToast('WhatsApp já está ligado')
+      } else {
+        setQrcode(res.qrcode)
+        setPairingCode(res.pairingCode)
+        setConnected(false)
+        stopPolling()
+        pollRef.current = setInterval(refreshState, 3500)
+      }
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Erro ao gerar QR code', 'err')
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true)
+    try {
+      await api.whatsapp.disconnect()
+      setConnected(false)
+      setQrcode(null)
+      setPairingCode(null)
+      stopPolling()
+      showToast('WhatsApp desligado')
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Erro ao desligar', 'err')
+    } finally {
+      setDisconnecting(false)
+    }
+  }
 
   async function save() {
     setSaving(true)
@@ -94,64 +166,52 @@ export default function WhatsappSettingsPage() {
           <ChevronLeft className="h-4 w-4" /> Configurações
         </button>
         <PageHeader
-          title="WhatsApp — Evolution API"
-          sub="Configure a integração WhatsApp para notificações automáticas aos clientes"
+          title="WhatsApp"
+          sub="Ligue o WhatsApp da sua empresa para enviar notificações automáticas aos clientes"
         />
       </div>
 
-      {/* Status */}
-      <div className="rounded-2xl p-4 flex items-center gap-3" style={{
-        background: configured ? 'rgba(34,197,94,0.06)' : 'rgba(234,179,8,0.06)',
-        border: `1px solid ${configured ? 'rgba(34,197,94,0.2)' : 'rgba(234,179,8,0.2)'}`,
-      }}>
-        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: configured ? '#22C55E' : '#EAB308' }} />
-        <p className="text-sm font-medium" style={{ color: configured ? '#22C55E' : '#EAB308' }}>
-          {configured ? 'Evolution API configurada e activa' : 'WhatsApp não configurado'}
-        </p>
-      </div>
-
-      {/* Como obter instância */}
-      <div className="rounded-2xl p-5 space-y-3" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Como configurar</p>
-        <ol className="space-y-2 text-sm" style={{ color: T.muted }}>
-          <li><span className="font-semibold" style={{ color: T.text }}>1.</span> Aceda à sua instância Evolution API e crie uma nova instância para este tenant</li>
-          <li><span className="font-semibold" style={{ color: T.text }}>2.</span> Copie o URL base da API (ex: <code className="text-xs px-1 py-0.5 rounded" style={{ background: T.divider }}>https://evolution.meuservidor.com</code>)</li>
-          <li><span className="font-semibold" style={{ color: T.text }}>3.</span> Copie a API Key global ou da instância</li>
-          <li><span className="font-semibold" style={{ color: T.text }}>4.</span> Copie o nome da instância criada</li>
-          <li><span className="font-semibold" style={{ color: T.text }}>5.</span> Faça scan do QR Code na interface da Evolution API para ligar o número WhatsApp</li>
-        </ol>
-      </div>
-
-      {/* Formulário */}
+      {/* Conectar WhatsApp */}
       <div className="rounded-2xl p-5 space-y-4" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-        <Field label="URL da Evolution API">
-          <Input
-            value={form.apiUrl}
-            onChange={v => setForm(f => ({ ...f, apiUrl: v }))}
-            placeholder="https://evolution.meuservidor.com"
-          />
-        </Field>
-        <Field label="API Key">
-          <Input
-            value={form.apiKey}
-            onChange={v => setForm(f => ({ ...f, apiKey: v }))}
-            placeholder="Chave de autenticação da API"
-          />
-        </Field>
-        <Field label="Nome da Instância">
-          <Input
-            value={form.instance}
-            onChange={v => setForm(f => ({ ...f, instance: v }))}
-            placeholder="Ex: fabriq-empresa"
-          />
-        </Field>
-        <Btn onClick={save} disabled={saving}>
-          {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> A guardar…</> : 'Guardar configuração'}
-        </Btn>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Conectar WhatsApp</p>
+          <Badge label={connected ? 'Ligado' : 'Não ligado'} color={connected ? '#22C55E' : T.subtle} />
+        </div>
+
+        {connected ? (
+          <div className="space-y-3">
+            <p className="text-sm" style={{ color: T.muted }}>O WhatsApp desta empresa está ligado e a enviar notificações.</p>
+            <Btn onClick={handleDisconnect} disabled={disconnecting} variant="danger">
+              {disconnecting ? <><Loader2 className="h-4 w-4 animate-spin" /> A desligar…</> : 'Desligar'}
+            </Btn>
+          </div>
+        ) : qrcode ? (
+          <div className="space-y-3">
+            <div className="flex justify-center p-4 rounded-xl" style={{ background: '#F9FAFB' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrcode} alt="QR Code WhatsApp" className="w-56 h-56" />
+            </div>
+            <p className="text-sm text-center" style={{ color: T.muted }}>
+              Abre o WhatsApp no telemóvel → Aparelhos ligados → Ligar aparelho → digitaliza o código
+            </p>
+            {pairingCode && (
+              <p className="text-xs text-center" style={{ color: T.subtle }}>
+                Código alternativo: <span className="font-mono font-semibold">{pairingCode}</span>
+              </p>
+            )}
+            <Btn onClick={handleConnect} disabled={connecting} variant="ghost" className="w-full">
+              {connecting ? <><Loader2 className="h-4 w-4 animate-spin" /> A gerar…</> : 'Gerar novo QR Code'}
+            </Btn>
+          </div>
+        ) : (
+          <Btn onClick={handleConnect} disabled={connecting} className="w-full">
+            {connecting ? <><Loader2 className="h-4 w-4 animate-spin" /> A gerar QR Code…</> : <><QrCode className="h-4 w-4" /> Gerar QR Code</>}
+          </Btn>
+        )}
       </div>
 
       {/* Teste */}
-      {configured && (
+      {connected && (
         <div className="rounded-2xl p-5 space-y-4" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
           <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Testar envio</p>
           <Field label="Número de telefone (com código país)">
@@ -166,6 +226,48 @@ export default function WhatsappSettingsPage() {
           </Btn>
         </div>
       )}
+
+      {/* Configuração manual avançada */}
+      <div className="rounded-2xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+        <button
+          onClick={() => setShowManual(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left"
+        >
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: T.subtle }}>Configuração manual (avançado)</p>
+          <ChevronDown className="h-4 w-4 transition-transform" style={{ color: T.subtle, transform: showManual ? 'rotate(180deg)' : undefined }} />
+        </button>
+        {showManual && (
+          <div className="px-5 pb-5 space-y-4" style={{ borderTop: `1px solid ${T.divider}` }}>
+            <p className="text-sm pt-4" style={{ color: T.muted }}>
+              Use esta secção apenas se tiver uma instância Evolution API própria, fora deste servidor.
+            </p>
+            <Field label="URL da Evolution API">
+              <Input
+                value={form.apiUrl}
+                onChange={v => setForm(f => ({ ...f, apiUrl: v }))}
+                placeholder="https://evolution.meuservidor.com"
+              />
+            </Field>
+            <Field label="API Key">
+              <Input
+                value={form.apiKey}
+                onChange={v => setForm(f => ({ ...f, apiKey: v }))}
+                placeholder="Chave de autenticação da API"
+              />
+            </Field>
+            <Field label="Nome da Instância">
+              <Input
+                value={form.instance}
+                onChange={v => setForm(f => ({ ...f, instance: v }))}
+                placeholder="Ex: fabriq-empresa"
+              />
+            </Field>
+            <Btn onClick={save} disabled={saving} variant="ghost">
+              {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> A guardar…</> : 'Guardar configuração manual'}
+            </Btn>
+          </div>
+        )}
+      </div>
 
       {/* Eventos */}
       <div className="rounded-2xl p-5 space-y-3" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
