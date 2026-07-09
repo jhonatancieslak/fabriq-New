@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-07-01 (Sessão 22)
+**Última sessão:** 2026-07-09 (Sessão 23)
 
 ---
 
@@ -816,6 +816,27 @@ Para retroactivo: pode-se fazer um import CSV com os tempos estimados histórico
 - **Webhook Stripe** já configurado — testar fluxo completo de subscrição
 - **Evolution API por tenant** — UI para cada cliente configurar a sua instância WhatsApp ✅ (backend feito, falta testar)
 - **Invoicing** — filtros por período e export XLS/PDF
+
+## Coladas por Espessura + Bloqueio de Billing (concluído 2026-07-09 Sessão 23)
+
+### Coladas em `/orders/new`
+- Cada espessura distinta entre as peças da ordem gera automaticamente uma colada (chapa) separada — sincronizado via `useEffect` sobre `items`
+- Cada colada tem etiqueta própria (`batchLabel` → `batchNumber` na API), origem, dimensões e material independentes
+- Campo "Colada da Chapa" a nível de ordem desativado quando há múltiplas coladas (a etiqueta passa a ser por colada)
+- Schema: `sheets[].batchNumber` opcional adicionado a `createOrderSchema`; `orders.service.ts` grava o campo em `OrderSheet`
+- Testado via API: 2 chapas (6mm/8mm) com etiquetas distintas gravadas correctamente na BD
+
+### Ecrã de Bloqueio de Billing
+- `components/ui/billing-lock.tsx` (novo): hook `useBillingLock()` consulta `GET /billing` e `BillingLockScreen` cobre o ecrã quando trial ou plano expirado
+- Integrado no `(admin)/layout.tsx` — não bloqueia a própria página `/billing`
+- `api.ts`: novo módulo `api.billing` (status/plans/checkout/portal) + tipos `BillingStatus`/`BillingPlan`
+- `billing/page.tsx` ajustada ao novo formato de `trial` (`isTrialPlan`, `expiresAt`, `daysLeft` nullable) devolvido pela API
+- `ecosystem.config.js`: `interpreter: 'none'` adicionado ao processo `fabriq-api`
+
+### Verificação
+- `tsc --noEmit` e `next build` sem erros em `apps/api` e `apps/web`
+- Serviços `fabriq-api`/`fabriq-web` reiniciados em produção
+- Testado end-to-end via API: login, `GET /billing` (formato correcto), criação de ordem com 2 coladas (`batchNumber` gravado por chapa), ordem de teste cancelada após verificação
 
 ## Email — Resend (concluído 2026-06-29)
 
