@@ -1,6 +1,19 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-07-09 (Sessão 23)
+**Última sessão:** 2026-07-09 (Sessão 24 — billing central-saas)
+
+---
+
+## Sessão 24 (2026-07-09) — Billing ligado ao Central SaaS
+
+- Central SaaS (`/var/www/jhonatancieslak/central-saas`, pm2 `central-saas`, porta 3300, `http://187.77.162.178/saas`) é agora o sistema único de licenciamento/billing Stripe para todos os SaaS (fabriq, picagens, eponto). Cada SaaS consulta `GET /saas/api/license/{productSlug}/{clientSlug}` para saber se deve bloquear o acesso.
+- Fabriq (produto) e Pipesolutions (cliente) já estão registados no Central SaaS: subscrição `trial`, €35/mês, **não bloqueada** (`blocked: false`) — Pipesolutions não paga por agora.
+- Assinatura local do fabriq (`app/models.py::Assinatura`, tabela `assinatura` do nesting) actualizada para `plano=trial, valor_mensal=0, estado=ativa, data_vencimento=NULL` — nunca bloqueia localmente. **Nota:** este modelo local ainda não está ligado ao Central SaaS — é um bloqueio independente, redundante a prazo. Ideal seria substituir a lógica de `bloquear_por_assinatura()` (`app/__init__.py`) por uma chamada ao endpoint de licença do Central SaaS.
+- Checkout Stripe testado end-to-end: `POST /saas/api/checkout/{subscriptionId}` cria sessão real (`cs_live_...`) — fluxo de pagamento está pronto para quando houver cliente a pagar.
+- **Webhook Stripe configurado**: reaproveitado o domínio `api.fabriq.pt` (stack antigo Next.js/Fastify, ainda em produção mas deprioritizado) só para a rota `/saas/` — nginx (`/etc/nginx/sites-available/api.fabriq.pt`) tem um novo `location /saas/` a fazer proxy para `127.0.0.1:3300` (Central SaaS), aproveitando o certificado wildcard `fabriq.pt` já existente (sem criar domínio novo).
+  - Webhook Stripe criado: `we_1TrI4UKqIHhNdadeiwmJ5w3i` → `https://api.fabriq.pt/saas/api/stripe/webhook` (eventos: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`)
+  - `STRIPE_WEBHOOK_SECRET` definido no `.env` do central-saas e serviço reiniciado.
+- **Próximo passo:** ligar o bloqueio local do fabriq (`Assinatura`) ao endpoint de licença do Central SaaS, para deixar de haver dois sistemas de bloqueio separados para o mesmo tenant.
 
 ---
 
