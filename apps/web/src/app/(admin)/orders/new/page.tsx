@@ -67,7 +67,8 @@ interface Sheet {
   materialId: string
   widthMm: string
   lengthMm: string
-  thicknessMm: string
+  thicknessMm: string // chave da colada — 1 espessura distinta = 1 colada
+  batchLabel: string  // etiqueta da colada (ex: "Colada A", "Mesa 2")
 }
 
 interface Item {
@@ -340,10 +341,10 @@ export default function NewOrderPage() {
   const [scheduledAt,  setScheduledAt]  = useState('')
   const [isUrgent,     setIsUrgent]     = useState(false)
 
-  // Chapa
-  const [sheet, setSheet] = useState<Sheet>({
-    origin: 'ours', materialId: '', widthMm: '', lengthMm: '', thicknessMm: '',
-  })
+  // Chapa — 1 colada por espessura distinta entre as peças
+  const [sheets, setSheets] = useState<Sheet[]>([
+    { origin: 'ours', materialId: '', widthMm: '', lengthMm: '', thicknessMm: '', batchLabel: '' },
+  ])
 
   // Processos
   const [processes, setProcesses] = useState<string[]>(['laser_cut'])
@@ -359,6 +360,23 @@ export default function NewOrderPage() {
   function removeItem(id: string) {
     setItems(prev => prev.length > 1 ? prev.filter(it => it.id !== id) : prev)
   }
+
+  // Sincroniza coladas com as espessuras distintas presentes nas peças —
+  // cada espessura diferente é sempre uma colada separada, podendo ou não existir.
+  useEffect(() => {
+    const distinctThicknesses = Array.from(
+      new Set(items.map(it => it.thicknessMm.trim()).filter(Boolean))
+    )
+    if (!distinctThicknesses.length) return
+    setSheets(prev => {
+      const byThickness = new Map(prev.map(s => [s.thicknessMm, s]))
+      const next = distinctThicknesses.map(th =>
+        byThickness.get(th) ?? { origin: 'ours' as const, materialId: '', widthMm: '', lengthMm: '', thicknessMm: th, batchLabel: '' }
+      )
+      const same = next.length === prev.length && next.every((s, i) => s === prev[i])
+      return same ? prev : next
+    })
+  }, [items])
 
   // Execução
   const [operatorId,    setOperatorId]    = useState('')
@@ -378,8 +396,8 @@ export default function NewOrderPage() {
   const [nestGap, setNestGap] = useState('5')
   const [nestResult, setNestResult] = useState<{ pcs: number; util: number } | null>(null)
 
-  const sheetW = parseFloat(sheet.widthMm)
-  const sheetH = parseFloat(sheet.lengthMm)
+  const sheetW = parseFloat(sheets[0]?.widthMm ?? '')
+  const sheetH = parseFloat(sheets[0]?.lengthMm ?? '')
 
   function simulateNesting() {
     const pw = parseFloat(nestW); const ph = parseFloat(nestH)
@@ -453,17 +471,23 @@ export default function NewOrderPage() {
         scheduledAt:  scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
         isUrgent,
         notes:             orderNotes || undefined,
-        sheetBatch:        sheetBatch || undefined,
+        sheetBatch:        sheetBatch || sheets.map(s => s.batchLabel).filter(Boolean).join(' / ') || undefined,
         sheetClientOwned:  sheetClientOwned || undefined,
         estimatedTimeSecs: estimatedTime ? parseTime(estimatedTime) : undefined,
         processes,
-        sheets: (sheet.materialId || sheet.widthMm || sheet.lengthMm) ? [{
-          origin:      sheet.origin,
-          materialId:  sheet.materialId || undefined,
-          widthMm:     sheet.widthMm ? parseFloat(sheet.widthMm) : undefined,
-          lengthMm:    sheet.lengthMm ? parseFloat(sheet.lengthMm) : undefined,
-          thicknessMm: sheet.thicknessMm ? parseFloat(sheet.thicknessMm) : undefined,
-        }] : undefined,
+        sheets: (() => {
+          const filled = sheets
+            .filter(s => s.materialId || s.widthMm || s.lengthMm)
+            .map(s => ({
+              origin:      s.origin,
+              materialId:  s.materialId || undefined,
+              widthMm:     s.widthMm ? parseFloat(s.widthMm) : undefined,
+              lengthMm:    s.lengthMm ? parseFloat(s.lengthMm) : undefined,
+              thicknessMm: s.thicknessMm ? parseFloat(s.thicknessMm) : undefined,
+              batchNumber: s.batchLabel || undefined,
+            }))
+          return filled.length ? filled : undefined
+        })(),
         stages,
         items: items.map(it => ({
           description:    it.description.trim(),
@@ -576,40 +600,70 @@ export default function NewOrderPage() {
         </Field>
       </Card>
 
-      {/* ── Chapa ─────────────────────────────────────── */}
+      {/* ── Chapa / Coladas ───────────────────────────── */}
       <Card>
-        <SectionTitle icon={Layers} label="Chapa" />
+        <SectionTitle icon={Layers} label={sheets.length > 1 ? `Chapa — ${sheets.length} coladas` : 'Chapa'} />
 
-        {/* Tipo de origem */}
-        <div className="flex gap-2 mb-4">
-          {SHEET_ORIGINS.map(o => (
-            <button key={o.id} onClick={() => setSheet(s => ({ ...s, origin: o.id }))}
-              className="flex-1 rounded-xl p-3 text-left transition-all"
-              style={sheet.origin === o.id
-                ? { background: `${o.color}15`, border: `2px solid ${o.color}` }
-                : { background: T.bg, border: `1px solid ${T.border}` }}>
-              <p className="text-xs font-bold" style={{ color: sheet.origin === o.id ? o.color : T.text }}>{o.label}</p>
-              <p className="text-xs mt-0.5" style={{ color: T.subtle }}>{o.sub}</p>
-            </button>
+        {sheets.length > 1 && (
+          <div className="rounded-xl px-3 py-2 mb-4 text-xs font-semibold"
+            style={{ background: T.yellowBg, border: `1px solid ${T.yellowBorder}`, color: T.yellow }}>
+            Esta ordem tem peças com {sheets.length} espessuras diferentes — cada espessura é sempre uma colada separada.
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {sheets.map((s, idx) => (
+            <div key={s.thicknessMm || idx} className={sheets.length > 1 ? 'rounded-xl p-3' : ''}
+              style={sheets.length > 1 ? { background: T.bg, border: `1px solid ${T.border}` } : undefined}>
+              {sheets.length > 1 && (
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs font-bold" style={{ color: T.text }}>
+                    Colada {idx + 1} — {s.thicknessMm || '?'}mm
+                  </p>
+                  <input value={s.batchLabel}
+                    onChange={e => setSheets(prev => prev.map((sh, i) => i === idx ? { ...sh, batchLabel: e.target.value } : sh))}
+                    className="flex-1 rounded-lg px-2 py-1 text-xs outline-none"
+                    style={{ background: T.bg, border: `1px solid ${T.border}`, color: T.text }}
+                    placeholder="Etiqueta desta colada (ex: Mesa 2)" />
+                </div>
+              )}
+
+              {/* Tipo de origem */}
+              <div className="flex gap-2 mb-4">
+                {SHEET_ORIGINS.map(o => (
+                  <button key={o.id}
+                    onClick={() => setSheets(prev => prev.map((sh, i) => i === idx ? { ...sh, origin: o.id } : sh))}
+                    className="flex-1 rounded-xl p-3 text-left transition-all"
+                    style={s.origin === o.id
+                      ? { background: `${o.color}15`, border: `2px solid ${o.color}` }
+                      : { background: T.bg, border: `1px solid ${T.border}` }}>
+                    <p className="text-xs font-bold" style={{ color: s.origin === o.id ? o.color : T.text }}>{o.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: T.subtle }}>{o.sub}</p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                <Field label="Largura (mm)">
+                  <Input value={s.widthMm} onChange={v => setSheets(prev => prev.map((sh, i) => i === idx ? { ...sh, widthMm: v } : sh))} type="number" placeholder="ex: 1500" />
+                </Field>
+                <Field label="Comprimento (mm)">
+                  <Input value={s.lengthMm} onChange={v => setSheets(prev => prev.map((sh, i) => i === idx ? { ...sh, lengthMm: v } : sh))} type="number" placeholder="ex: 3000" />
+                </Field>
+                <Field label="Espessura (mm)" hint={sheets.length > 1 ? '— definida pelas peças' : undefined}>
+                  <Input value={s.thicknessMm}
+                    onChange={v => setSheets(prev => prev.map((sh, i) => i === idx ? { ...sh, thicknessMm: v } : sh))}
+                    type="number" placeholder="ex: 6" disabled={sheets.length > 1} />
+                </Field>
+                <Field label="Material">
+                  <Select value={s.materialId} onChange={v => setSheets(prev => prev.map((sh, i) => i === idx ? { ...sh, materialId: v } : sh))}>
+                    <option value="">—</option>
+                    {materials.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </Select>
+                </Field>
+              </div>
+            </div>
           ))}
-        </div>
-
-        <div className="grid grid-cols-4 gap-3">
-          <Field label="Largura (mm)">
-            <Input value={sheet.widthMm} onChange={v => setSheet(s => ({ ...s, widthMm: v }))} type="number" placeholder="ex: 1500" />
-          </Field>
-          <Field label="Comprimento (mm)">
-            <Input value={sheet.lengthMm} onChange={v => setSheet(s => ({ ...s, lengthMm: v }))} type="number" placeholder="ex: 3000" />
-          </Field>
-          <Field label="Espessura (mm)">
-            <Input value={sheet.thicknessMm} onChange={v => setSheet(s => ({ ...s, thicknessMm: v }))} type="number" placeholder="ex: 6" />
-          </Field>
-          <Field label="Material">
-            <Select value={sheet.materialId} onChange={v => setSheet(s => ({ ...s, materialId: v }))}>
-              <option value="">—</option>
-              {materials.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </Select>
-          </Field>
         </div>
       </Card>
 
@@ -702,8 +756,8 @@ export default function NewOrderPage() {
               {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
             </Select>
           </Field>
-          <Field label="Colada da Chapa" hint="— opcional">
-            <Input value={sheetBatch} onChange={setSheetBatch} placeholder="ex: Colada A, Mesa 2…" />
+          <Field label="Colada da Chapa" hint={sheets.length > 1 ? '— definida por colada, acima' : '— opcional'}>
+            <Input value={sheetBatch} onChange={setSheetBatch} placeholder="ex: Colada A, Mesa 2…" disabled={sheets.length > 1} />
           </Field>
           <Field label="Tempo Estimado (CypeCut)" hint="HH:MM:SS — do software de nesting">
             <input value={estimatedTime} onChange={e => setEstimatedTime(e.target.value)}
@@ -774,12 +828,12 @@ export default function NewOrderPage() {
             <Input value={nestGap} onChange={setNestGap} type="number" placeholder="5" />
           </Field>
         </div>
-        {(!sheet.widthMm || !sheet.lengthMm) && (
+        {(!sheets[0]?.widthMm || !sheets[0]?.lengthMm) && (
           <p className="text-xs mt-2" style={{ color: T.subtle }}>
             Preencha as dimensões da chapa acima para simular o nesting.
           </p>
         )}
-        {sheet.widthMm && sheet.lengthMm && (
+        {sheets[0]?.widthMm && sheets[0]?.lengthMm && (
           <button onClick={simulateNesting}
             className="mt-3 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all"
             style={{ background: T.yellowBg, border: `1px solid ${T.yellowBorder}`, color: T.yellow }}>

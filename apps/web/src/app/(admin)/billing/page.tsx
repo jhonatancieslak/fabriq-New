@@ -18,7 +18,7 @@ interface UsageItem { current: number; limit: number | null; unlimited: boolean 
 interface BillingData {
   plan: string; planLabel: string; planPrice: string
   planExpiresAt: string | null; planExpired: boolean
-  trial: { endsAt: string; daysLeft: number; expired: boolean } | null
+  trial: { isTrialPlan: boolean; expiresAt: string | null; daysLeft: number | null; expired: boolean }
   usage: {
     operators: UsageItem; adminUsers: UsageItem; machines: UsageItem
     ordersMonth: UsageItem; ordersTotal?: UsageItem
@@ -135,23 +135,24 @@ export default function BillingPage() {
       ) : data && (
         <>
           {/* Trial / Plano expirado — alerta */}
-          {data.trial?.expired || data.planExpired ? (
+          {data.trial.expired || data.planExpired ? (
             <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
               <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#EF4444' }} />
               <div>
                 <p className="text-sm font-bold" style={{ color: '#FCA5A5' }}>
-                  {data.trial?.expired ? 'Trial expirado' : 'Subscrição expirada'}
+                  {data.trial.expired ? 'Trial expirado' : 'Subscrição expirada'}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: '#EF4444' }}>
-                  A criação de novas ordens, operadores, utilizadores e máquinas está bloqueada. Faça upgrade para continuar.
+                  O acesso ao FABRIQ.IA está bloqueado. Faça upgrade para continuar.
                 </p>
               </div>
             </div>
-          ) : data.trial && data.trial.daysLeft <= 3 ? (
+          ) : data.trial.isTrialPlan && data.trial.daysLeft !== null && data.trial.daysLeft <= 3 ? (
             <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: 'rgba(234,179,8,0.07)', border: '1px solid rgba(234,179,8,0.2)' }}>
               <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#EAB308' }} />
               <p className="text-sm" style={{ color: '#EAB308' }}>
-                Trial termina em <strong>{data.trial.daysLeft} dia{data.trial.daysLeft !== 1 ? 's' : ''}</strong> ({fmtDate(data.trial.endsAt)}). Faça upgrade para não perder o acesso.
+                Trial termina em <strong>{data.trial.daysLeft} dia{data.trial.daysLeft !== 1 ? 's' : ''}</strong>
+                {data.trial.expiresAt ? ` (${fmtDate(data.trial.expiresAt)})` : ''}. Faça upgrade para não perder o acesso.
               </p>
             </div>
           ) : null}
@@ -166,9 +167,9 @@ export default function BillingPage() {
                     {data.planPrice}
                   </span>
                 </div>
-                {data.trial && !data.trial.expired && (
+                {data.trial.isTrialPlan && !data.trial.expired && data.trial.expiresAt && data.trial.daysLeft !== null && (
                   <p className="text-xs" style={{ color: T.muted }}>
-                    Trial termina em <strong style={{ color: '#EAB308' }}>{fmtDate(data.trial.endsAt)}</strong>
+                    Trial termina em <strong style={{ color: '#EAB308' }}>{fmtDate(data.trial.expiresAt)}</strong>
                     {' '}· {data.trial.daysLeft} dia{data.trial.daysLeft !== 1 ? 's' : ''} restante{data.trial.daysLeft !== 1 ? 's' : ''}
                   </p>
                 )}

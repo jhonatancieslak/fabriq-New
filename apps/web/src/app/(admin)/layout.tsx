@@ -3,17 +3,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { FeedbackWidget } from '@/components/ui/feedback-widget'
 import { TrialBanner } from '@/components/ui/trial-banner'
 import { Tour } from '@/components/ui/tour'
+import { useBillingLock, BillingLockScreen } from '@/components/ui/billing-lock'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [ready, setReady] = useState(false)
   const [showTour, setShowTour] = useState(false)
+  const billingLock = useBillingLock()
 
   useEffect(() => {
     const token = localStorage.getItem('fabriq_token')
@@ -51,6 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <FeedbackWidget />
       </div>
       {showTour && <Tour onClose={closeTour} />}
+      {billingLock && pathname !== '/billing' && <BillingLockScreen status={billingLock} />}
     </div>
   )
 }

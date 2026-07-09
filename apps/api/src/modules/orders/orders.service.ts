@@ -85,6 +85,7 @@ export async function createOrder(
           widthMm:    sh.widthMm,
           lengthMm:   sh.lengthMm,
           thicknessMm: sh.thicknessMm,
+          batchNumber: sh.batchNumber,
           sortOrder:  i,
         })),
       } : undefined,

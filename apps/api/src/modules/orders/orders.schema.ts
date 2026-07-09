@@ -34,6 +34,7 @@ export const createOrderSchema = z.object({
     widthMm:    z.number().positive().optional(),
     lengthMm:   z.number().positive().optional(),
     thicknessMm: z.number().positive().optional(),
+    batchNumber: z.string().optional(), // etiqueta da colada (1 por espessura distinta)
   })).optional(),
 
   // Etapas (geradas automaticamente a partir de processes ou definidas manualmente)

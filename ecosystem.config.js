@@ -19,6 +19,7 @@ module.exports = {
       script: '/var/www/fabriq/apps/web/node_modules/.bin/next',
       args: 'start -p 3190',
       cwd: '/var/www/fabriq/apps/web',
+      interpreter: 'none',
       instances: 1,
       exec_mode: 'fork',
       watch: false,

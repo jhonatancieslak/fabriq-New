@@ -39,3 +39,4 @@ apps/api/prisma/migrations/*.lock
 
 # Dados Docker / PostgreSQL (resquício do projecto antigo)
 fabriq.pt/
+services/nesting/

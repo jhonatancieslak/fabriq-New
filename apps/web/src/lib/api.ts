@@ -198,6 +198,14 @@ export const api = {
       request<any>(`/api/v1/reports?from=${from}&to=${to}`),
   },
 
+  billing: {
+    status: () => request<BillingStatus>('/api/v1/billing'),
+    plans: () => request<{ plans: BillingPlan[] }>('/api/v1/billing/plans'),
+    checkout: (plan: 'starter' | 'pro' | 'factory') =>
+      request<{ url: string }>('/api/v1/billing/checkout', { method: 'POST', body: JSON.stringify({ plan }) }),
+    portal: () => request<{ url: string }>('/api/v1/billing/portal', { method: 'POST' }),
+  },
+
   notifications: {
     badge: () => request<{ pendingOrders: number; recentNotifications: number; total: number }>('/api/v1/notifications/badge'),
     status: () => request<{ email: { configured: boolean; from: string | null; provider: string }; whatsapp: { configured: boolean; apiUrl: string | null; provider: string } }>('/api/v1/notifications/status'),
@@ -334,6 +342,23 @@ export interface NestingJob {
   sheetLengthMm: number
   gapMm: number
   createdAt?: string
+}
+
+export interface BillingStatus {
+  plan: string
+  planLabel: string
+  planPrice: string
+  planExpiresAt: string | null
+  planExpired: boolean
+  trial: { isTrialPlan: boolean; daysLeft: number | null; expiresAt: string | null; expired: boolean }
+  usage: Record<string, { current: number; limit: number | null; unlimited: boolean }>
+}
+export interface BillingPlan {
+  id: 'starter' | 'pro' | 'factory'
+  label: string
+  price: number
+  priceId: string
+  features: string[]
 }
 
 export interface AppUser {
