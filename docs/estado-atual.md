@@ -1,6 +1,16 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-07-09 (Sessão 24 — billing central-saas)
+**Última sessão:** 2026-07-13 (Sessão 25 — pivot Flask confirmado, notificações e ger. gerência)
+
+---
+
+## Sessão 25 (2026-07-13) — Pivot Flask confirmado + notificações + fim do app Gerência
+
+- **Confirmado pivot 2026-07-09**: desenvolvimento fica 100% em `services/nesting` (Flask). Verificado que as duas features que estavam a meio no rewrite Next.js (`apps/web`/`apps/api`, não commitadas) já tinham sido portadas para o Flask em sessão anterior: coladas por espessura (`ordens.coladas()`, `ChapasOrdem.colada`) e bloqueio de billing (`bloquear_por_assinatura()`, blueprint `plano`). Alterações Next.js não commitadas ficaram por commitar de propósito — não há mais trabalho a fazer lá.
+- **Bug retrabalho corrigido**: ordens com `pecas_incompletas` preenchido ficavam presas para sempre na lista "Aguardam Retrabalho" (Gerência) mesmo depois de o retrabalho ser feito — o campo nunca era limpo. Corrigido em `app/routes/ordens.py::nova()`: ao criar ordem de retrabalho (via `retrabalho_origem_id`, hidden field novo em `ordens/form.html`), limpa `pecas_incompletas` da ordem original. Ordem `OC-202605-0016` (presa desde 09/05) limpa manualmente via script one-off, confirmado pelo utilizador que já tinha sido retrabalhada.
+- **Notificações do sino (header)**: adicionado "Marcar todas como lidas" (`base.html`) — dismissal client-side via `localStorage` (chave `fabriq_notif_lidas`), por notificação individual (id + valor snapshot); reaparece automaticamente se o valor mudar (nova ordem pendente, novo aviso de vencimento). Não existe (nem foi criado) sistema de notificações server-side — continua tudo calculado ao vivo por request via `inject_globals()`.
+- **App Gerência (Next.js externo, `gerencia.estruturasmetalicasviana.com`) descontinuado**: já não tinha nginx/processo ativo (porta 3000 pertence a outro projeto, `solarnest-web`). Blueprint `pwa_gerencia_bp` (`app/routes/pwa_gerencia.py`, prefixo `/gerencia-pwa`) desregistado em `app/__init__.py` (código mantido no repo, reversível, ficheiros não apagados). Certificado SSL órfão apagado via `certbot delete`. Link morto no PWA (`pwa/dashboard.html:698`, apontava para `/nesting/gerencia` inexistente) corrigido para `url_for('gerencia.index')` — o dashboard Gerência **interno** do Flask (`gerencia_bp`) continua ativo e é o único "Gerência" que existe agora.
+- **Próximo passo:** nenhum item crítico em aberto. Sugestão futura: ligar `bloquear_por_assinatura()` ao Central SaaS (ver Sessão 24) continua pendente.
 
 ---
 
