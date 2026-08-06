@@ -835,6 +835,15 @@ Para retroactivo: pode-se fazer um import CSV com os tempos estimados histórico
 - `POST /whatsapp/connect` chamado com JWT real do admin Pipesolutions → QR code gerado com sucesso, instância `fabriq-11643ce0-427f-4849-9975-d6ef8f99e5b0` persistida na BD
 - **Falta**: escanear o QR real no telemóvel para confirmar ligação end-to-end (ninguém escaneou ainda — próximo passo é o utilizador abrir `/settings/whatsapp` e ligar o WhatsApp do Pipesolutions)
 
+## Fix: notificação de conclusão duplicada — nesting (2026-08-06)
+
+- Bug: ordem #276 (`OC-202608-0004`) enviava email/WhatsApp de conclusão repetidamente ao solicitador.
+- Causa: dois endpoints PWA (`pwa.py concluir()` e `pwa.py token_concluir()`) chamavam `notificar_solicitador(ordem, 'concluido')` sem qualquer guarda contra reenvio (retries de rede, dupla submissão) — `OrdemCorte` não tinha flag de "já notificado".
+- Fix: nova coluna `notificado_concluido` (Boolean, default False) em `ordens_corte` (`app/models.py`), aplicada em produção via `ALTER TABLE`. Ambos os endpoints agora só chamam `notificar_solicitador` se `not ordem.notificado_concluido`, marcando a flag e fazendo commit antes de notificar.
+- Ordem 276 marcada manualmente como `notificado_concluido=TRUE` para parar o loop já em curso.
+- `nestcut` reiniciado, serviço `active`.
+- Nota: endpoint admin `ordens.atualizar_estado()` continua sem enviar notificação (comportamento pré-existente, não alterado).
+
 ## Próximos passos (geral)
 
 - **Webhook Stripe** já configurado — testar fluxo completo de subscrição
