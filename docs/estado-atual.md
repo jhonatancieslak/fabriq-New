@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-27 (Sessão 28 — arranque FABRIQ v2: Supabase + auth + trial + bloqueio + análise iCut + produção avançada)
+**Última sessão:** 2026-08-27 (Sessão 28 — arranque FABRIQ v2 + migração para Postgres self-host na VPS)
 
 ---
 
@@ -54,9 +54,42 @@
   de `/coladas` do fabriq actual), `order_batches`/`order_batch_orders` (lotes de produção),
   `nesting_jobs` enriquecido (gap, chapas necessárias, peças/chapa, layout_json, preview).
   `v2/supabase/004_materiais_texto_livre.sql` aplicado também. Schema agora com 20 tabelas.
+- **Migração de Supabase.com → Postgres self-host na VPS.** Decisão do utilizador: cada tenant
+  isolado por RLS (não banco físico separado — inviável a esta escala), e infra na própria VPS em
+  vez de Supabase.com (evita free-tier pausar após 7 dias; full self-host da stack completa
+  descartado por falta de RAM livre — só 767MB livres, swap quase cheia no momento da decisão).
+  Montada stack **mínima**: Postgres (nova database `fabriq_v2` no cluster PG16 já existente,
+  não container novo) + GoTrue (Auth) + PostgREST (REST), sem Kong/Storage/Realtime/Studio.
+  - Roles Postgres: `anon`, `authenticated`, `service_role` (bypassrls), `authenticator`.
+  - Schema `auth` + funções `auth.uid()/email()/role()` — GoTrue cria as suas próprias no boot
+    (tive de apagar as minhas primeiro e passar ownership do schema `auth` para `fabriq_v2_user`,
+    senão dava "must be owner of function uid").
+  - Containers Docker (`v2/supabase/docker-compose.yml`, `gotrue.env`, `postgrest.env` — todos
+    gitignored) com `network_mode: host` mas bind explícito em `127.0.0.1` (GoTrue porta 9999,
+    PostgREST porta 8091) — isolamento sem tocar em firewall/iptables do servidor.
+  - Nginx (`v2.fabriq.pt`) ganhou `/auth/v1/` → GoTrue e `/rest/v1/` → PostgREST, replicando a
+    forma da API do Supabase Cloud — o `supabase-js` no frontend não mudou nada de código, só o
+    `.env` (`VITE_SUPABASE_URL=https://v2.fabriq.pt` + chave `anon` mintada localmente, JWT HS256
+    assinado com o mesmo secret do GoTrue).
+  - **SMTP:** reaproveitada a chave Resend do fabriq (`apps/api/.env`), mas essa chave só tem
+    `picagens.pt` verificado, não `fabriq.pt` — confirmação de e-mail real falhava (500). Por ora
+    `GOTRUE_MAILER_AUTOCONFIRM=true` (sem exigir confirmação) até verificar `fabriq.pt` no Resend.
+  - Schema completo (20 tabelas, as 4 migrations) reaplicado limpo na nova database.
+  - **Backup:** `fabriq_v2` adicionado a `/usr/local/bin/backup-other-dbs.sh` (mesma lista dos
+    outros bancos do servidor — dump diário 02h30, off-site Google Drive, retenção 14 dias).
+    Testado dump manual, ok.
+  - Testado end-to-end de novo (cadastro → login → dashboard) já na infra nova. Supabase.com fica
+    desligado/sem uso a partir de agora (credenciais antigas em `v2/.env`/`v2/app/.env` já
+    substituídas).
+- **Pendências de schema levantadas pelo utilizador** (ainda não aplicadas): `sheet_models` e
+  `label_templates` por empresa (`company_id`) — cada cliente vai ter o próprio modelo de chapa e
+  layout de etiqueta, a aplicar junto do módulo de Ordens de Produção.
+- **Armazenamento de ficheiros** (fotos de prova pós-corte, DXF/DWG): decidido **não** usar
+  Supabase Storage — seguir o padrão já usado no fabriq actual (`apps/api/uploads/`, disco local
+  na VPS), servido via Nginx, coberto pelo backup existente. Ainda não implementado no v2.
 - **Próximo passo:** ajustar `pricing_presets` para o modelo fiscal PT (IVA/margem/comissão por
   categoria) e `quote_items` para geometria paramétrica — depois sim, módulo Parâmetros
-  (máquina/materiais/precificação/config gerais) com CRUD real ligado ao Supabase. Ícones ficam
+  (máquina/materiais/precificação/config gerais) com CRUD real ligado à API self-host. Ícones ficam
   para o fim (ficheiro no Drive do utilizador, pasta "Fabriq").
 
 ---

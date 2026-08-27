@@ -40,3 +40,8 @@ apps/api/prisma/migrations/*.lock
 # Dados Docker / PostgreSQL (resquício do projecto antigo)
 fabriq.pt/
 services/nesting/
+
+# FABRIQ v2 — segredos self-host Supabase
+v2/supabase/.selfhost-secrets
+v2/supabase/gotrue.env
+v2/supabase/postgrest.env
