@@ -4,6 +4,43 @@
 
 ---
 
+## ▶ RETOMAR AQUI (sessão pausada 2026-08-27 de manhã, volta à tarde)
+
+Dizer "continue de onde paramos" — ler isto primeiro, depois a Sessão 28 completa abaixo.
+
+**Estado ao pausar:** tudo a funcionar, testado end-to-end. Nada pendente de erro.
+
+- App: https://v2.fabriq.pt (login/cadastro/dashboard ok)
+- Backend self-host na VPS: Postgres (`fabriq_v2`) + GoTrue (`fabriq_v2_auth`) + PostgREST
+  (`fabriq_v2_rest`) — containers com `restart: unless-stopped`, sobrevivem a reboot.
+- Tenant de teste: `selfhost-teste@fabriq.pt` / senha `TesteFabriq123!` / empresa "Fabriq Selfhost Lda"
+  (o antigo `teste-v2@fabriq.pt` era do Supabase.com, já não existe — usar este agora).
+- Dev server Vite (`v2/app`, porta 5180) **não é systemd/pm2**, roda em background solto
+  (`setsid nohup … & disown`). Se cair (reboot, sessão terminal fechada), religar com:
+  ```bash
+  cd /var/www/fabriq/v2/app && setsid nohup npm run dev > /tmp/vite.log 2>&1 < /dev/null & disown
+  ```
+  Confirmar: `curl -s -o /dev/null -w "%{http_code}\n" https://v2.fabriq.pt/cadastro` deve dar `200`.
+- Se os containers caírem: `cd /var/www/fabriq/v2/supabase && docker compose up -d`.
+
+**Próximo passo combinado (ainda não começado):**
+1. Ajustar `pricing_presets` para modelo fiscal PT (IVA/margem/comissão por categoria M.O./M.P./S.E.,
+   em vez do ICMS/IPI/PIS-COFINS que o iCut usa — ver achados da análise do iCut mais abaixo)
+2. Ajustar `quote_items` para suportar geometria paramétrica (retângulo/círculo/etc + furos), não só `dxf_url`
+3. Módulo **Parâmetros** (máquina/materiais/precificação/config gerais) — CRUD real ligado à API,
+   import de planilha
+4. Depois: Clientes → Orçamentos → Ordens de Produção → Nesting
+5. Pendente à parte: verificar domínio `fabriq.pt` no Resend (só `picagens.pt` tá verificado —
+   por isso `GOTRUE_MAILER_AUTOCONFIRM=true` por agora, sem exigir confirmação real de e-mail)
+6. Pendente à parte: `sheet_models` + `label_templates` por empresa (modelo de chapa e etiqueta
+   custom por cliente — pedido do utilizador, aplicar junto do módulo Ordens de Produção)
+7. Ícones dos botões: ficheiro no Drive do utilizador, pasta "Fabriq" — só no fim, depois da app funcional
+
+Detalhe técnico completo de tudo o que foi feito na sessão 28 (schema, self-host, análise iCut,
+correções de RLS) está na secção abaixo.
+
+---
+
 ## Sessão 28 (2026-08-27) — Arranque FABRIQ v2 (app nova, Portugal)
 
 - **Projeto novo e separado** do fabriq actual: `/var/www/fabriq/v2` (não confundir com o repo raiz).
