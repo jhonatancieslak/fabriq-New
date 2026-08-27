@@ -1,6 +1,32 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-07-13 (Sessão 25 — pivot Flask confirmado, notificações e ger. gerência)
+**Última sessão:** 2026-08-27 (Sessão 27 — v2/fabriq: rastreabilidade de coladas)
+
+---
+
+## Sessão 27 (2026-08-27) — Rastreabilidade de Coladas (v2/fabriq)
+
+- Projecto real de app fica em `/var/www/fabriq` (repo root), não em `v2/` (dir separada, código próprio).
+- Nova página `/coladas` (`apps/web/src/app/(admin)/coladas/page.tsx`): pesquisa por número/etiqueta de colada, lista todas as ordens/chapas que a usaram (cliente, obra, origem, material, dimensões, estado, data).
+- Backend: `GET /api/v1/orders/batches/search?batchNumber=...` (`orders.routes.ts`), filtra `OrderSheet.batchNumber` por tenant, `contains` case-insensitive.
+- `api.ts`: `api.orders.searchByBatch()` + tipo `BatchSheetResult`. Sidebar: novo link "Coladas" (ícone `Layers`).
+- `tsc --noEmit` limpo em api e web, `next build` ok, `fabriq-api`/`fabriq-web` reiniciados via pm2, commit `e28f8ea` pushed.
+- **Próximo passo:** validar em produção (utilizador testar pesquisa real com colada existente).
+
+---
+
+## Sessão 26 (2026-08-12) — ZIP de ficheiros, desvio de tempo (IA) e velocidades de corte
+
+- **Repo `services/nesting` sem remote (pendência da Sessão 25) resolvida**: criado `github.com/jhonatancieslak/fabriq-nesting` (privado), remote `origin` configurado, push de `nesting-extracted` e `main` (default branch), ambas sincronizadas ao longo da sessão.
+- **Download ZIP de ficheiros da ordem** (`/ordens/<id>`): botão em "Ações" gera ZIP em memória (`ordens.download_zip`, `app/routes/ordens.py`) com os DXF anexados organizados em pastas `obra/material/espessura/ficheiro.dxf` — pedido do utilizador para levar os ficheiros ao laser via pen/drive.
+- **Desvio tempo estimado (CypeCut) vs tempo real de corte**:
+  - Novas colunas `desvio_tempo_segundos`/`desvio_tempo_pct` em `ordens_corte` (`ALTER TABLE`, backup `pg_dump` prévio).
+  - Método `OrdemCorte.calcular_desvio_tempo()` (`app/models.py`), chamado em `pwa.py::concluir()` e `pwa.py::token_concluir()` sempre que o operador informa o tempo real na conclusão — comparação já aparece no PWA (`pwa/ordem.html`, `pwa/token_ordem.html`).
+  - Tela admin `/relatorios/desvio-tempo` (`relatorios.desvio_tempo`, admin-only, menu abaixo de "Parâmetros IA"): lista ordens com desvio, filtros mês/ano/material/operador, KPIs de desvio médio e ordens dentro/fora do estimado.
+  - **Backfill retroativo**: das 243 ordens concluídas, só 17 tinham `tempo_estimado` preenchido (a maioria das ordens nunca recebeu esse valor do CypeCut ao criar/editar) — 16 delas (as que também tinham `tempo_corte`) tiveram o desvio calculado via `UPDATE` manual com a mesma fórmula do código. Dataset real de partida: **16 ordens**. Para crescer, `tempo_estimado` precisa continuar a ser preenchido ao criar/editar ordens.
+- **Análise via Groq**: botão "Analisar com IA" na tela de desvio de tempo (`relatorios.desvio_tempo_ia`, POST) — envia até 200 ordens com desvio + tabela de velocidades cadastradas ao Groq (`llama-3.1-8b-instant`, mesma chave `ConfiguracaoGeral.groq_apikey` já usada no planeamento), pede padrões de desvio por material/espessura e sugestão de ajuste; resposta mostrada inline na página. Ainda não há nenhum ajuste automático — só análise sob pedido do admin.
+- **Velocidades de Corte** (`/velocidades-corte/`, admin-only, menu abaixo de "Análise de Tempo (IA)"): nova tabela `velocidades_corte` (material, espessura, velocidade m/min, nº estágios) + CRUD. Seed inicial: Alumínio (2/5/6/10mm) e Ferro (1.5/3/5/10/12/15/20mm, 15mm e 20mm com 3 estágios). Ainda **não** está ligado ao cálculo automático de `tempo_estimado` (fase futura: `tempo_estimado = perímetro DXF ÷ velocidade`, usando `FicheiroDXF.perimetro_mm`/`ItemOrdemCorte.perimetro_mm` já existentes).
+- **Próximo passo:** (1) garantir que `tempo_estimado` é sempre preenchido ao criar ordem, para o dataset de desvio crescer; (2) ligar `velocidades_corte` ao cálculo automático de `tempo_estimado` a partir do perímetro DXF; (3) ideia do utilizador para depois — tela de nesting onde insere desenho/material/espessura, gera e informa o tempo que o CypeCut dá com os parâmetros (ainda não desenhada); (4) tela interativa no laser para o operador iniciar/finalizar o corte (substituindo o apontamento manual de tempo no PWA por registo de imagens) — feature maior, ainda não iniciada.
 
 ---
 
