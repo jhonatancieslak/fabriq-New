@@ -68,6 +68,36 @@ Multi-tenant por `company_id` em toda tabela (RLS do Supabase por tenant). Moeda
 
 > Rascunho — ajustar depois de aplicar schema real no Supabase.
 
+### Produção avançada (não existe no iCut — referência: modelo já validado no fabriq atual)
+
+Analisado `apps/api/prisma/schema.prisma` do fabriq actual (produção, testado) e reforçado o v2 com o
+mesmo nível de detalhe, adaptado a PT/EUR/multi-tenant:
+
+- `production_order_stages` — uma ordem pode ter várias etapas (ex: laser → quinagem), cada uma com
+  máquina, operador, status (pendente/em_curso/pausado/concluido), timestamps, tempo de corte,
+  assinatura do operador.
+- `production_order_files` — ficheiros DXF/DWG com geometria extraída (área, bbox, perímetro).
+- `production_order_photos` — fotos tiradas durante a produção, por etapa.
+- `production_order_sheets` — chapas usadas por ordem, com **número de colada** (rastreabilidade —
+  feature já existe no fabriq actual, página `/coladas`).
+- `nesting_jobs` — enriquecido: gap entre peças, nº de chapas necessárias, peças por chapa, peças não
+  encaixadas, `layout_json` (posições), preview PNG.
+- `order_batches` / `order_batch_orders` — lotes de produção agrupando várias ordens numa máquina.
+
+### Correcção pós-análise iCut (2026-08-27)
+
+- `materials.nome` mudado de enum fixo para **texto livre** — iCut permite materiais custom
+  (ex: SAE-1020, ASTM A36), não só os 5 tipos básicos. Adicionado `espessura_mm` opcional por
+  material (preço pode variar por espessura) e `is_padrao`.
+- Presets de precificação (`pricing_presets`) no iCut têm, por categoria (M.O./M.P./S.E.), um
+  bloco fiscal próprio (lá é ICMS/IPI/PIS-COFINS/Outras Taxas/Margem/Comissão — modelo BR). Para
+  PT vamos usar: **IVA (taxa normal/intermédia/reduzida) + Outras Taxas + Margem + Comissão** por
+  categoria — ajustar `pricing_presets` num próximo passo (ainda não aplicado).
+- Itens de orçamento no iCut podem ser criados **sem DXF**, via forma geométrica paramétrica
+  (retângulo/círculo/oblongo/elipse/triângulo/hexágono/personalizado) com furos/recortes internos —
+  calcula perímetro automaticamente e mostra preview SVG da peça. `quote_items` deve suportar isto
+  (geometria paramétrica), não só `dxf_url`. Ainda não aplicado.
+
 ## Fases
 
 1. **Setup base:** projeto Supabase (schema + RLS + Auth), scaffold app (Tauri + frontend partilhado), login/cadastro com trial 4 dias.

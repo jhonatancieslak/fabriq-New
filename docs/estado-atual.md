@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-27 (Sessão 28 — arranque FABRIQ v2 novo: Supabase + auth + trial + bloqueio)
+**Última sessão:** 2026-08-27 (Sessão 28 — arranque FABRIQ v2: Supabase + auth + trial + bloqueio + análise iCut + produção avançada)
 
 ---
 
@@ -32,9 +32,32 @@
   fim do comando bash). Proxy Nginx em `/etc/nginx/sites-available/v2.fabriq.pt`.
 - Credenciais em `v2/.env` (raiz, backend/scripts) e `v2/app/.env` (Vite, `VITE_` prefix) — ambos
   gitignored.
-- **Próximo passo:** módulo Parâmetros (máquina/materiais/precificação/config gerais) — CRUD real
-  ligado ao Supabase, import de planilha. Depois Clientes, Orçamentos, Ordens de Produção, Nesting.
-  Ícones ficam para o fim (ficheiro no Drive do utilizador, pasta "Fabriq").
+- **Análise do concorrente (iCut, app.icutdev.com)** feita ao vivo no browser (login de teste do
+  utilizador). Achados que mudaram o schema:
+  - Materiais são **texto livre** (ex: SAE-1020, ASTM A36), não um enum fixo de 5 tipos — corrigido
+    (`materials.nome` agora text, + `espessura_mm` opcional, + `is_padrao`).
+  - Presets de precificação têm bloco fiscal por categoria (M.O./M.P./S.E.) — no iCut é
+    ICMS/IPI/PIS-COFINS (BR); no v2 vai ser IVA/Outras Taxas/Margem/Comissão (PT) — **ainda não
+    aplicado ao schema**, é o próximo passo de correcção antes do módulo Precificação.
+  - Itens de orçamento podem ser criados sem DXF, via geometria paramétrica (retângulo, círculo,
+    hexágono, etc. + furos internos) com preview SVG automático — `quote_items` vai precisar de
+    suportar isto além do `dxf_url`.
+  - Confirmado: "Desenhar Peça" e "Banco de dados de peças" são features pagas/beta no iCut — dá
+    para adiar sem prejuízo do MVP.
+- **Reforço do schema de produção** — avisado pelo utilizador para não copiar o iCut (que não tem
+  nada disto) e em vez disso referenciar o fabriq actual, que já tem nesting/ordens/coladas
+  validados em produção (`apps/api/prisma/schema.prisma`: `OrderStage`, `OrderItem`, `OrderFile`,
+  `OrderPhoto`, `OrderSheet`, `NestingJob`, `OrderBatch`). Aplicado ao v2 via
+  `v2/supabase/003_producao_avancada.sql`: `production_order_stages` (etapas multi-máquina com
+  operador/timestamps/assinatura), `production_order_files` (DXF com geometria extraída),
+  `production_order_photos`, `production_order_sheets` (chapas + número de colada — mesma feature
+  de `/coladas` do fabriq actual), `order_batches`/`order_batch_orders` (lotes de produção),
+  `nesting_jobs` enriquecido (gap, chapas necessárias, peças/chapa, layout_json, preview).
+  `v2/supabase/004_materiais_texto_livre.sql` aplicado também. Schema agora com 20 tabelas.
+- **Próximo passo:** ajustar `pricing_presets` para o modelo fiscal PT (IVA/margem/comissão por
+  categoria) e `quote_items` para geometria paramétrica — depois sim, módulo Parâmetros
+  (máquina/materiais/precificação/config gerais) com CRUD real ligado ao Supabase. Ícones ficam
+  para o fim (ficheiro no Drive do utilizador, pasta "Fabriq").
 
 ---
 
