@@ -52,6 +52,33 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
     return { orders, total, page: Number(page), pages: Math.ceil(total / Number(limit)) }
   })
 
+  // GET /api/v1/orders/batches/search?batchNumber=...
+  // Rastreabilidade: encontra todas as ordens/chapas que usaram uma colada específica
+  app.get('/batches/search', { preHandler: [requireAuth, requireRole('admin', 'financial', 'viewer')] }, async (req) => {
+    const { batchNumber } = req.query as Record<string, string>
+    if (!batchNumber || !batchNumber.trim()) return { sheets: [] }
+
+    const sheets = await app.prisma.orderSheet.findMany({
+      where: {
+        serviceOrder: { tenantId: req.tenantId! },
+        batchNumber: { contains: batchNumber.trim(), mode: 'insensitive' },
+      },
+      include: {
+        material: { select: { name: true, type: true } },
+        serviceOrder: {
+          select: {
+            id: true, orderNumber: true, status: true, createdAt: true, completedAt: true,
+            client: { select: { name: true } },
+            project: { select: { name: true, code: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return { sheets }
+  })
+
   // GET /api/v1/orders/:id
   app.get('/:id', { preHandler: [requireAuth, requireRole('admin', 'financial', 'viewer', 'requester')] }, async (req, reply) => {
     const { id } = req.params as { id: string }

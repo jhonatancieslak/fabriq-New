@@ -85,6 +85,8 @@ export const api = {
     cancel: (id: string, reason?: string) =>
       request<Order>(`/api/v1/orders/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
     verifyByAuthCode: (authCode: string) => request<Order>(`/api/v1/orders/auth/${authCode}`),
+    searchByBatch: (batchNumber: string) =>
+      request<{ sheets: BatchSheetResult[] }>(`/api/v1/orders/batches/search?batchNumber=${encodeURIComponent(batchNumber)}`),
   },
 
   machines: {
@@ -359,6 +361,22 @@ export interface BillingPlan {
   price: number
   priceId: string
   features: string[]
+}
+
+export interface BatchSheetResult {
+  id: string
+  origin: 'ours' | 'offcut' | 'client'
+  widthMm: string | null
+  lengthMm: string | null
+  thicknessMm: string | null
+  batchNumber: string | null
+  createdAt: string
+  material: { name: string; type: string } | null
+  serviceOrder: {
+    id: string; orderNumber: string; status: string; createdAt: string; completedAt: string | null
+    client: { name: string } | null
+    project: { name: string; code: string } | null
+  }
 }
 
 export interface AppUser {
