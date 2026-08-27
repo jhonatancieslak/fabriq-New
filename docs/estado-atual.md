@@ -1,6 +1,40 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-27 (Sessão 27 — v2/fabriq: rastreabilidade de coladas)
+**Última sessão:** 2026-08-27 (Sessão 28 — arranque FABRIQ v2 novo: Supabase + auth + trial + bloqueio)
+
+---
+
+## Sessão 28 (2026-08-27) — Arranque FABRIQ v2 (app nova, Portugal)
+
+- **Projeto novo e separado** do fabriq actual: `/var/www/fabriq/v2` (não confundir com o repo raiz).
+  Vai virar app instalável (Tauri) + web, backend Supabase, concorrendo com o iCut mas para o
+  mercado português (pt-PT, EUR, IVA, NIF) e com módulo extra de Ordens de Produção + Nesting.
+- Plano completo em `docs/fabriq-v2-plano.md`.
+- **Supabase:** projeto `rzwvgwnrllaccyjmlaok.supabase.co` (região eu-west-1). Schema aplicado via
+  `v2/supabase/schema.sql` (14 tabelas, RLS por `company_id`, enums PT) + `v2/supabase/002_signup_rpc.sql`
+  (RPC `signup_company`, security definer, cria empresa+trial 4 dias+user+preset default).
+  Connection pooler correcto: `aws-1-eu-west-1.pooler.supabase.com:5432` (não `aws-0`).
+- **Bug de RLS corrigido:** `auth_company_id()` fazia SELECT em `users`, e `users` tinha RLS a chamar
+  a própria função → recursão infinita → 500 em qualquer query autenticada. Fix: função marcada
+  `security definer`.
+- **App web** (`v2/app`): Vite + React + TS + Tailwind v4 + react-router + `@supabase/supabase-js`.
+  Feito: `AuthContext` (sessão, empresa, subscrição), `RequireAuth` (guarda rota + bloqueio por
+  subscrição), páginas Login/Cadastro (layout iCut, trial 4 dias sem cartão), fluxo de confirmação
+  de e-mail (Supabase exige confirmação — cadastro fica pendente em localStorage e só cria a
+  empresa no primeiro login pós-confirmação), tela `/bloqueado`, layout com sidebar e módulos
+  placeholder (Orçamentos, Ordens de Produção, Nesting, Clientes, Parâmetros, Históricos, Configurações).
+- **Testado end-to-end no browser** (`v2.fabriq.pt`, site Nginx + Let's Encrypt novos): cadastro →
+  confirmação de e-mail → login → dashboard → bloqueio de acesso por subscrição (`status=blocked`)
+  → tela de bloqueio. Tudo a funcionar.
+- Tenant de teste fica na base: `teste-v2@fabriq.pt` / empresa "Fabriq Teste Lda" — útil para
+  continuar a testar os próximos módulos.
+- Dev server: `v2/app`, `npm run dev` (porta 5180, `setsid nohup … & disown` para sobreviver ao
+  fim do comando bash). Proxy Nginx em `/etc/nginx/sites-available/v2.fabriq.pt`.
+- Credenciais em `v2/.env` (raiz, backend/scripts) e `v2/app/.env` (Vite, `VITE_` prefix) — ambos
+  gitignored.
+- **Próximo passo:** módulo Parâmetros (máquina/materiais/precificação/config gerais) — CRUD real
+  ligado ao Supabase, import de planilha. Depois Clientes, Orçamentos, Ordens de Produção, Nesting.
+  Ícones ficam para o fim (ficheiro no Drive do utilizador, pasta "Fabriq").
 
 ---
 
