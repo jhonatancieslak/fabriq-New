@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard'
 import Placeholder from './pages/Placeholder'
 import Parametros from './pages/Parametros'
 import Clientes from './pages/Clientes'
+import Orcamentos from './pages/Orcamentos'
+import QuoteForm from './pages/Orcamentos/QuoteForm'
 
 export default function App() {
   return (
@@ -27,7 +29,8 @@ export default function App() {
             }
           >
             <Route path="/" element={<Dashboard />} />
-            <Route path="/orcamentos" element={<Placeholder title="Orçamentos" />} />
+            <Route path="/orcamentos" element={<Orcamentos />} />
+            <Route path="/orcamentos/:id" element={<QuoteForm />} />
             <Route path="/ordens" element={<Placeholder title="Ordens de Produção" />} />
             <Route path="/nesting" element={<Placeholder title="Nesting" />} />
             <Route path="/clientes" element={<Clientes />} />

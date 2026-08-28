@@ -64,6 +64,59 @@ export interface MachineParameter {
   frequencia_filtro_corte_hz: number | null
 }
 
+export type QuoteStatus = 'rascunho' | 'enviado' | 'aprovado' | 'rejeitado'
+export type QuoteItemOrigem = 'dxf' | 'parametrica'
+export type GeometriaTipo = 'retangulo' | 'circulo'
+
+export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
+  rascunho: 'Rascunho',
+  enviado: 'Enviado',
+  aprovado: 'Aprovado',
+  rejeitado: 'Rejeitado',
+}
+
+export interface Geometria {
+  tipo: GeometriaTipo
+  largura_mm?: number
+  altura_mm?: number
+  diametro_mm?: number
+  furos?: number
+}
+
+export interface Quote {
+  id: string
+  company_id: string
+  client_id: string | null
+  vendedor_id: string | null
+  pricing_preset_id: string | null
+  status: QuoteStatus
+  desconto_pct: number
+  iva_pct: number
+  currency: string
+  total_liquido: number
+  total_iva: number
+  total_bruto: number
+  pdf_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface QuoteItem {
+  id: string
+  company_id: string
+  quote_id: string
+  material_id: string | null
+  espessura_mm: number | null
+  dxf_url: string | null
+  descricao: string | null
+  quantidade: number
+  peso_kg: number | null
+  tempo_corte_s: number | null
+  custo_calculado: number | null
+  geometria: Geometria | null
+  origem: QuoteItemOrigem
+}
+
 export interface Client {
   id: string
   company_id: string

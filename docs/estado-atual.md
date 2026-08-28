@@ -1,30 +1,43 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-28 (Sessão 29 — geometria paramétrica + módulo Parâmetros v2)
+**Última sessão:** 2026-08-28 (Sessão 29 — Parâmetros, Clientes e Orçamentos v2)
 
 ---
 
 ## ▶ RETOMAR AQUI (2026-08-28)
 
 - `quote_items` (fabriq_v2, DB live + `v2/supabase/schema.sql`) ganhou `geometria jsonb` +
-  `origem` ('dxf'|'parametrica') — migration `v2/supabase/003_quote_items_geometria.sql` já aplicada
-  na VPS via `sudo -u postgres psql -d fabriq_v2` (o role `authenticator`/`fabriq_v2_user` do
-  PostgREST não tem permissão DDL, sempre usar `sudo -u postgres` pra alterações de schema).
-- `pricing_presets` já estava no modelo fiscal PT (mo_pct/mp_pct/se_pct/iva_pct) desde a sessão 28 —
-  confirmado, não precisou de ajuste.
-- **Módulo Parâmetros implementado** em `v2/app/src/pages/Parametros/` — 5 abas com CRUD real
-  ligado ao PostgREST (self-host): Máquinas, Materiais, Parâmetros de Corte (machine_parameters),
-  Precificação (pricing_presets, com toggle de preset padrão), Configurações Gerais
-  (company_settings, upsert singleton por company). Testado end-to-end no browser
-  (login selfhost-teste@fabriq.pt, insert de máquina/material confirmado via RLS, dados de
-  teste removidos depois).
-- Rota `/parametros` trocada de `<Placeholder>` pra `<Parametros>` em `v2/app/src/App.tsx`.
-- Tipos novos em `v2/app/src/types/db.ts`: `Machine`, `Material`, `MachineParameter`,
-  `PricingPreset`, `CompanySettings` + enums/labels PT.
+  `origem` ('dxf'|'parametrica') — migration `v2/supabase/003_quote_items_geometria.sql`.
+  **Importante:** depois de qualquer `alter table` manual via `sudo -u postgres psql -d fabriq_v2`
+  (o role do PostgREST não tem DDL), é preciso `NOTIFY pgrst, 'reload schema';` ou
+  `docker restart fabriq_v2_rest` — senão a API responde "Could not find the column in the schema
+  cache" mesmo com a coluna já existindo no banco.
+- `pricing_presets` já estava no modelo fiscal PT (mo_pct/mp_pct/se_pct/iva_pct) desde a sessão 28.
+- **Módulo Parâmetros** (`v2/app/src/pages/Parametros/`) — 5 abas CRUD: Máquinas, Materiais,
+  Parâmetros de Corte, Precificação, Configurações Gerais.
+- **Módulo Clientes** (`v2/app/src/pages/Clientes.tsx`) — lista com pesquisa, criar/editar/remover.
+- **Módulo Orçamentos** (`v2/app/src/pages/Orcamentos/`) — lista + formulário de edição
+  (`/orcamentos/:id`, criado automaticamente ao clicar "Novo Orçamento"). Itens paramétricos
+  (retângulo/círculo, calcula peso via `lib/pricing.ts` usando peso específico do material) ou
+  ficheiro DXF (só link por agora, sem upload real). Totais calculados com preset de precificação
+  (mo_pct+mp_pct+se_pct como margem sobre matéria-prima) + IVA. **Simplificação conhecida:** custo
+  de máquina/tempo de corte ainda não entra no cálculo (só matéria-prima) — entra quando o módulo
+  Nesting existir e machine_parameters.valor_hora_maquina puder ser usado com tempo de corte real.
+- Testado end-to-end no browser (login selfhost-teste@fabriq.pt): criar cliente, criar orçamento,
+  preset "Padrão", item retângulo 300×200mm aço carbono 2mm → peso 0.942kg, custo €1.79/un,
+  total com IVA €11.01 — matemática conferida manualmente. Dados de teste removidos depois.
+- Componentes de UI partilhados movidos de `pages/Parametros/shared.tsx` para
+  `v2/app/src/components/form.tsx` (reuso entre Parâmetros/Clientes/Orçamentos).
+- **Pendência de produto (não implementar ainda):** utilizador pediu pra usar
+  `sistema.fabriq.pt/ordens/<id>/folha-corte` (OF Pipe Solutions) como referência de layout pro
+  módulo Nesting/Ordens de Produção — mas esse layout é o modelo de auditoria específico daquele
+  cliente. Antes de desenhar `sheet_models`/`label_templates` por tenant, consultar squad/
+  engenheiro de produção sobre quais campos são padrão vs. customizáveis. Detalhe completo em
+  memória `project_folha_corte_referencia.md`.
 
-**Próximo passo:** Clientes → Orçamentos (usar `quote_items.geometria`/`origem` no formulário de
-item paramétrico) → Ordens de Produção → Nesting. Pendências à parte (Resend domínio, sheet_models/
-label_templates, ícones) seguem listadas na Sessão 28 abaixo.
+**Próximo passo:** Ordens de Produção → Nesting (consultar squad de produção antes de desenhar
+modelos de folha por cliente, ver pendência acima). Pendências à parte (Resend domínio, ícones)
+seguem listadas na Sessão 28 abaixo.
 
 ---
 
