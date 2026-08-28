@@ -5,7 +5,16 @@ import { useAuth } from '../../contexts/AuthContext'
 import type { PricingPreset } from '../../types/db'
 import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
 
-const EMPTY = { nome: '', mo_pct: '', mp_pct: '', se_pct: '', iva_pct: '23', is_default: false }
+const EMPTY = {
+  nome: '',
+  mo_pct: '',
+  mp_pct: '',
+  se_pct: '',
+  iva_pct: '23',
+  outras_taxas_pct: '',
+  comissao_pct: '',
+  is_default: false,
+}
 
 export default function PricingPresets() {
   const { appUser } = useAuth()
@@ -49,6 +58,8 @@ export default function PricingPresets() {
       mp_pct: Number(form.mp_pct) || 0,
       se_pct: Number(form.se_pct) || 0,
       iva_pct: Number(form.iva_pct) || 0,
+      outras_taxas_pct: Number(form.outras_taxas_pct) || 0,
+      comissao_pct: Number(form.comissao_pct) || 0,
       is_default: form.is_default,
     })
     setSaving(false)
@@ -75,7 +86,7 @@ export default function PricingPresets() {
       <h2 className="text-white font-medium mb-1">Precificação</h2>
       <p className="text-xs text-slate-500 mb-4">Presets de margem (mão de obra, matéria-prima, serviço/extra) e IVA aplicável.</p>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 items-end">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3 mb-4 items-end">
         <Field label="Nome do preset">
           <input className={inputCls} value={form.nome} onChange={(e) => set('nome', e.target.value)} placeholder="Padrão" />
         </Field>
@@ -90,6 +101,12 @@ export default function PricingPresets() {
         </Field>
         <Field label="IVA %">
           <input className={inputCls} type="number" step="0.001" value={form.iva_pct} onChange={(e) => set('iva_pct', e.target.value)} />
+        </Field>
+        <Field label="Outras Taxas %">
+          <input className={inputCls} type="number" step="0.001" value={form.outras_taxas_pct} onChange={(e) => set('outras_taxas_pct', e.target.value)} />
+        </Field>
+        <Field label="Comissão %">
+          <input className={inputCls} type="number" step="0.001" value={form.comissao_pct} onChange={(e) => set('comissao_pct', e.target.value)} />
         </Field>
       </div>
 
@@ -117,6 +134,8 @@ export default function PricingPresets() {
                 <Th>M.P.</Th>
                 <Th>Serviço/Extra</Th>
                 <Th>IVA</Th>
+                <Th>Outras Taxas</Th>
+                <Th>Comissão</Th>
                 <Th>Padrão</Th>
                 <Th></Th>
               </tr>
@@ -129,6 +148,8 @@ export default function PricingPresets() {
                   <Td>{p.mp_pct}%</Td>
                   <Td>{p.se_pct}%</Td>
                   <Td>{p.iva_pct}%</Td>
+                  <Td>{p.outras_taxas_pct}%</Td>
+                  <Td>{p.comissao_pct}%</Td>
                   <Td>
                     {p.is_default ? (
                       <span className="text-emerald-400 text-xs">✓ padrão</span>

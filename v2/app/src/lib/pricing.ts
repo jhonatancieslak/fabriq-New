@@ -40,8 +40,10 @@ export function computeQuoteTotals(items: QuoteItem[], preset: PricingPreset | n
   const moPct = preset ? Number(preset.mo_pct) : 0
   const mpPct = preset ? Number(preset.mp_pct) : 0
   const sePct = preset ? Number(preset.se_pct) : 0
+  const outrasTaxasPct = preset ? Number(preset.outras_taxas_pct) : 0
+  const comissaoPct = preset ? Number(preset.comissao_pct) : 0
 
-  const comMargem = subtotalMp * (1 + (moPct + mpPct + sePct) / 100)
+  const comMargem = subtotalMp * (1 + (moPct + mpPct + sePct + outrasTaxasPct + comissaoPct) / 100)
   const totalLiquido = comMargem * (1 - descontoPct / 100)
   const totalIva = totalLiquido * (ivaPct / 100)
   const totalBruto = totalLiquido + totalIva

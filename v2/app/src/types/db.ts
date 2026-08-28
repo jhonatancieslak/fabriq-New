@@ -178,6 +178,8 @@ export interface PricingPreset {
   mp_pct: number
   se_pct: number
   iva_pct: number
+  outras_taxas_pct: number
+  comissao_pct: number
   is_default: boolean
 }
 
