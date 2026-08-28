@@ -197,7 +197,9 @@ create table quote_items (
   peso_kg numeric(12,4),
   tempo_corte_s numeric(12,3),
   custo_calculado numeric(14,4),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  geometria jsonb,
+  origem text not null default 'dxf' check (origem in ('dxf', 'parametrica'))
 );
 
 -- ============================================================

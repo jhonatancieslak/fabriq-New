@@ -7,6 +7,7 @@ import Cadastro from './pages/auth/Cadastro'
 import Login from './pages/auth/Login'
 import Dashboard from './pages/Dashboard'
 import Placeholder from './pages/Placeholder'
+import Parametros from './pages/Parametros'
 
 export default function App() {
   return (
@@ -29,7 +30,7 @@ export default function App() {
             <Route path="/ordens" element={<Placeholder title="Ordens de Produção" />} />
             <Route path="/nesting" element={<Placeholder title="Nesting" />} />
             <Route path="/clientes" element={<Placeholder title="Clientes" />} />
-            <Route path="/parametros" element={<Placeholder title="Parâmetros" />} />
+            <Route path="/parametros" element={<Parametros />} />
             <Route path="/historicos" element={<Placeholder title="Históricos" />} />
             <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
           </Route>

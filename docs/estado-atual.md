@@ -1,10 +1,34 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-27 (Sessão 28 — arranque FABRIQ v2 + migração para Postgres self-host na VPS)
+**Última sessão:** 2026-08-28 (Sessão 29 — geometria paramétrica + módulo Parâmetros v2)
 
 ---
 
-## ▶ RETOMAR AQUI (sessão pausada 2026-08-27 de manhã, volta à tarde)
+## ▶ RETOMAR AQUI (2026-08-28)
+
+- `quote_items` (fabriq_v2, DB live + `v2/supabase/schema.sql`) ganhou `geometria jsonb` +
+  `origem` ('dxf'|'parametrica') — migration `v2/supabase/003_quote_items_geometria.sql` já aplicada
+  na VPS via `sudo -u postgres psql -d fabriq_v2` (o role `authenticator`/`fabriq_v2_user` do
+  PostgREST não tem permissão DDL, sempre usar `sudo -u postgres` pra alterações de schema).
+- `pricing_presets` já estava no modelo fiscal PT (mo_pct/mp_pct/se_pct/iva_pct) desde a sessão 28 —
+  confirmado, não precisou de ajuste.
+- **Módulo Parâmetros implementado** em `v2/app/src/pages/Parametros/` — 5 abas com CRUD real
+  ligado ao PostgREST (self-host): Máquinas, Materiais, Parâmetros de Corte (machine_parameters),
+  Precificação (pricing_presets, com toggle de preset padrão), Configurações Gerais
+  (company_settings, upsert singleton por company). Testado end-to-end no browser
+  (login selfhost-teste@fabriq.pt, insert de máquina/material confirmado via RLS, dados de
+  teste removidos depois).
+- Rota `/parametros` trocada de `<Placeholder>` pra `<Parametros>` em `v2/app/src/App.tsx`.
+- Tipos novos em `v2/app/src/types/db.ts`: `Machine`, `Material`, `MachineParameter`,
+  `PricingPreset`, `CompanySettings` + enums/labels PT.
+
+**Próximo passo:** Clientes → Orçamentos (usar `quote_items.geometria`/`origem` no formulário de
+item paramétrico) → Ordens de Produção → Nesting. Pendências à parte (Resend domínio, sheet_models/
+label_templates, ícones) seguem listadas na Sessão 28 abaixo.
+
+---
+
+## Sessão anterior (2026-08-27)
 
 Dizer "continue de onde paramos" — ler isto primeiro, depois a Sessão 28 completa abaixo.
 
