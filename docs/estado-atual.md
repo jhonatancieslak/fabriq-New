@@ -1,10 +1,44 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-28 (Sessão 29 — Parâmetros, Clientes, Orçamentos e Ordens de Produção v2)
+**Última sessão:** 2026-08-28 (Sessão 30 — análise gaps vs iCut + paridade fiscal Precificação)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-08-28)
+## ▶ RETOMAR AQUI (2026-08-28, sessão 30 — utilizador volta ~13h)
+
+**Contexto:** sistema é para Portugal, iCut e o fabriq v1 (`services/nesting/` etc.) servem só de
+base/referência, não para copiar 1:1. Análise completa de gaps ficou registada em
+`/root/.claude/plans/reflective-skipping-alpaca.md` (plano de sessão, não versionado no repo) —
+reler esse ficheiro para retomar a visão geral antes de continuar.
+
+**Feito nesta sessão (commit `5394f65`, push ok):**
+- Gap #1 do roadmap (paridade fiscal PT em Precificação) fechado: `pricing_presets` ganhou
+  `outras_taxas_pct` + `comissao_pct` (migration `v2/supabase/005_pricing_taxas_comissao.sql`,
+  aplicada em produção via `sudo -u postgres psql -d fabriq_v2`, com `NOTIFY pgrst, 'reload
+  schema'` + `docker restart fabriq_v2_rest` a seguir — obrigatório sempre após DDL manual).
+  Modelo **simplificado**, decisão confirmada com utilizador: soma de margens (M.O./M.P./S.E. +
+  Outras Taxas + Comissão) + IVA único editável no orçamento — **não** replicar bloco fiscal por
+  categoria do iCut (isso só faz sentido no BR, onde cada categoria tem imposto diferente
+  ICMS/IPI/PIS-COFINS; em PT o IVA é único).
+- Confirmado: descontos (`desconto_opcao1/2_pct`), dobra/conformação (2 modos) e custo de setup já
+  existiam em `company_settings` desde a sessão 28 — não precisaram de trabalho.
+- `app/src/lib/pricing.ts` (`computeQuoteTotals`) e `Parametros/PricingPresets.tsx` (form + tabela)
+  atualizados. `tsc --noEmit` limpo.
+
+**Roadmap priorizado (ver plano completo para detalhe de cada item):**
+1. ~~Paridade fiscal PT em Precificação~~ ✅ feito nesta sessão
+2. **Módulo Nesting** (próximo) — decidir `sheet_models`/`label_templates` por empresa (pendente
+   desde sessão 28) e **investigar reaproveitar o motor de nesting do v1**
+   (`/var/www/fabriq/services/nesting/` — Flask, já em produção, `models.py` 69.9K + ODA File
+   Converter vendorizado p/ DXF/DWG) em vez de reescrever o algoritmo do zero. Rota `/nesting` no
+   v2 ainda é `Placeholder.tsx`; schema `nesting_jobs` já está pronto (gap, chapas necessárias,
+   peças/chapa, `layout_json`, preview).
+3. Geração de PDF de orçamento (não existe nenhuma ainda — bloqueia entrega ao cliente).
+4. App instalável do Operador do Laser (Tauri + Supabase Realtime + notificação nativa) —
+   depende de `machine_id` por etapa em `production_order_stages` (já existe).
+5. Import de planilha de parâmetros em lote.
+6. Empacotamento Tauri do app principal (Engenharia) — reaproveita o mesmo frontend, é só build.
+7. PWA — fica para o fim, confirmado pelo utilizador.
 
 - `quote_items` (fabriq_v2, DB live + `v2/supabase/schema.sql`) ganhou `geometria jsonb` +
   `origem` ('dxf'|'parametrica') — migration `v2/supabase/003_quote_items_geometria.sql`.
@@ -12,7 +46,8 @@
   (o role do PostgREST não tem DDL), é preciso `NOTIFY pgrst, 'reload schema';` ou
   `docker restart fabriq_v2_rest` — senão a API responde "Could not find the column in the schema
   cache" mesmo com a coluna já existindo no banco.
-- `pricing_presets` já estava no modelo fiscal PT (mo_pct/mp_pct/se_pct/iva_pct) desde a sessão 28.
+- `pricing_presets` fiscal PT: mo_pct/mp_pct/se_pct/iva_pct desde sessão 28,
+  outras_taxas_pct/comissao_pct desde sessão 30 (ver acima).
 - **Módulo Parâmetros** (`v2/app/src/pages/Parametros/`) — 5 abas CRUD: Máquinas, Materiais,
   Parâmetros de Corte, Precificação, Configurações Gerais.
 - **Módulo Clientes** (`v2/app/src/pages/Clientes.tsx`) — lista com pesquisa, criar/editar/remover.
