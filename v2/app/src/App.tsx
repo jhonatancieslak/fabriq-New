@@ -11,6 +11,8 @@ import Parametros from './pages/Parametros'
 import Clientes from './pages/Clientes'
 import Orcamentos from './pages/Orcamentos'
 import QuoteForm from './pages/Orcamentos/QuoteForm'
+import Ordens from './pages/Ordens'
+import OrderDetail from './pages/Ordens/OrderDetail'
 
 export default function App() {
   return (
@@ -31,7 +33,8 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/orcamentos" element={<Orcamentos />} />
             <Route path="/orcamentos/:id" element={<QuoteForm />} />
-            <Route path="/ordens" element={<Placeholder title="Ordens de Produção" />} />
+            <Route path="/ordens" element={<Ordens />} />
+            <Route path="/ordens/:id" element={<OrderDetail />} />
             <Route path="/nesting" element={<Placeholder title="Nesting" />} />
             <Route path="/clientes" element={<Clientes />} />
             <Route path="/parametros" element={<Parametros />} />

@@ -117,6 +117,40 @@ export interface QuoteItem {
   origem: QuoteItemOrigem
 }
 
+export type ProductionOrderStatus = 'aguardando' | 'em_producao' | 'concluido' | 'cancelado'
+
+export const PRODUCTION_ORDER_STATUS_LABELS: Record<ProductionOrderStatus, string> = {
+  aguardando: 'Aguardando',
+  em_producao: 'Em Produção',
+  concluido: 'Concluído',
+  cancelado: 'Cancelado',
+}
+
+export interface ProductionOrder {
+  id: string
+  company_id: string
+  quote_id: string | null
+  tipo: MachineType
+  status: ProductionOrderStatus
+  qr_code: string
+  label_printed_at: string | null
+  iniciado_em: string | null
+  concluido_em: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductionOrderItem {
+  id: string
+  company_id: string
+  production_order_id: string
+  quote_item_id: string | null
+  material_id: string | null
+  quantidade: number
+  materia_prima_consumida_kg: number | null
+  created_at: string
+}
+
 export interface Client {
   id: string
   company_id: string

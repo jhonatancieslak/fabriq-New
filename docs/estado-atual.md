@@ -1,6 +1,6 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-28 (Sessão 29 — Parâmetros, Clientes e Orçamentos v2)
+**Última sessão:** 2026-08-28 (Sessão 29 — Parâmetros, Clientes, Orçamentos e Ordens de Produção v2)
 
 ---
 
@@ -28,6 +28,14 @@
   total com IVA €11.01 — matemática conferida manualmente. Dados de teste removidos depois.
 - Componentes de UI partilhados movidos de `pages/Parametros/shared.tsx` para
   `v2/app/src/components/form.tsx` (reuso entre Parâmetros/Clientes/Orçamentos).
+- **Módulo Ordens de Produção** (`v2/app/src/pages/Ordens/`) — lista + criação a partir de um
+  orçamento com status `aprovado` (copia `quote_items` para `production_order_items`, calculando
+  `materia_prima_consumida_kg = peso_kg × quantidade`), detalhe com workflow de estado
+  (aguardando/em_produção/concluído/cancelado — grava `iniciado_em`/`concluido_em`
+  automaticamente), QR de rastreio (`qr_code`, gerado pelo default do schema). Testado
+  end-to-end: orçamento aprovado → ordem criada → item copiado corretamente → transição de
+  estado grava timestamp. **Sem folha impressa ainda** — layout de impressão fica pendente da
+  consulta ao squad de produção (ver pendência abaixo).
 - **Pendência de produto (não implementar ainda):** utilizador pediu pra usar
   `sistema.fabriq.pt/ordens/<id>/folha-corte` (OF Pipe Solutions) como referência de layout pro
   módulo Nesting/Ordens de Produção — mas esse layout é o modelo de auditoria específico daquele
@@ -35,7 +43,7 @@
   engenheiro de produção sobre quais campos são padrão vs. customizáveis. Detalhe completo em
   memória `project_folha_corte_referencia.md`.
 
-**Próximo passo:** Ordens de Produção → Nesting (consultar squad de produção antes de desenhar
+**Próximo passo:** Nesting (consultar squad de produção antes de desenhar
 modelos de folha por cliente, ver pendência acima). Pendências à parte (Resend domínio, ícones)
 seguem listadas na Sessão 28 abaixo.
 
