@@ -64,6 +64,25 @@ export interface MachineParameter {
   frequencia_filtro_corte_hz: number | null
 }
 
+export interface Client {
+  id: string
+  company_id: string
+  empresa: string
+  contacto: string | null
+  vendedor_id: string | null
+  nif: string | null
+  email: string | null
+  telefone: string | null
+  endereco: string | null
+  cidade: string | null
+  codigo_postal: string | null
+  condicao_pagamento: string | null
+  pricing_preset_id: string | null
+  observacoes: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface PricingPreset {
   id: string
   company_id: string

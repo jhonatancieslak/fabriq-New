@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { MACHINE_TYPE_LABELS, type Machine, type MachineType } from '../../types/db'
-import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th } from './shared'
+import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
 
 const TIPOS: MachineType[] = ['laser', 'guilhotina', 'quinagem']
 

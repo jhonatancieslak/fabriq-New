@@ -11,7 +11,7 @@ import {
   type MachineParameter,
   type Material,
 } from '../../types/db'
-import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th } from './shared'
+import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
 
 const GASES: GasType[] = ['oxigenio', 'nitrogenio', 'ar_comprimido']
 

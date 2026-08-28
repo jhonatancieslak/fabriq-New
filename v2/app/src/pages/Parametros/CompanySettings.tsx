@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import type { CompanySettings as CompanySettingsRow, DobraPricingMode } from '../../types/db'
-import { btnPrimary, Card, Field, inputCls } from './shared'
+import { btnPrimary, Card, Field, inputCls } from '../../components/form'
 
 export default function CompanySettings() {
   const { appUser } = useAuth()
