@@ -1,10 +1,20 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-29 (Sessão 31 — módulo Nesting v2 + rebrand amarelo + PDF de orçamento + scaffold Tauri)
+**Última sessão:** 2026-08-29 (Sessão 31 — módulo Nesting v2 + rebrand amarelo + PDF de orçamento + scaffold Tauri + import CSV parâmetros)
 
 ---
 
 ## ▶ RETOMAR AQUI (2026-08-29, sessão 31)
+
+**Roadmap item 5 fechado nesta sessão (commit `c7d7f90`, push ok): import em lote de parâmetros de
+corte via CSV.** `v2/app/src/lib/csvImport.ts` (parse client-side com `papaparse`, sem backend) +
+bloco "Importar em lote (CSV)" em `Parametros/MachineParameters.tsx`: baixar modelo, upload,
+preview linha-a-linha com validação (máquina/material resolvidos por nome contra os já cadastrados
+na empresa, gás validado contra enum), confirmar → bulk insert. Testado end-to-end no browser
+(4 linhas, 2 válidas + 2 com erro proposital) — funcionou corretamente. **Nota**: durante o teste um
+`confirm()` nativo do botão "Remover" travou a aba do browser automation (comportamento conhecido,
+não é bug do código) — os 2 registos de teste inseridos (`Laser Bystronic 1` / `Aço carbono`
+3mm/5mm) ficaram no tenant `selfhost-teste`, sem impacto.
 
 **Roadmap item 4 fechado nesta sessão (commit `add9ae2`, push ok): scaffold do app instalável
 Operador do Laser (Tauri).** MVP mínimo confirmado com utilizador (não a tela completa do
@@ -98,8 +108,8 @@ reler esse ficheiro para retomar a visão geral antes de continuar.
 4. ~~App instalável do Operador do Laser (scaffold)~~ ✅ scaffold feito sessão 31 — falta tela nativa
    própria (ver retomada acima) (Tauri + Supabase Realtime + notificação nativa) —
    depende de `machine_id` por etapa em `production_order_stages` (já existe).
-5. Import de planilha de parâmetros em lote.
-6. Empacotamento Tauri do app principal (Engenharia) — reaproveita o mesmo frontend, é só build.
+5. ~~Import de planilha de parâmetros em lote~~ ✅ feito sessão 31 (CSV, ver retomada acima)
+6. **(próximo)** Empacotamento Tauri do app principal (Engenharia) — reaproveita o mesmo frontend, é só build.
 7. PWA — fica para o fim, confirmado pelo utilizador.
 
 - `quote_items` (fabriq_v2, DB live + `v2/supabase/schema.sql`) ganhou `geometria jsonb` +
