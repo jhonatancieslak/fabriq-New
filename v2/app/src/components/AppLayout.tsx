@@ -20,7 +20,10 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     <div className="min-h-screen bg-slate-950 flex">
       <aside className="w-60 shrink-0 border-r border-slate-800 flex flex-col">
         <div className="px-4 py-4 border-b border-slate-800">
-          <p className="text-white font-semibold text-sm">{company?.nome_fantasia || company?.razao_social || 'Fabriq'}</p>
+          <p className="text-sm font-black tracking-tight text-white">
+            FABRIQ<span className="text-amber-400">.pt</span>
+          </p>
+          <p className="text-white font-medium text-xs mt-2">{company?.nome_fantasia || company?.razao_social || 'Fabriq'}</p>
           <p className="text-slate-500 text-xs">{appUser?.role}</p>
         </div>
         <nav className="flex-1 px-2 py-3 space-y-1">
