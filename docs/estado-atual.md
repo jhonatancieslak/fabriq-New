@@ -1,10 +1,33 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-29 (Sessão 31 — módulo Nesting v2 + rebrand amarelo + PDF de orçamento + scaffold Tauri + import CSV parâmetros)
+**Última sessão:** 2026-08-29 (Sessão 31 — módulos Nesting/PDF/import CSV + 2 apps Tauri + rebrand FABRIQ.pt)
 
 ---
 
 ## ▶ RETOMAR AQUI (2026-08-29, sessão 31)
+
+**Roadmap item 6 fechado nesta sessão (commit `5422632`, push ok): scaffold + build de release do
+app "Engenharia" (Tauri).** Segundo wrapper Tauri, `v2/desktop-engenharia/` — janela maior
+(1360×860) carregando o dashboard completo, distinto do "Fabriq Operador" (item 4, janela compacta
+para a CPU do laser). Desta vez rodou o `tauri build` de verdade (não só `cargo check`): gerou
+`.deb`, `.rpm` e `.AppImage` com sucesso (74MB AppImage, 3.1MB deb/rpm — ambos ficam fora do git,
+em `target/`, já coberto pelo `.gitignore` do `src-tauri`). No processo, corrigido bug de path nos
+DOIS scaffolds Tauri (`desktop/` e `desktop-engenharia/`): `frontendDist` apontava para
+`"../app/dist"` (relativo a `src-tauri/`) quando devia ser `"../../app/dist"` — sem isso
+`tauri build` falha por não achar os web assets (só não tinha aparecido antes porque o item 4
+rodou só `cargo check`, que não valida essa config).
+
+**Bônus desta sessão**: `npm run build` do frontend estava silenciosamente quebrado há um tempo —
+`tsc -b && vite build` só roda o `vite build` se o `tsc` passar, e havia 10 erros TS pré-existentes
+(principalmente `<Th></Th>` sem children explícito, herdado de um padrão copiado entre páginas)
+que nunca bloqueavam nada visivelmente porque ninguém checava o exit code. Corrigidos todos —
+`npm run build` agora compila limpo de ponta a ponta, e o `dist/` gerado é o que os apps Tauri
+empacotam.
+
+**Wordmark**: utilizador confirmou trocar `FABRIQ.IA` (manual de marca do fabriq v1) por
+`FABRIQ.pt`. v2 não tinha nenhum wordmark fixo ainda (só nome do tenant, white-label) — adicionado
+`FABRIQ.pt` (".pt" em amarelo) no topo da sidebar, no login, no cadastro, e no `<title>` da página
+(commit `d35815a`).
 
 **Roadmap item 5 fechado nesta sessão (commit `c7d7f90`, push ok): import em lote de parâmetros de
 corte via CSV.** `v2/app/src/lib/csvImport.ts` (parse client-side com `papaparse`, sem backend) +
@@ -109,8 +132,8 @@ reler esse ficheiro para retomar a visão geral antes de continuar.
    própria (ver retomada acima) (Tauri + Supabase Realtime + notificação nativa) —
    depende de `machine_id` por etapa em `production_order_stages` (já existe).
 5. ~~Import de planilha de parâmetros em lote~~ ✅ feito sessão 31 (CSV, ver retomada acima)
-6. **(próximo)** Empacotamento Tauri do app principal (Engenharia) — reaproveita o mesmo frontend, é só build.
-7. PWA — fica para o fim, confirmado pelo utilizador.
+6. ~~Empacotamento Tauri do app principal (Engenharia)~~ ✅ feito sessão 31 (ver retomada acima)
+7. **(próximo)** PWA — fica para o fim, confirmado pelo utilizador.
 
 - `quote_items` (fabriq_v2, DB live + `v2/supabase/schema.sql`) ganhou `geometria jsonb` +
   `origem` ('dxf'|'parametrica') — migration `v2/supabase/003_quote_items_geometria.sql`.
