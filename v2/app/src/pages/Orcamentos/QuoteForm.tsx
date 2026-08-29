@@ -6,6 +6,7 @@ import {
   MATERIAL_NAME_LABELS,
   QUOTE_STATUS_LABELS,
   type Client,
+  type CompanySettings,
   type GeometriaTipo,
   type Material,
   type PricingPreset,
@@ -15,6 +16,8 @@ import {
   type QuoteStatus,
 } from '../../types/db'
 import { areaM2, computeQuoteTotals, itemCustoMateriaPrima, pesoKg } from '../../lib/pricing'
+import { gerarOrcamentoPdf } from '../../lib/quotePdf'
+import { useAuth } from '../../contexts/AuthContext'
 import { btnDanger, btnGhost, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
 
 const STATUSES: QuoteStatus[] = ['rascunho', 'enviado', 'aprovado', 'rejeitado']
@@ -36,12 +39,14 @@ const EMPTY_ITEM = {
 export default function QuoteForm() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { company } = useAuth()
 
   const [quote, setQuote] = useState<Quote | null>(null)
   const [items, setItems] = useState<QuoteItem[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [presets, setPresets] = useState<PricingPreset[]>([])
   const [materials, setMaterials] = useState<Material[]>([])
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [itemForm, setItemForm] = useState(EMPTY_ITEM)
@@ -50,18 +55,20 @@ export default function QuoteForm() {
   async function load() {
     if (!id) return
     setLoading(true)
-    const [{ data: q }, { data: it }, { data: c }, { data: p }, { data: m }] = await Promise.all([
+    const [{ data: q }, { data: it }, { data: c }, { data: p }, { data: m }, { data: cs }] = await Promise.all([
       supabase.from('quotes').select('*').eq('id', id).maybeSingle(),
       supabase.from('quote_items').select('*').eq('quote_id', id).order('created_at'),
       supabase.from('clients').select('*').order('empresa'),
       supabase.from('pricing_presets').select('*').order('nome'),
       supabase.from('materials').select('*').order('nome'),
+      supabase.from('company_settings').select('*').maybeSingle(),
     ])
     setQuote(q as Quote)
     setItems((it as QuoteItem[]) ?? [])
     setClients((c as Client[]) ?? [])
     setPresets((p as PricingPreset[]) ?? [])
     setMaterials((m as Material[]) ?? [])
+    setCompanySettings((cs as CompanySettings) ?? null)
     setLoading(false)
   }
 
@@ -190,17 +197,40 @@ export default function QuoteForm() {
         <button className={btnGhost} onClick={() => navigate('/orcamentos')}>
           ← Orçamentos
         </button>
-        <select
-          className={`${inputCls} max-w-[10rem]`}
-          value={quote.status}
-          onChange={(e) => patchQuote({ status: e.target.value as QuoteStatus })}
-        >
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {QUOTE_STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-3">
+          <button
+            className={btnPrimary}
+            disabled={!company || items.length === 0}
+            onClick={() =>
+              company &&
+              totals &&
+              gerarOrcamentoPdf({
+                quote,
+                items,
+                client: clients.find((c) => c.id === quote.client_id) ?? null,
+                company,
+                companySettings,
+                materials,
+                materialLabels: MATERIAL_NAME_LABELS,
+                totals,
+                geometriaLabel,
+              })
+            }
+          >
+            Gerar PDF
+          </button>
+          <select
+            className={`${inputCls} max-w-[10rem]`}
+            value={quote.status}
+            onChange={(e) => patchQuote({ status: e.target.value as QuoteStatus })}
+          >
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {QUOTE_STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <Card>
