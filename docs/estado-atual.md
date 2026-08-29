@@ -1,12 +1,25 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-29 (Sessão 31 — módulo Nesting v2 + rebrand amarelo + PDF de orçamento)
+**Última sessão:** 2026-08-29 (Sessão 31 — módulo Nesting v2 + rebrand amarelo + PDF de orçamento + scaffold Tauri)
 
 ---
 
 ## ▶ RETOMAR AQUI (2026-08-29, sessão 31)
 
-**Roadmap item 3 fechado nesta sessão (commit `d64f21c`, push ok): Geração de PDF de orçamento.**
+**Roadmap item 4 fechado nesta sessão (commit `add9ae2`, push ok): scaffold do app instalável
+Operador do Laser (Tauri).** MVP mínimo confirmado com utilizador (não a tela completa do
+operador): `v2/desktop/` — janela nativa Tauri que carrega `https://v2.fabriq.pt` diretamente
+(mesmo frontend web, autenticado), sem UI nativa própria ainda. `cargo check` limpo. Instalado
+nesta sessão (autorizado pelo utilizador antes, servidor partilhado): Rust/Cargo via `rustup`
+(`~/.cargo`, isolado) + libs de sistema via `apt` (`libwebkit2gtk-4.1-dev`,
+`libjavascriptcoregtk-4.1-dev`, `libsoup-3.0-dev`, `libssl-dev`, `build-essential`, `libxdo-dev`,
+`libayatana-appindicator3-dev`, `librsvg2-dev`) — aditivas, não afetaram serviços já rodando.
+**Falta para próxima sessão:** ícones próprios da marca (hoje são placeholders default do Tauri),
+tela nativa do operador ("cara de app" — utilizador confirmou que não deve reaproveitar o layout
+do dashboard web 1:1; listar/iniciar/concluir ordens da máquina), build de release empacotado
+(`.deb`/`.AppImage`/`.msi` — não testado ainda, só `cargo check`).
+
+**Roadmap item 3 fechado sessão 31 (commit `d64f21c`, push ok): Geração de PDF de orçamento.**
 100% client-side (`jsPDF` + `jspdf-autotable`, `v2/app/src/lib/quotePdf.ts`) — v2 não tem backend
 próprio (só PostgREST + frontend estático) nem serviço de storage self-hosted configurado, então
 não há como gerar PDF no servidor nem persistir `pdf_url` ainda. Botão "Gerar PDF" no header do
@@ -82,7 +95,8 @@ reler esse ficheiro para retomar a visão geral antes de continuar.
 2. ~~Módulo Nesting~~ ✅ feito sessão 31 (algoritmo TS próprio, não reaproveitou v1 — ver retomada
    acima)
 3. ~~Geração de PDF de orçamento~~ ✅ feito sessão 31 (client-side, sem storage — ver retomada acima)
-4. **(próximo)** App instalável do Operador do Laser (Tauri + Supabase Realtime + notificação nativa) —
+4. ~~App instalável do Operador do Laser (scaffold)~~ ✅ scaffold feito sessão 31 — falta tela nativa
+   própria (ver retomada acima) (Tauri + Supabase Realtime + notificação nativa) —
    depende de `machine_id` por etapa em `production_order_stages` (já existe).
 5. Import de planilha de parâmetros em lote.
 6. Empacotamento Tauri do app principal (Engenharia) — reaproveita o mesmo frontend, é só build.
