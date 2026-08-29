@@ -1,10 +1,52 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-28 (Sessão 30 — análise gaps vs iCut + paridade fiscal Precificação)
+**Última sessão:** 2026-08-29 (Sessão 31 — módulo Nesting v2 + rebrand amarelo)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-08-28, sessão 30 — utilizador volta ~13h)
+## ▶ RETOMAR AQUI (2026-08-29, sessão 31)
+
+**Feito nesta sessão (commit `1521c4d`, push ok):**
+- Roadmap item 2 (Módulo Nesting) fechado: algoritmo MaxRects BSSF multi-chapa portado de
+  `services/nesting/app/utils/nesting_calc.py` (Python, v1) para TypeScript puro
+  (`v2/app/src/lib/nesting.ts`) — decisão confirmada com utilizador: **não** chamar v1 como
+  microserviço (v1 é só referência de negócio); algoritmo roda no frontend porque precisa
+  funcionar offline dentro da futura app Tauri instalada na CPU da máquina laser.
+- Nova tabela `sheet_models` (catálogo de tamanhos de chapa por material/empresa) — migration
+  `v2/supabase/006_nesting_sheet_models.sql`, aplicada + `NOTIFY pgrst`.
+- UI `/nesting` (listagem) e `/nesting/:id` (editor: escolhe orçamento aprovado + chapa manual ou
+  do catálogo, calcula, mostra layout em SVG por chapa) — testado end-to-end no browser (login
+  `selfhost-teste@fabriq.pt`), incluindo bug real de aspect-ratio do SVG (chapa em retrato ficava
+  espremida numa caixa `maxHeight` fixa) corrigido antes do commit.
+- **Rebrand emerald→amber** em toda a app v2 (12 ficheiros): utilizador reportou que o visual
+  "carregado" (dark + verde) não seguia o manual de marca do fabriq v1 (`#EAB308` amarelo, texto
+  preto sobre amarelo — nunca branco). Aplicado globalmente via `form.tsx`/`AppLayout.tsx`
+  (componentes partilhados) + swap pontual nas páginas que tinham cor hardcoded.
+
+**Backlog levantado pelo utilizador nesta sessão, ainda NÃO implementado — precisa de sessão de
+planeamento própria antes de mexer (escopo grande, não coube misturar no meio do Nesting):**
+1. **Modelo de cobrança flexível em Precificação**: hoje só soma percentuais de margem sobre
+   material. Falta suportar (a) cobrar mão-de-obra (tempo de máquina) + material, (b) cliente traz
+   o próprio material → cobrar só serviço/mão-de-obra, (c) orçamento com mão-de-obra e material
+   discriminados separadamente vs. somados numa linha única — isso deve ser configurável, não fixo.
+2. **Matéria-prima**: utilizador sente que os cálculos "não estão a bater" — não foi possível
+   confirmar bug concreto nesta sessão (um teste rápido de peça 300×200×3mm em aço carbono bateu:
+   1.413kg/peça × 5 = 7.065kg, valor correto), mas precisa de investigação dedicada com casos reais
+   do utilizador antes de descartar.
+3. **Orçamento rápido**: opção de criar orçamento sem informar dados completos do cliente (uso
+   interno, não vai para o cliente).
+4. **Rastreabilidade configurável por empresa**: cada cliente (tenant) tem código próprio; na
+   ordem de fabrico deve haver opção de rastreabilidade completa para auditoria — mas isso precisa
+   ser **configurável por empresa** (algumas exigem compliance rígido, outras não precisam).
+5. **Multi-tenant customizável**: cada empresa cliente poderá ter telas e relatórios diferentes
+   entre si — não é um único layout fixo para todos os tenants. Implicação de arquitetura grande
+   (config por tenant armazenada onde? feature flags? templates?) — discutir antes de desenhar.
+6. **App instalável (Tauri)**: confirmado que vai ter layout totalmente diferente do web, "cara de
+   app" nativo — não reaproveitar 1:1 o layout do dashboard web. Ainda não scaffolded.
+
+---
+
+## Sessão 30 (2026-08-28 — análise gaps vs iCut + paridade fiscal Precificação)
 
 **Contexto:** sistema é para Portugal, iCut e o fabriq v1 (`services/nesting/` etc.) servem só de
 base/referência, não para copiar 1:1. Análise completa de gaps ficou registada em
