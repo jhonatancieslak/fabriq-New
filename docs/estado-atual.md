@@ -1,10 +1,20 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-29 (Sessão 31 — módulo Nesting v2 + rebrand amarelo)
+**Última sessão:** 2026-08-29 (Sessão 31 — módulo Nesting v2 + rebrand amarelo + PDF de orçamento)
 
 ---
 
 ## ▶ RETOMAR AQUI (2026-08-29, sessão 31)
+
+**Roadmap item 3 fechado nesta sessão (commit `d64f21c`, push ok): Geração de PDF de orçamento.**
+100% client-side (`jsPDF` + `jspdf-autotable`, `v2/app/src/lib/quotePdf.ts`) — v2 não tem backend
+próprio (só PostgREST + frontend estático) nem serviço de storage self-hosted configurado, então
+não há como gerar PDF no servidor nem persistir `pdf_url` ainda. Botão "Gerar PDF" no header do
+`QuoteForm.tsx`, dispara download direto no browser. Respeita `company_settings.pdf_orientacao` /
+`pdf_listras_zebradas` / `observacao_padrao` já existentes no schema. **Pendente para o futuro**: se
+algum dia se configurar storage (Supabase self-hosted ou S3-compatible), trocar para upload +
+`pdf_url` persistido, e usar as configs `pdf_mostrar_logo`/`pdf_densidade`/`pdf_tamanho_desenho`
+ainda não lidas pelo gerador atual.
 
 **Feito nesta sessão (commit `1521c4d`, push ok):**
 - Roadmap item 2 (Módulo Nesting) fechado: algoritmo MaxRects BSSF multi-chapa portado de
@@ -68,15 +78,11 @@ reler esse ficheiro para retomar a visão geral antes de continuar.
   atualizados. `tsc --noEmit` limpo.
 
 **Roadmap priorizado (ver plano completo para detalhe de cada item):**
-1. ~~Paridade fiscal PT em Precificação~~ ✅ feito nesta sessão
-2. **Módulo Nesting** (próximo) — decidir `sheet_models`/`label_templates` por empresa (pendente
-   desde sessão 28) e **investigar reaproveitar o motor de nesting do v1**
-   (`/var/www/fabriq/services/nesting/` — Flask, já em produção, `models.py` 69.9K + ODA File
-   Converter vendorizado p/ DXF/DWG) em vez de reescrever o algoritmo do zero. Rota `/nesting` no
-   v2 ainda é `Placeholder.tsx`; schema `nesting_jobs` já está pronto (gap, chapas necessárias,
-   peças/chapa, `layout_json`, preview).
-3. Geração de PDF de orçamento (não existe nenhuma ainda — bloqueia entrega ao cliente).
-4. App instalável do Operador do Laser (Tauri + Supabase Realtime + notificação nativa) —
+1. ~~Paridade fiscal PT em Precificação~~ ✅ feito sessão 30
+2. ~~Módulo Nesting~~ ✅ feito sessão 31 (algoritmo TS próprio, não reaproveitou v1 — ver retomada
+   acima)
+3. ~~Geração de PDF de orçamento~~ ✅ feito sessão 31 (client-side, sem storage — ver retomada acima)
+4. **(próximo)** App instalável do Operador do Laser (Tauri + Supabase Realtime + notificação nativa) —
    depende de `machine_id` por etapa em `production_order_stages` (já existe).
 5. Import de planilha de parâmetros em lote.
 6. Empacotamento Tauri do app principal (Engenharia) — reaproveita o mesmo frontend, é só build.
