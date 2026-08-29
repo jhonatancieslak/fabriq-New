@@ -13,6 +13,8 @@ import Orcamentos from './pages/Orcamentos'
 import QuoteForm from './pages/Orcamentos/QuoteForm'
 import Ordens from './pages/Ordens'
 import OrderDetail from './pages/Ordens/OrderDetail'
+import Nesting from './pages/Nesting'
+import NestingForm from './pages/Nesting/NestingForm'
 
 export default function App() {
   return (
@@ -35,7 +37,8 @@ export default function App() {
             <Route path="/orcamentos/:id" element={<QuoteForm />} />
             <Route path="/ordens" element={<Ordens />} />
             <Route path="/ordens/:id" element={<OrderDetail />} />
-            <Route path="/nesting" element={<Placeholder title="Nesting" />} />
+            <Route path="/nesting" element={<Nesting />} />
+            <Route path="/nesting/:id" element={<NestingForm />} />
             <Route path="/clientes" element={<Clientes />} />
             <Route path="/parametros" element={<Parametros />} />
             <Route path="/historicos" element={<Placeholder title="Históricos" />} />

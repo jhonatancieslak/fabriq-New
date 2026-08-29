@@ -16,7 +16,7 @@ import { btnGhost, btnPrimary, Card, Field, inputCls, Td, Th } from '../../compo
 const STATUS_COLORS: Record<string, string> = {
   aguardando: 'bg-slate-700 text-slate-200',
   em_producao: 'bg-amber-600/30 text-amber-300',
-  concluido: 'bg-emerald-600/30 text-emerald-300',
+  concluido: 'bg-amber-500/30 text-amber-300',
   cancelado: 'bg-red-600/30 text-red-300',
 }
 
@@ -175,7 +175,7 @@ export default function Ordens() {
                     </Td>
                     <Td>{new Date(o.created_at).toLocaleDateString('pt-PT')}</Td>
                     <Td>
-                      <span className="text-xs text-emerald-400">Abrir →</span>
+                      <span className="text-xs text-amber-400">Abrir →</span>
                     </Td>
                   </tr>
                 ))}

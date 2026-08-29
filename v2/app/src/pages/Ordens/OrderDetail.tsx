@@ -86,7 +86,7 @@ export default function OrderDetail() {
               key={s}
               onClick={() => handleStatus(s)}
               className={`px-3 py-1.5 rounded-md text-sm transition ${
-                order.status === s ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                order.status === s ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               {PRODUCTION_ORDER_STATUS_LABELS[s]}
@@ -108,7 +108,7 @@ export default function OrderDetail() {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-500 mb-1">QR de rastreio</p>
-            <code className="text-xs text-emerald-400 bg-slate-800 px-2 py-1 rounded">{order.qr_code}</code>
+            <code className="text-xs text-amber-400 bg-slate-800 px-2 py-1 rounded">{order.qr_code}</code>
           </div>
         </div>
       </Card>

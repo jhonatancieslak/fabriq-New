@@ -9,7 +9,7 @@ import { btnPrimary, Card, Td, Th } from '../../components/form'
 const STATUS_COLORS: Record<string, string> = {
   rascunho: 'bg-slate-700 text-slate-200',
   enviado: 'bg-amber-600/30 text-amber-300',
-  aprovado: 'bg-emerald-600/30 text-emerald-300',
+  aprovado: 'bg-amber-500/30 text-amber-300',
   rejeitado: 'bg-red-600/30 text-red-300',
 }
 
@@ -85,7 +85,7 @@ export default function Orcamentos() {
                   <Td>€{Number(q.total_bruto).toFixed(2)}</Td>
                   <Td>{new Date(q.updated_at).toLocaleDateString('pt-PT')}</Td>
                   <Td>
-                    <span className="text-xs text-emerald-400">Abrir →</span>
+                    <span className="text-xs text-amber-400">Abrir →</span>
                   </Td>
                 </tr>
               ))}

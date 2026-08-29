@@ -224,6 +224,55 @@ export interface Subscription {
   current_period_end: string | null
 }
 
+export type NestingJobStatus = 'pendente' | 'concluido' | 'erro'
+
+export const NESTING_JOB_STATUS_LABELS: Record<NestingJobStatus, string> = {
+  pendente: 'Pendente',
+  concluido: 'Concluído',
+  erro: 'Erro',
+}
+
+export interface SheetModel {
+  id: string
+  company_id: string
+  material_id: string | null
+  nome: string
+  largura_mm: number
+  altura_mm: number
+  espessura_mm: number | null
+}
+
+export interface NestingLayoutPeca {
+  id: string
+  x: number
+  y: number
+  largura: number
+  altura: number
+  rotacionada: boolean
+}
+
+export interface NestingLayout {
+  chapas: { pecas: NestingLayoutPeca[]; aproveitamento_pct: number }[]
+}
+
+export interface NestingJob {
+  id: string
+  company_id: string
+  quote_id: string | null
+  production_order_id: string | null
+  chapa_largura_mm: number | null
+  chapa_altura_mm: number | null
+  gap_mm: number
+  aproveitamento_pct: number | null
+  pecas_count: number | null
+  chapas_necessarias: number | null
+  pecas_por_chapa: number | null
+  pecas_nao_encaixadas: number
+  layout_json: NestingLayout | null
+  status: NestingJobStatus
+  created_at: string
+}
+
 export interface AppUser {
   id: string
   company_id: string

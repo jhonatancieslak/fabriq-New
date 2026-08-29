@@ -130,7 +130,7 @@ export default function CompanySettings() {
         <button className={btnPrimary} onClick={handleSave} disabled={saving}>
           {saving ? 'A guardar…' : 'Guardar'}
         </button>
-        {saved && <span className="text-sm text-emerald-400">Guardado ✓</span>}
+        {saved && <span className="text-sm text-amber-400">Guardado ✓</span>}
         {error && <span className="text-sm text-red-400">{error}</span>}
       </div>
     </Card>

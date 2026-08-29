@@ -39,7 +39,7 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
           <div>
@@ -49,7 +49,7 @@ export default function Login() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
@@ -58,7 +58,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-medium py-2 transition"
+            className="w-full rounded-md bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-sm font-medium py-2 transition"
           >
             {loading ? 'A entrar…' : 'Entrar'}
           </button>
@@ -66,7 +66,7 @@ export default function Login() {
 
         <p className="text-sm text-slate-400 mt-6 text-center">
           Ainda não tem conta?{' '}
-          <Link to="/cadastro" className="text-emerald-400 hover:underline">
+          <Link to="/cadastro" className="text-amber-400 hover:underline">
             Criar conta grátis
           </Link>
         </p>

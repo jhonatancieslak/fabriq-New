@@ -152,7 +152,7 @@ export default function PricingPresets() {
                   <Td>{p.comissao_pct}%</Td>
                   <Td>
                     {p.is_default ? (
-                      <span className="text-emerald-400 text-xs">✓ padrão</span>
+                      <span className="text-amber-400 text-xs">✓ padrão</span>
                     ) : (
                       <button className="text-xs text-slate-400 hover:text-white" onClick={() => handleSetDefault(p.id)}>
                         tornar padrão

@@ -2,10 +2,10 @@
 import type { ReactNode } from 'react'
 
 export const inputCls =
-  'w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500'
+  'w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
 export const labelCls = 'block text-xs text-slate-400 mb-1'
 export const btnPrimary =
-  'rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 transition'
+  'rounded-md bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-sm font-medium px-4 py-2 transition'
 export const btnGhost =
   'rounded-md border border-slate-700 hover:bg-slate-800 text-slate-300 text-sm px-3 py-1.5 transition'
 export const btnDanger = 'text-red-400 hover:text-red-300 text-xs'

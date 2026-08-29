@@ -28,7 +28,7 @@ export default function Parametros() {
             key={t.key}
             onClick={() => setActive(t.key)}
             className={`px-4 py-2 text-sm border-b-2 -mb-px transition ${
-              active === t.key ? 'border-emerald-500 text-white' : 'border-transparent text-slate-400 hover:text-white'
+              active === t.key ? 'border-amber-500 text-white' : 'border-transparent text-slate-400 hover:text-white'
             }`}
           >
             {t.label}

@@ -74,7 +74,7 @@ export default function Cadastro() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
         <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-8 text-center">
-          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-2xl">
+          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-2xl">
             ✉️
           </div>
           <h1 className="text-lg font-semibold text-white mb-2">Confirme o seu e-mail</h1>
@@ -82,7 +82,7 @@ export default function Cadastro() {
             Enviámos um link de confirmação para <span className="text-white">{form.email}</span>. Clique nele para
             ativar a conta e comece o seu teste grátis de 4 dias.
           </p>
-          <Link to="/login" className="text-emerald-400 hover:underline text-sm">
+          <Link to="/login" className="text-amber-400 hover:underline text-sm">
             Já confirmei — Entrar
           </Link>
         </div>
@@ -130,7 +130,7 @@ export default function Cadastro() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-medium py-2 transition"
+            className="w-full rounded-md bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-sm font-medium py-2 transition"
           >
             {loading ? 'A criar conta…' : 'Começar teste grátis de 4 dias'}
           </button>
@@ -138,7 +138,7 @@ export default function Cadastro() {
 
         <p className="text-sm text-slate-400 mt-6 text-center">
           Já tem uma conta?{' '}
-          <Link to="/login" className="text-emerald-400 hover:underline">
+          <Link to="/login" className="text-amber-400 hover:underline">
             Entrar
           </Link>
         </p>
@@ -168,7 +168,7 @@ function Field({
         required={required}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
       />
     </div>
   )

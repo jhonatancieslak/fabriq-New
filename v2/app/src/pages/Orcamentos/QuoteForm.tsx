@@ -267,13 +267,13 @@ export default function QuoteForm() {
 
           <div className="flex gap-2 mb-4">
             <button
-              className={`px-3 py-1.5 rounded-md text-sm ${itemForm.origem === 'parametrica' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+              className={`px-3 py-1.5 rounded-md text-sm ${itemForm.origem === 'parametrica' ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}`}
               onClick={() => setField('origem', 'parametrica')}
             >
               Paramétrica
             </button>
             <button
-              className={`px-3 py-1.5 rounded-md text-sm ${itemForm.origem === 'dxf' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+              className={`px-3 py-1.5 rounded-md text-sm ${itemForm.origem === 'dxf' ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}`}
               onClick={() => setField('origem', 'dxf')}
             >
               Ficheiro DXF

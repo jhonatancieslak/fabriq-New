@@ -31,7 +31,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
               end={item.end}
               className={({ isActive }) =>
                 `block rounded-md px-3 py-2 text-sm transition ${
-                  isActive ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  isActive ? 'bg-amber-500 text-black' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`
               }
             >
