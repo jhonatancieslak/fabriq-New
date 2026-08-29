@@ -81,7 +81,7 @@ export default function Machines() {
             <tr className="border-b border-slate-800">
               <Th>Nome</Th>
               <Th>Tipo</Th>
-              <Th></Th>
+              <Th>{null}</Th>
             </tr>
           </thead>
           <tbody>

@@ -137,7 +137,7 @@ export default function PricingPresets() {
                 <Th>Outras Taxas</Th>
                 <Th>Comissão</Th>
                 <Th>Padrão</Th>
-                <Th></Th>
+                <Th>{null}</Th>
               </tr>
             </thead>
             <tbody>

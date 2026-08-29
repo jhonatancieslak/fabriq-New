@@ -94,7 +94,7 @@ export default function Materials() {
               <Th>Material</Th>
               <Th>Preço/kg</Th>
               <Th>Peso esp.</Th>
-              <Th></Th>
+              <Th>{null}</Th>
             </tr>
           </thead>
           <tbody>

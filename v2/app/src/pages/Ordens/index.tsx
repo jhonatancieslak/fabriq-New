@@ -162,7 +162,7 @@ export default function Ordens() {
                   <Th>Tipo</Th>
                   <Th>Estado</Th>
                   <Th>Criada em</Th>
-                  <Th></Th>
+                  <Th>{null}</Th>
                 </tr>
               </thead>
               <tbody>

@@ -72,7 +72,7 @@ export default function Orcamentos() {
                 <Th>Estado</Th>
                 <Th>Total (bruto)</Th>
                 <Th>Atualizado</Th>
-                <Th></Th>
+                <Th>{null}</Th>
               </tr>
             </thead>
             <tbody>

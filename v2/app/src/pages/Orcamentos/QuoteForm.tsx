@@ -15,7 +15,7 @@ import {
   type QuoteItemOrigem,
   type QuoteStatus,
 } from '../../types/db'
-import { areaM2, computeQuoteTotals, itemCustoMateriaPrima, pesoKg } from '../../lib/pricing'
+import { computeQuoteTotals, itemCustoMateriaPrima, pesoKg } from '../../lib/pricing'
 import { gerarOrcamentoPdf } from '../../lib/quotePdf'
 import { useAuth } from '../../contexts/AuthContext'
 import { btnDanger, btnGhost, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
@@ -383,7 +383,7 @@ export default function QuoteForm() {
                     <Th>Qtd</Th>
                     <Th>Peso (kg)</Th>
                     <Th>Custo M.P.</Th>
-                    <Th></Th>
+                    <Th>{null}</Th>
                   </tr>
                 </thead>
                 <tbody>

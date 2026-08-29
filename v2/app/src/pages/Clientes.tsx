@@ -219,7 +219,7 @@ export default function Clientes() {
                   <Th>E-mail</Th>
                   <Th>Telefone</Th>
                   <Th>Preset</Th>
-                  <Th></Th>
+                  <Th>{null}</Th>
                 </tr>
               </thead>
               <tbody>

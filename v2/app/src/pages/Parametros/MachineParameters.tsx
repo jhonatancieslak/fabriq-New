@@ -355,7 +355,7 @@ export default function MachineParameters() {
                 <Th>Gás</Th>
                 <Th>€/h máquina</Th>
                 <Th>Taxa mín.</Th>
-                <Th></Th>
+                <Th>{null}</Th>
               </tr>
             </thead>
             <tbody>

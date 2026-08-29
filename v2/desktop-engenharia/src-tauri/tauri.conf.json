@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Fabriq Operador",
+  "productName": "Fabriq Engenharia",
   "version": "0.1.0",
-  "identifier": "pt.fabriq.operador",
+  "identifier": "pt.fabriq.engenharia",
   "build": {
     "frontendDist": "../../app/dist",
     "devUrl": "https://v2.fabriq.pt"
@@ -10,12 +10,12 @@
   "app": {
     "windows": [
       {
-        "title": "Fabriq — Operador do Laser",
+        "title": "FABRIQ.pt — Engenharia",
         "url": "https://v2.fabriq.pt",
-        "width": 1100,
-        "height": 750,
-        "minWidth": 800,
-        "minHeight": 600,
+        "width": 1360,
+        "height": 860,
+        "minWidth": 1000,
+        "minHeight": 650,
         "resizable": true,
         "fullscreen": false
       }

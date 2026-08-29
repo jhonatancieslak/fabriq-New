@@ -13,7 +13,7 @@ import {
   type ProductionOrderStatus,
   type Quote,
 } from '../../types/db'
-import { btnGhost, btnPrimary, Card, Td, Th } from '../../components/form'
+import { btnGhost, Card, Td, Th } from '../../components/form'
 
 const STATUSES: ProductionOrderStatus[] = ['aguardando', 'em_producao', 'concluido', 'cancelado']
 
