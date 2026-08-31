@@ -1,10 +1,45 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-31 (Sessão 32 — operador nativo, PWA, custo M.O. flexível)
+**Última sessão:** 2026-08-31 (Sessão 33 — pipeline etapas produção, passo 1)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-08-31, sessão 32)
+## ▶ RETOMAR AQUI (2026-08-31, sessão 33)
+
+Análise pedida pelo utilizador: app v1 (Flask, `services/nesting`) só rastreia UMA etapa (corte
+laser) via QR-token (`/t/<token>`, sem login) com fotos por ordem. v2 `/operador` era só shell
+(iniciar/concluir). Objetivo: pipeline multi-etapa real — corte → quinagem/guilhotina (conforme
+peça) → acabamento → finalizado, com fotos de rastreabilidade por etapa.
+
+**Descoberta**: schema v2 já tinha `production_order_stages` + `production_order_photos`
+(`supabase/003_producao_avancada.sql`, sessão 28) — só faltava a etapa lógica (`tipo` reusava
+`machine_type`, que não cobre acabamento/finalizado, e é a mesma enum usada por `machines.tipo`,
+não dava pra poluir).
+
+**Passo 1 feito**: migration `supabase/008_etapas_pipeline.sql` — nova enum `etapa_producao`
+(`corte, quinagem, guilhotina, acabamento, finalizado`), coluna `etapa` em
+`production_order_stages` (not null, backfill a partir do `tipo` antigo), `tipo`/`machine_id` agora
+opcionais (etapas de acabamento/finalizado não têm máquina), índice
+`(company_id, production_order_id, etapa)`. Aplicada em produção via `sudo -u postgres psql -d
+fabriq_v2` (confirmado com utilizador antes — `fabriq_v2_user` não é owner das tabelas, só
+superuser altera schema). Tipos TS `EtapaProducao`, `StageStatus`, `ProductionOrderStage`,
+`ProductionOrderPhoto` adicionados em `app/src/types/db.ts` (não existiam apesar da tabela SQL já
+existir desde a sessão 28).
+
+**Ainda falta** (tarde, conforme combinado): rota QR-token pública tipo v1 (`/t/<token>`) pra abrir
+ordem sem login no telemóvel; UI de avançar etapa (com ramificação quinagem OU guilhotina conforme
+peça) + upload foto obrigatório por etapa pra Supabase Storage (bucket ainda não existe, nem
+policy, nem código de upload no frontend); ligar isso ao dashboard `/operador` já existente.
+Também flagar: existe um terceiro app paralelo em `apps/web/src/app/op/*` (Next.js) com scan QR
+próprio batendo API diferente — confirmar com utilizador se está morto antes de continuar
+investindo no v2, pra não duplicar trabalho.
+
+**Próximo passo**: implementar rota QR-token + UI de etapas + upload de fotos (tarde, mesma
+sessão de trabalho).
+
+---
+
+## Sessão 32 (2026-08-31)
 
 Fechado: dashboard nativo `/operador` + app Tauri Operador apontando pra ele; PWA
 (manifest/ícones/service worker) com deploy Nginx servindo `dist/` estático em vez de proxy pro

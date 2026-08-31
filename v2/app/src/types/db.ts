@@ -155,6 +155,47 @@ export interface ProductionOrderItem {
   created_at: string
 }
 
+export type EtapaProducao = 'corte' | 'quinagem' | 'guilhotina' | 'acabamento' | 'finalizado'
+
+export const ETAPA_PRODUCAO_LABELS: Record<EtapaProducao, string> = {
+  corte: 'Corte',
+  quinagem: 'Quinagem',
+  guilhotina: 'Guilhotina',
+  acabamento: 'Acabamento',
+  finalizado: 'Finalizado',
+}
+
+export type StageStatus = 'pendente' | 'em_curso' | 'pausado' | 'concluido'
+
+export interface ProductionOrderStage {
+  id: string
+  company_id: string
+  production_order_id: string
+  numero_etapa: number
+  etapa: EtapaProducao
+  tipo: MachineType | null
+  machine_id: string | null
+  operador_id: string | null
+  status: StageStatus
+  iniciado_em: string | null
+  pausado_em: string | null
+  concluido_em: string | null
+  tempo_corte_s: number | null
+  notas: string | null
+  assinatura_operador: string | null
+  created_at: string
+}
+
+export interface ProductionOrderPhoto {
+  id: string
+  company_id: string
+  production_order_stage_id: string
+  storage_path: string
+  thumbnail_path: string | null
+  tirada_por: string | null
+  tirada_em: string
+}
+
 export interface Client {
   id: string
   company_id: string
