@@ -8,6 +8,8 @@ import {
   type Client,
   type CompanySettings,
   type GeometriaTipo,
+  type Machine,
+  type MachineParameter,
   type Material,
   type PricingPreset,
   type Quote,
@@ -15,7 +17,7 @@ import {
   type QuoteItemOrigem,
   type QuoteStatus,
 } from '../../types/db'
-import { computeQuoteTotals, itemCustoMateriaPrima, pesoKg } from '../../lib/pricing'
+import { computeQuoteTotals, itemCustoMaoDeObra, itemCustoMateriaPrima, perimetroMm, pesoKg, tempoCorteS } from '../../lib/pricing'
 import { gerarOrcamentoPdf } from '../../lib/quotePdf'
 import { confirmDialog, notifyError, notifySuccess } from '../../lib/ui'
 import { useAuth } from '../../contexts/AuthContext'
@@ -26,6 +28,7 @@ const STATUSES: QuoteStatus[] = ['rascunho', 'enviado', 'aprovado', 'rejeitado']
 const EMPTY_ITEM = {
   origem: 'parametrica' as QuoteItemOrigem,
   material_id: '',
+  machine_id: '',
   espessura_mm: '',
   tipo_geometria: 'retangulo' as GeometriaTipo,
   largura_mm: '',
@@ -35,6 +38,7 @@ const EMPTY_ITEM = {
   dxf_url: '',
   descricao: '',
   quantidade: '1',
+  chapa_cliente: false,
 }
 
 export default function QuoteForm() {
@@ -47,6 +51,8 @@ export default function QuoteForm() {
   const [clients, setClients] = useState<Client[]>([])
   const [presets, setPresets] = useState<PricingPreset[]>([])
   const [materials, setMaterials] = useState<Material[]>([])
+  const [machines, setMachines] = useState<Machine[]>([])
+  const [machineParams, setMachineParams] = useState<MachineParameter[]>([])
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -56,13 +62,15 @@ export default function QuoteForm() {
   async function load() {
     if (!id) return
     setLoading(true)
-    const [{ data: q }, { data: it }, { data: c }, { data: p }, { data: m }, { data: cs }] = await Promise.all([
+    const [{ data: q }, { data: it }, { data: c }, { data: p }, { data: m }, { data: cs }, { data: mac }, { data: mp }] = await Promise.all([
       supabase.from('quotes').select('*').eq('id', id).maybeSingle(),
       supabase.from('quote_items').select('*').eq('quote_id', id).order('created_at'),
       supabase.from('clients').select('*').order('empresa'),
       supabase.from('pricing_presets').select('*').order('nome'),
       supabase.from('materials').select('*').order('nome'),
       supabase.from('company_settings').select('*').maybeSingle(),
+      supabase.from('machines').select('*').order('nome'),
+      supabase.from('machine_parameters').select('*'),
     ])
     setQuote(q as Quote)
     setItems((it as QuoteItem[]) ?? [])
@@ -70,6 +78,8 @@ export default function QuoteForm() {
     setPresets((p as PricingPreset[]) ?? [])
     setMaterials((m as Material[]) ?? [])
     setCompanySettings((cs as CompanySettings) ?? null)
+    setMachines((mac as Machine[]) ?? [])
+    setMachineParams((mp as MachineParameter[]) ?? [])
     setLoading(false)
   }
 
@@ -137,7 +147,15 @@ export default function QuoteForm() {
     }
 
     const peso = pesoKg(geometria, espessura, material)
-    const custo = itemCustoMateriaPrima(peso, material)
+    const custo = itemCustoMateriaPrima(peso, material, itemForm.chapa_cliente)
+
+    const machineParam = machineParams.find(
+      (mp) => mp.machine_id === itemForm.machine_id && mp.material_id === itemForm.material_id && Number(mp.espessura_mm) === espessura
+    ) ?? null
+    const perimetro = perimetroMm(geometria)
+    const furosCount = itemForm.furos ? Number(itemForm.furos) : 0
+    const tempoS = tempoCorteS(perimetro, furosCount, machineParam)
+    const custoMo = itemCustoMaoDeObra(tempoS, machineParam)
 
     setSaving(true)
     const { data, error } = await supabase
@@ -146,6 +164,7 @@ export default function QuoteForm() {
         company_id: quote.company_id,
         quote_id: quote.id,
         material_id: itemForm.material_id || null,
+        machine_id: itemForm.machine_id || null,
         espessura_mm: espessura,
         dxf_url,
         geometria,
@@ -153,7 +172,11 @@ export default function QuoteForm() {
         descricao: itemForm.descricao || null,
         quantidade: Number(itemForm.quantidade) || 1,
         peso_kg: peso || null,
+        perimetro_mm: perimetro || null,
+        tempo_corte_s: tempoS || null,
         custo_calculado: custo || null,
+        custo_mo_calculado: custoMo || null,
+        chapa_cliente: itemForm.chapa_cliente,
       })
       .select()
       .single()
@@ -332,6 +355,16 @@ export default function QuoteForm() {
             <Field label="Espessura (mm)">
               <input className={inputCls} type="number" step="0.01" value={itemForm.espessura_mm} onChange={(e) => setField('espessura_mm', e.target.value)} />
             </Field>
+            <Field label="Máquina">
+              <select className={inputCls} value={itemForm.machine_id} onChange={(e) => setField('machine_id', e.target.value)}>
+                <option value="">Sem máquina (só material)</option>
+                {machines.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
+                  </option>
+                ))}
+              </select>
+            </Field>
 
             {itemForm.origem === 'parametrica' ? (
               <>
@@ -373,6 +406,11 @@ export default function QuoteForm() {
             </Field>
           </div>
 
+          <label className="flex items-center gap-2 text-sm text-slate-300 mb-4">
+            <input type="checkbox" checked={itemForm.chapa_cliente} onChange={(e) => setField('chapa_cliente', e.target.checked)} />
+            Cliente fornece o material (cobrar só mão-de-obra)
+          </label>
+
           <button className={btnPrimary} onClick={handleAddItem} disabled={saving}>
             Adicionar item
           </button>
@@ -391,6 +429,7 @@ export default function QuoteForm() {
                     <Th>Qtd</Th>
                     <Th>Peso (kg)</Th>
                     <Th>Custo M.P.</Th>
+                    <Th>Custo M.O.</Th>
                     <Th>{null}</Th>
                   </tr>
                 </thead>
@@ -398,11 +437,14 @@ export default function QuoteForm() {
                   {items.map((it) => (
                     <tr key={it.id} className="border-b border-slate-800/60">
                       <Td>{geometriaLabel(it)}</Td>
-                      <Td>{materialName(it.material_id)}</Td>
+                      <Td>
+                        {it.chapa_cliente ? <span className="text-amber-400 text-xs">Cliente traz material</span> : materialName(it.material_id)}
+                      </Td>
                       <Td>{it.espessura_mm ?? '—'}</Td>
                       <Td>{it.quantidade}</Td>
                       <Td>{it.peso_kg ? Number(it.peso_kg).toFixed(3) : '—'}</Td>
                       <Td>€{it.custo_calculado ? Number(it.custo_calculado).toFixed(2) : '0.00'}</Td>
+                      <Td>€{it.custo_mo_calculado ? Number(it.custo_mo_calculado).toFixed(2) : '0.00'}</Td>
                       <Td>
                         <button className={btnDanger} onClick={() => handleDeleteItem(it.id)}>
                           Remover
@@ -421,10 +463,23 @@ export default function QuoteForm() {
         <div className="mt-5 max-w-sm ml-auto">
           <Card>
             <div className="space-y-1 text-sm">
-              <div className="flex justify-between text-slate-400">
-                <span>Matéria-prima</span>
-                <span>€{totals.subtotalMp.toFixed(2)}</span>
-              </div>
+              {companySettings?.discriminar_mo_mp === false ? (
+                <div className="flex justify-between text-slate-400">
+                  <span>Material + mão-de-obra</span>
+                  <span>€{(totals.subtotalMp + totals.subtotalMo).toFixed(2)}</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Matéria-prima</span>
+                    <span>€{totals.subtotalMp.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>Mão-de-obra</span>
+                    <span>€{totals.subtotalMo.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between text-slate-300">
                 <span>Total líquido</span>
                 <span>€{totals.totalLiquido.toFixed(2)}</span>

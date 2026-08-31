@@ -11,7 +11,7 @@ interface QuotePdfInput {
   companySettings: CompanySettings | null
   materials: Material[]
   materialLabels: Record<MaterialName, string>
-  totals: { subtotalMp: number; totalLiquido: number; totalIva: number; totalBruto: number }
+  totals: { subtotalMp: number; subtotalMo: number; totalLiquido: number; totalIva: number; totalBruto: number }
   geometriaLabel: (it: QuoteItem) => string
 }
 
@@ -78,21 +78,26 @@ export function gerarOrcamentoPdf(input: QuotePdfInput): void {
     return m ? materialLabels[m.nome] : '—'
   }
 
+  const discriminar = companySettings?.discriminar_mo_mp !== false
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
-    head: [['Peça', 'Material', 'Esp. (mm)', 'Qtd', 'Peso (kg)', 'Preço unit.', 'Subtotal']],
+    head: [
+      discriminar
+        ? ['Peça', 'Material', 'Esp. (mm)', 'Qtd', 'Peso (kg)', 'M.P. unit.', 'M.O. unit.', 'Subtotal']
+        : ['Peça', 'Material', 'Esp. (mm)', 'Qtd', 'Peso (kg)', 'Preço unit.', 'Subtotal'],
+    ],
     body: items.map((it) => {
-      const custoUnit = Number(it.custo_calculado) || 0
-      return [
-        geometriaLabel(it),
-        materialName(it.material_id),
-        it.espessura_mm ?? '—',
-        String(it.quantidade),
-        it.peso_kg ? Number(it.peso_kg).toFixed(3) : '—',
-        `€${custoUnit.toFixed(2)}`,
-        `€${(custoUnit * it.quantidade).toFixed(2)}`,
-      ]
+      const mpUnit = Number(it.custo_calculado) || 0
+      const moUnit = Number(it.custo_mo_calculado) || 0
+      const materialCol = it.chapa_cliente ? 'Cliente traz material' : materialName(it.material_id)
+      const row = [geometriaLabel(it), materialCol, it.espessura_mm ?? '—', String(it.quantidade), it.peso_kg ? Number(it.peso_kg).toFixed(3) : '—']
+      if (discriminar) {
+        row.push(`€${mpUnit.toFixed(2)}`, `€${moUnit.toFixed(2)}`, `€${((mpUnit + moUnit) * it.quantidade).toFixed(2)}`)
+      } else {
+        row.push(`€${(mpUnit + moUnit).toFixed(2)}`, `€${((mpUnit + moUnit) * it.quantidade).toFixed(2)}`)
+      }
+      return row
     }),
     headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
     styles: { fontSize: 8, cellPadding: 2 },
@@ -106,9 +111,18 @@ export function gerarOrcamentoPdf(input: QuotePdfInput): void {
   let ty = finalY
   doc.setFontSize(9)
   doc.setTextColor(80, 80, 80)
-  doc.text('Matéria-prima', totalsX, ty)
-  doc.text(`€${totals.subtotalMp.toFixed(2)}`, pageWidth - margin, ty, { align: 'right' })
-  ty += 5
+  if (discriminar) {
+    doc.text('Matéria-prima', totalsX, ty)
+    doc.text(`€${totals.subtotalMp.toFixed(2)}`, pageWidth - margin, ty, { align: 'right' })
+    ty += 5
+    doc.text('Mão-de-obra', totalsX, ty)
+    doc.text(`€${totals.subtotalMo.toFixed(2)}`, pageWidth - margin, ty, { align: 'right' })
+    ty += 5
+  } else {
+    doc.text('Material + mão-de-obra', totalsX, ty)
+    doc.text(`€${(totals.subtotalMp + totals.subtotalMo).toFixed(2)}`, pageWidth - margin, ty, { align: 'right' })
+    ty += 5
+  }
   doc.text('Total líquido', totalsX, ty)
   doc.text(`€${totals.totalLiquido.toFixed(2)}`, pageWidth - margin, ty, { align: 'right' })
   ty += 5

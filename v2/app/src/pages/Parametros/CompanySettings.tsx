@@ -18,6 +18,7 @@ export default function CompanySettings() {
     pdf_tamanho_desenho: 'medio',
     pdf_listras_zebradas: false,
     pdf_mostrar_logo: true,
+    discriminar_mo_mp: true,
   })
 
   useEffect(() => {
@@ -86,6 +87,15 @@ export default function CompanySettings() {
         <Field label="Condição pagamento padrão">
           <input className={inputCls} value={form.condicao_pagamento_padrao ?? ''} onChange={(e) => set('condicao_pagamento_padrao', e.target.value)} />
         </Field>
+      </div>
+
+      <h3 className="text-sm text-slate-300 font-medium mb-3">Cobrança</h3>
+      <div className="mb-5">
+        <label className="flex items-center gap-2 text-sm text-slate-300">
+          <input type="checkbox" checked={form.discriminar_mo_mp ?? true} onChange={(e) => set('discriminar_mo_mp', e.target.checked)} />
+          Discriminar matéria-prima e mão-de-obra em linhas separadas (orçamento e PDF)
+        </label>
+        <p className="text-xs text-slate-500 mt-1 ml-6">Desligado: mostra uma linha só com material + mão-de-obra somados.</p>
       </div>
 
       <h3 className="text-sm text-slate-300 font-medium mb-3">PDF de orçamento</h3>

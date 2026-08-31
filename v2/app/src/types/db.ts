@@ -106,13 +106,17 @@ export interface QuoteItem {
   company_id: string
   quote_id: string
   material_id: string | null
+  machine_id: string | null
   espessura_mm: number | null
   dxf_url: string | null
   descricao: string | null
   quantidade: number
   peso_kg: number | null
+  perimetro_mm: number | null
   tempo_corte_s: number | null
   custo_calculado: number | null
+  custo_mo_calculado: number | null
+  chapa_cliente: boolean
   geometria: Geometria | null
   origem: QuoteItemOrigem
 }
@@ -200,6 +204,7 @@ export interface CompanySettings {
   pdf_tamanho_desenho: string | null
   pdf_listras_zebradas: boolean
   pdf_mostrar_logo: boolean
+  discriminar_mo_mp: boolean
 }
 
 export interface Company {
