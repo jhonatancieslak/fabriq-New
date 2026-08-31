@@ -6,15 +6,26 @@ import {
   MACHINE_TYPE_LABELS,
   MATERIAL_NAME_LABELS,
   type Client,
+  type EtapaProducao,
   type Material,
   type ProductionOrder,
   type ProductionOrderItem,
+  type ProductionOrderStage,
   type Quote,
 } from '../../types/db'
+
+const ETAPA_LABEL: Record<EtapaProducao, string> = {
+  corte: 'Corte',
+  quinagem: 'Quinagem',
+  guilhotina: 'Guilhotina',
+  acabamento: 'Acabamento',
+  finalizado: 'Finalizado',
+}
 
 export default function Operador() {
   const { company, appUser, signOut } = useAuth()
   const [orders, setOrders] = useState<ProductionOrder[]>([])
+  const [stages, setStages] = useState<ProductionOrderStage[]>([])
   const [quotes, setQuotes] = useState<Quote[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [materials, setMaterials] = useState<Material[]>([])
@@ -25,14 +36,16 @@ export default function Operador() {
 
   async function load() {
     setLoading(true)
-    const [{ data: o }, { data: q }, { data: c }, { data: m }, { data: it }] = await Promise.all([
+    const [{ data: o }, { data: st }, { data: q }, { data: c }, { data: m }, { data: it }] = await Promise.all([
       supabase.from('production_orders').select('*').in('status', ['aguardando', 'em_producao']).order('created_at', { ascending: true }),
+      supabase.from('production_order_stages').select('*').order('numero_etapa', { ascending: true }),
       supabase.from('quotes').select('*'),
       supabase.from('clients').select('*'),
       supabase.from('materials').select('*'),
       supabase.from('production_order_items').select('*'),
     ])
     setOrders((o as ProductionOrder[]) ?? [])
+    setStages((st as ProductionOrderStage[]) ?? [])
     setQuotes((q as Quote[]) ?? [])
     setClients((c as Client[]) ?? [])
     setMaterials((m as Material[]) ?? [])
@@ -56,47 +69,39 @@ export default function Operador() {
 
   async function iniciar(order: ProductionOrder) {
     setBusyId(order.id)
-    const { data } = await supabase
+    const now = new Date().toISOString()
+    const { data: updated } = await supabase
       .from('production_orders')
-      .update({ status: 'em_producao', iniciado_em: order.iniciado_em ?? new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update({ status: 'em_producao', iniciado_em: order.iniciado_em ?? now, updated_at: now })
       .eq('id', order.id)
       .select()
       .single()
-    if (data) setOrders((prev) => prev.map((o) => (o.id === order.id ? (data as ProductionOrder) : o)))
+    const { data: stage } = await supabase
+      .from('production_order_stages')
+      .insert({
+        company_id: company!.id,
+        production_order_id: order.id,
+        numero_etapa: 1,
+        etapa: 'corte',
+        status: 'em_curso',
+        iniciado_em: now,
+        operador_id: appUser?.id ?? null,
+      })
+      .select()
+      .single()
+    if (updated) setOrders((prev) => prev.map((o) => (o.id === order.id ? (updated as ProductionOrder) : o)))
+    if (stage) setStages((prev) => [...prev, stage as ProductionOrderStage])
     setBusyId(null)
   }
 
-  async function concluir(order: ProductionOrder, foto: File) {
+  async function concluirEtapa(order: ProductionOrder, stage: ProductionOrderStage, foto: File) {
     setBusyId(order.id)
     const now = new Date().toISOString()
-
-    const { data: stage, error: stageError } = await supabase
-      .from('production_order_stages')
-      .upsert(
-        {
-          company_id: company!.id,
-          production_order_id: order.id,
-          numero_etapa: 1,
-          etapa: 'corte',
-          status: 'concluido',
-          concluido_em: now,
-          operador_id: appUser?.id ?? null,
-        },
-        { onConflict: 'production_order_id,etapa' },
-      )
-      .select()
-      .single()
-
-    if (stageError || !stage) {
-      setBusyId(null)
-      return
-    }
 
     const path = `${company!.id}/${stage.id}/${Date.now()}-${foto.name}`
     const { error: uploadError } = await supabase.storage.from('production-photos').upload(path, foto, {
       contentType: foto.type,
     })
-
     if (!uploadError) {
       await supabase.from('production_order_photos').insert({
         company_id: company!.id,
@@ -105,6 +110,49 @@ export default function Operador() {
       })
     }
 
+    const { data: updatedStage } = await supabase
+      .from('production_order_stages')
+      .update({ status: 'concluido', concluido_em: now })
+      .eq('id', stage.id)
+      .select()
+      .single()
+    if (updatedStage) setStages((prev) => prev.map((s) => (s.id === stage.id ? (updatedStage as ProductionOrderStage) : s)))
+    setBusyId(null)
+  }
+
+  async function avancarEtapa(order: ProductionOrder, numeroAnterior: number, etapa: EtapaProducao) {
+    setBusyId(order.id)
+    const now = new Date().toISOString()
+    const { data: stage } = await supabase
+      .from('production_order_stages')
+      .insert({
+        company_id: company!.id,
+        production_order_id: order.id,
+        numero_etapa: numeroAnterior + 1,
+        etapa,
+        status: 'em_curso',
+        iniciado_em: now,
+        operador_id: appUser?.id ?? null,
+      })
+      .select()
+      .single()
+    if (stage) setStages((prev) => [...prev, stage as ProductionOrderStage])
+    setBusyId(null)
+  }
+
+  async function finalizar(order: ProductionOrder, numeroAnterior: number) {
+    setBusyId(order.id)
+    const now = new Date().toISOString()
+    await supabase.from('production_order_stages').insert({
+      company_id: company!.id,
+      production_order_id: order.id,
+      numero_etapa: numeroAnterior + 1,
+      etapa: 'finalizado',
+      status: 'concluido',
+      iniciado_em: now,
+      concluido_em: now,
+      operador_id: appUser?.id ?? null,
+    })
     const { error } = await supabase
       .from('production_orders')
       .update({ status: 'concluido', concluido_em: now, updated_at: now })
@@ -146,16 +194,16 @@ export default function Operador() {
                   <OrderCard
                     key={o.id}
                     order={o}
+                    stages={stages.filter((s) => s.production_order_id === o.id)}
                     open={openId === o.id}
                     busy={busyId === o.id}
                     clientName={clientName(o.quote_id)}
                     itemRows={items.filter((it) => it.production_order_id === o.id)}
                     materialName={materialName}
                     onToggle={() => setOpenId((v) => (v === o.id ? null : o.id))}
-                    onAction={(foto) => foto && concluir(o, foto)}
-                    actionLabel="Concluir"
-                    actionCls="bg-emerald-500 text-black"
-                    requiresPhoto
+                    onConcluirEtapa={(stage, foto) => concluirEtapa(o, stage, foto)}
+                    onAvancar={(numero, etapa) => avancarEtapa(o, numero, etapa)}
+                    onFinalizar={(numero) => finalizar(o, numero)}
                   />
                 ))}
               </Section>
@@ -163,19 +211,21 @@ export default function Operador() {
             {pendentes.length > 0 && (
               <Section title="Aguardando">
                 {pendentes.map((o) => (
-                  <OrderCard
-                    key={o.id}
-                    order={o}
-                    open={openId === o.id}
-                    busy={busyId === o.id}
-                    clientName={clientName(o.quote_id)}
-                    itemRows={items.filter((it) => it.production_order_id === o.id)}
-                    materialName={materialName}
-                    onToggle={() => setOpenId((v) => (v === o.id ? null : o.id))}
-                    onAction={() => iniciar(o)}
-                    actionLabel="Iniciar"
-                    actionCls="bg-amber-500 text-black"
-                  />
+                  <div key={o.id} className="rounded-lg border border-slate-800 bg-slate-900 p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{clientName(o.quote_id)}</p>
+                      <p className="text-slate-500 text-xs">
+                        {MACHINE_TYPE_LABELS[o.tipo]} · {o.qr_code}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => iniciar(o)}
+                      disabled={busyId === o.id}
+                      className="bg-amber-500 text-black px-4 py-2 rounded-md font-semibold text-sm disabled:opacity-50"
+                    >
+                      {busyId === o.id ? '…' : 'Iniciar'}
+                    </button>
+                  </div>
                 ))}
               </Section>
             )}
@@ -197,30 +247,33 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function OrderCard({
   order,
+  stages,
   open,
   busy,
   clientName,
   itemRows,
   materialName,
   onToggle,
-  onAction,
-  actionLabel,
-  actionCls,
-  requiresPhoto,
+  onConcluirEtapa,
+  onAvancar,
+  onFinalizar,
 }: {
   order: ProductionOrder
+  stages: ProductionOrderStage[]
   open: boolean
   busy: boolean
   clientName: string
   itemRows: ProductionOrderItem[]
   materialName: (id: string | null) => string
   onToggle: () => void
-  onAction: (foto?: File) => void
-  actionLabel: string
-  actionCls: string
-  requiresPhoto?: boolean
+  onConcluirEtapa: (stage: ProductionOrderStage, foto: File) => void
+  onAvancar: (numeroAnterior: number, etapa: EtapaProducao) => void
+  onFinalizar: (numeroAnterior: number) => void
 }) {
   const [foto, setFoto] = useState<File | null>(null)
+  const ordenadas = [...stages].sort((a, b) => a.numero_etapa - b.numero_etapa)
+  const emCurso = ordenadas.find((s) => s.status === 'em_curso')
+  const ultimaConcluida = [...ordenadas].reverse().find((s) => s.status === 'concluido')
 
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900 overflow-hidden">
@@ -229,6 +282,7 @@ function OrderCard({
           <p className="font-medium">{clientName}</p>
           <p className="text-slate-500 text-xs">
             {MACHINE_TYPE_LABELS[order.tipo]} · {order.qr_code}
+            {emCurso && <span className="text-amber-400"> · {ETAPA_LABEL[emCurso.etapa]}</span>}
           </p>
         </div>
         <span className="text-slate-500 text-lg">{open ? '−' : '+'}</span>
@@ -247,25 +301,83 @@ function OrderCard({
               ))}
             </ul>
           )}
-          {requiresPhoto && (
-            <label className="block mb-3">
-              <span className="text-xs text-slate-400 block mb-1">Foto de rastreabilidade (obrigatória)</span>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
-                className="block w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-slate-800 file:text-white"
-              />
-            </label>
+
+          {ordenadas.length > 0 && (
+            <ol className="text-xs text-slate-500 mb-4 flex flex-wrap gap-1">
+              {ordenadas.map((s) => (
+                <li
+                  key={s.id}
+                  className={`px-2 py-0.5 rounded-full ${
+                    s.status === 'concluido' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-amber-400'
+                  }`}
+                >
+                  {ETAPA_LABEL[s.etapa]}
+                </li>
+              ))}
+            </ol>
           )}
-          <button
-            onClick={() => onAction(foto ?? undefined)}
-            disabled={busy || (requiresPhoto && !foto)}
-            className={`w-full py-3 rounded-md font-semibold text-sm ${actionCls} disabled:opacity-50`}
-          >
-            {busy ? '…' : actionLabel}
-          </button>
+
+          {emCurso ? (
+            <>
+              <label className="block mb-3">
+                <span className="text-xs text-slate-400 block mb-1">Foto de {ETAPA_LABEL[emCurso.etapa].toLowerCase()} (obrigatória)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
+                  className="block w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-slate-800 file:text-white"
+                />
+              </label>
+              <button
+                onClick={() => foto && onConcluirEtapa(emCurso, foto)}
+                disabled={busy || !foto}
+                className="w-full py-3 rounded-md font-semibold text-sm bg-emerald-500 text-black disabled:opacity-50"
+              >
+                {busy ? '…' : `Concluir ${ETAPA_LABEL[emCurso.etapa]}`}
+              </button>
+            </>
+          ) : ultimaConcluida?.etapa === 'corte' ? (
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => onAvancar(ultimaConcluida.numero_etapa, 'quinagem')}
+                disabled={busy}
+                className="py-2 rounded-md text-xs font-semibold bg-slate-800 hover:bg-slate-700 disabled:opacity-50"
+              >
+                Quinagem
+              </button>
+              <button
+                onClick={() => onAvancar(ultimaConcluida.numero_etapa, 'guilhotina')}
+                disabled={busy}
+                className="py-2 rounded-md text-xs font-semibold bg-slate-800 hover:bg-slate-700 disabled:opacity-50"
+              >
+                Guilhotina
+              </button>
+              <button
+                onClick={() => onAvancar(ultimaConcluida.numero_etapa, 'acabamento')}
+                disabled={busy}
+                className="py-2 rounded-md text-xs font-semibold bg-slate-800 hover:bg-slate-700 disabled:opacity-50"
+              >
+                Sem dobra
+              </button>
+            </div>
+          ) : ultimaConcluida?.etapa === 'quinagem' || ultimaConcluida?.etapa === 'guilhotina' ? (
+            <button
+              onClick={() => onAvancar(ultimaConcluida.numero_etapa, 'acabamento')}
+              disabled={busy}
+              className="w-full py-3 rounded-md font-semibold text-sm bg-amber-500 text-black disabled:opacity-50"
+            >
+              {busy ? '…' : 'Avançar p/ Acabamento'}
+            </button>
+          ) : ultimaConcluida?.etapa === 'acabamento' ? (
+            <button
+              onClick={() => onFinalizar(ultimaConcluida.numero_etapa)}
+              disabled={busy}
+              className="w-full py-3 rounded-md font-semibold text-sm bg-emerald-500 text-black disabled:opacity-50"
+            >
+              {busy ? '…' : 'Finalizar ordem'}
+            </button>
+          ) : null}
         </div>
       )}
     </div>

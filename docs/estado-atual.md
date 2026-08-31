@@ -113,10 +113,28 @@ dava 400 no browser (só funcionava via `curl` com header manual). Corrigido: bu
 a valer igual, só afecta o atalho de leitura). `Tracking.tsx` ajustado pra montar a URL completa
 via esse endpoint (`photoUrl()`) em vez de usar `storage_path` cru como `src`.
 
-**Falta ainda**: pipeline multi-etapa real (UI de avançar quinagem/guilhotina/acabamento com
-ramificação por peça) — hoje só a etapa "corte" é criada/concluída via `/operador`; falta testar
-pelo telemóvel de um operador real com login de verdade (o teste desta sessão simulou o JWT
-directamente, nunca passou pela UI do browser).
+**Passo 5 (mesma sessão) — pipeline multi-etapa completo em `/operador`**: decisão tomada com o
+utilizador — como não existe campo no schema indicando se uma peça precisa quinagem ou guilhotina,
+**o operador escolhe manualmente** (sem mudança de schema). Fluxo agora implementado em
+`Operador/index.tsx`:
+- "Iniciar" cria stage `corte` (`em_curso`).
+- Ao concluir corte (foto obrigatória), aparecem 3 botões: **Quinagem** / **Guilhotina** / **Sem
+  dobra** (vai direto pra acabamento) — cria a próxima stage conforme escolha.
+- Quinagem/Guilhotina concluída (foto obrigatória) → botão único "Avançar p/ Acabamento".
+- Acabamento concluído (foto obrigatória) → botão "Finalizar ordem": cria stage `finalizado`
+  (sem foto, é só marcador) e marca `production_orders.status = 'concluido'`.
+- Card mostra trilha de etapas já percorridas (pills verde=concluído/âmbar=em curso) e a etapa
+  atual no cabeçalho fechado do card.
+- Toda etapa exige foto pra concluir (exceto `finalizado`, que é instantâneo).
+- Testado end-to-end via API real (JWT assinado + RLS, não é bypass) numa **ordem de teste
+  dedicada** (criada e apagada só pra este teste, não mexeu em dados reais desta vez): corte →
+  quinagem → acabamento → finalizado, `production_orders.status` virou `concluido`, RPC pública
+  `get_order_tracking` devolveu as 4 etapas na ordem certa.
+- `tsc -b` + `vite build` sem erros, deploy feito.
+
+**Falta ainda**: testar pelo telemóvel de um operador real com login de verdade pela UI do browser
+(todos os testes desta sessão foram via API/JWT simulado, nunca clicando na interface); paridade
+fiscal/pricing e outros itens de sessões anteriores continuam pendentes à parte.
 
 ---
 
