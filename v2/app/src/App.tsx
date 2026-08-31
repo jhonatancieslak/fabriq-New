@@ -17,6 +17,7 @@ import OrderDetail from './pages/Ordens/OrderDetail'
 import Nesting from './pages/Nesting'
 import NestingForm from './pages/Nesting/NestingForm'
 import Operador from './pages/Operador'
+import Tracking from './pages/Public/Tracking'
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/bloqueado" element={<Bloqueado />} />
+          <Route path="/t/:token" element={<Tracking />} />
           <Route
             path="/operador"
             element={

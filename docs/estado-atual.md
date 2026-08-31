@@ -37,6 +37,32 @@ investindo no v2, pra não duplicar trabalho.
 **Próximo passo**: implementar rota QR-token + UI de etapas + upload de fotos (tarde, mesma
 sessão de trabalho).
 
+**Passo 2 feito (mesma sessão, tarde)**: rastreabilidade pública via QR implementada.
+- `supabase/009_rastreabilidade_publica.sql` — função `get_order_tracking(p_token text)`
+  (`security definer`, grant `anon, authenticated`) busca `production_orders` por `qr_code`. Se
+  `status <> 'concluido'`: devolve só status/tipo/iniciado_em (regra pedida: ordem não finalizada
+  mostra só status). Se `concluido`: devolve também array de etapas (`production_order_stages`,
+  join `users` pro nome do operador) com fotos aninhadas (`production_order_photos`) — array de
+  fotos vazio por enquanto (upload ainda não implementado). Aplicada em produção via `sudo -u
+  postgres psql -d fabriq_v2` + `NOTIFY pgrst, 'reload schema'` (PostgREST cacheia schema, precisa
+  notify pra ver função nova).
+- Rota pública `/t/:token` nova em `app/src/App.tsx` (fora do `RequireAuth`) → página
+  `app/src/pages/Public/Tracking.tsx`: chama `supabase.rpc('get_order_tracking', {p_token: token})`
+  no client, renderiza ecrã "aguardando"/"em produção" (ícone ⏳) OU rastreabilidade completa por
+  etapa com fotos em grid (ícone ✅) conforme resposta.
+- Confirmado: **não existe app paralelo Next.js** (`apps/web/*`) — repo é 100% Vite+React
+  Router+Supabase em `app/src`. Investigação anterior sobre app paralelo estava incorreta, item
+  fechado.
+- `tsc -b` e `vite build` sem erros, deploy no dir `dist/` já servido por `v2.fabriq.pt` (nginx
+  `try_files ... /index.html`, SPA fallback já configurado). Testado end-to-end: `curl
+  /t/<qr_code real>` → 200; RPC direta via `rest/v1/rpc/get_order_tracking` devolve JSON correto
+  pra ordem `em_producao` (só status básico, sem etapas — confirma comportamento certo).
+- **Falta ainda**: QR code não é gerado como imagem em lugar nenhum (`qr_code` é só texto na BD,
+  sem lib `qrcode`/`qrcode.react` no projeto) — próximo passo é adicionar geração visual +
+  impressão de etiqueta apontando pra `https://v2.fabriq.pt/t/<qr_code>`; bucket de Storage pras
+  fotos ainda não existe (nem policy, nem upload no frontend) — sem isso o array `fotos` fica
+  sempre vazio mesmo em ordens concluídas.
+
 ---
 
 ## Sessão 32 (2026-08-31)
