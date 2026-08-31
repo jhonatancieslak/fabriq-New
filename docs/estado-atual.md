@@ -1,10 +1,35 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-29 (Sessão 31 — módulos Nesting/PDF/import CSV + 2 apps Tauri + rebrand FABRIQ.pt)
+**Última sessão:** 2026-08-31 (Sessão 32 — operador nativo, PWA, custo M.O. flexível)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-08-29, sessão 31)
+## ▶ RETOMAR AQUI (2026-08-31, sessão 32)
+
+Fechado: dashboard nativo `/operador` + app Tauri Operador apontando pra ele; PWA
+(manifest/ícones/service worker) com deploy Nginx servindo `dist/` estático em vez de proxy pro
+vite dev; bug crítico corrigido (`PageLoading` sem import em 12 páginas, tela branca); e feature
+grande de **custo de mão-de-obra flexível**: cálculo por máquina (perímetro × velocidade de corte +
+pausas por furo → tempo × valor/hora, com taxa mínima), suporte a chapa fornecida pelo cliente
+(zera M.P., mantém M.O.), discriminação M.P./M.O. configurável por empresa (toggle em
+Parâmetros → Configurações Gerais) refletida em QuoteForm, totais, PDF. Migration
+`supabase/007_custo_mo_flexivel.sql`. Commit `2cd8e91`, push ok.
+
+**Testado end-to-end no browser** (tenant `selfhost-teste@fabriq.pt`, trial estendido até
+30/09/2026 — estava expirado, senha resetada via `sudo -u postgres psql` porque `fabriq_v2_user`
+não tem permissão direta em `auth.users`/`subscriptions`, só o superuser do Postgres): cadastrado
+parâmetro de corte Laser Bystronic 1 + Aço carbono 3mm (€60/h, taxa mín €5, vel. corte 20mm/s,
+parada/furo 2s); orçamento com retângulo 500×300mm/4 furos calculou M.P. €6.71 (peso × preço/kg) e
+M.O. €5.00 (tempo de corte caiu abaixo da taxa mínima, aplicou o piso corretamente); tabela de itens
+e totais mostraram as linhas separadas M.P./M.O. como esperado pelo toggle; "Gerar PDF" rodou sem
+erro no console. Confirma que a feature da sessão 31 está funcional em produção.
+
+**Próximo passo**: nenhuma pendência aberta — decidir próxima prioridade de roadmap com o
+utilizador.
+
+---
+
+## Sessão 31 (2026-08-29)
 
 **Roadmap item 6 fechado nesta sessão (commit `5422632`, push ok): scaffold + build de release do
 app "Engenharia" (Tauri).** Segundo wrapper Tauri, `v2/desktop-engenharia/` — janela maior
