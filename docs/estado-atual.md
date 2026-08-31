@@ -147,8 +147,29 @@ UI do login. Corrigido: `Login.tsx` ganhou bloco de ícone (quadrado âmbar 80×
 visualmente via screenshot (precisou hard-reload — o service worker do PWA cacheia o build
 anterior, `ctrl+shift+r` força buscar a versão nova).
 
+**Passo 7 (mesma sessão) — app instalável de verdade**: bug real encontrado — `vite-plugin-pwa`
+gerava `sw.js`/`manifest.webmanifest` certinho, mas **o service worker nunca era registado no
+cliente** (`main.tsx` não chamava `registerSW()` do `virtual:pwa-register`, então nenhum browser
+considerava o site instalável, apesar do manifest existir). Corrigido:
+- `main.tsx`: `registerSW({ immediate: true })` + listener de `beforeinstallprompt` que guarda o
+  evento em `window.__installPromptEvent` (Chrome só dispara esse evento uma vez, cedo — se
+  ninguém escutar na hora, perde-se).
+- `src/vite-env.d.ts` novo (não existia) com `/// <reference types="vite-plugin-pwa/client" />`
+  pro TS reconhecer `virtual:pwa-register`.
+- `useInstallPrompt` (hook) + `InstallAppBanner` (componente) novos — banner "Instala o FABRIQ
+  como app" com botão que chama `prompt()` no Chrome/Android; em iOS (sem `beforeinstallprompt`)
+  mostra instrução manual ("Partilhar → Adicionar ao ecrã principal"). Já não aparece se a app já
+  estiver rodando em modo `standalone`. Integrado no topo do `/operador`.
+- `index.html`: meta tags iOS (`apple-mobile-web-app-capable`, `apple-touch-icon`, `theme-color`)
+  — sem elas o "Adicionar à Tela de Início" do Safari não pega o ícone certo nem tira a barra do
+  Safari.
+- **Confirmado ao vivo via browser automation**: depois do fix, Chrome disparou
+  `beforeinstallprompt` de verdade e o banão "Instalar" apareceu em `/operador` — antes do fix,
+  não tinha nenhum registration (`navigator.serviceWorker.getRegistrations()` vazio).
+
 **Falta ainda**: paridade fiscal/pricing e outros itens de sessões anteriores continuam pendentes
-à parte; testar instalação real como PWA (ícone na home screen) num telemóvel físico.
+à parte; confirmar instalação num telemóvel físico real (Android Chrome + iOS Safari), não só
+Chrome desktop com viewport mobile.
 
 ---
 

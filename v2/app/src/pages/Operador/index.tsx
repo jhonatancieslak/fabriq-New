@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import InstallAppBanner from '../../components/InstallAppBanner'
 import {
   MACHINE_TYPE_LABELS,
   MATERIAL_NAME_LABELS,
@@ -181,7 +182,8 @@ export default function Operador() {
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 space-y-6">
+      <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        <InstallAppBanner />
         {loading ? (
           <p className="text-slate-500 text-sm text-center py-10">A carregar…</p>
         ) : orders.length === 0 ? (
