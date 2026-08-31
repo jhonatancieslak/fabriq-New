@@ -1,16 +1,17 @@
 import type { ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { LayoutDashboard, FileText, ClipboardList, Grid2x2, Users, Settings2, History, Settings } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const NAV = [
-  { to: '/', label: 'Início', end: true },
-  { to: '/orcamentos', label: 'Orçamentos' },
-  { to: '/ordens', label: 'Ordens de Produção' },
-  { to: '/nesting', label: 'Nesting' },
-  { to: '/clientes', label: 'Clientes' },
-  { to: '/parametros', label: 'Parâmetros' },
-  { to: '/historicos', label: 'Históricos' },
-  { to: '/configuracoes', label: 'Configurações' },
+  { to: '/', label: 'Início', end: true, icon: LayoutDashboard },
+  { to: '/orcamentos', label: 'Orçamentos', icon: FileText },
+  { to: '/ordens', label: 'Ordens de Produção', icon: ClipboardList },
+  { to: '/nesting', label: 'Nesting', icon: Grid2x2 },
+  { to: '/clientes', label: 'Clientes', icon: Users },
+  { to: '/parametros', label: 'Parâmetros', icon: Settings2 },
+  { to: '/historicos', label: 'Históricos', icon: History },
+  { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
 export default function AppLayout({ children }: { children?: ReactNode }) {
@@ -21,7 +22,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
       <aside className="w-60 shrink-0 border-r border-slate-800 flex flex-col">
         <div className="px-4 py-4 border-b border-slate-800">
           <p className="text-sm font-black tracking-tight text-white">
-            FABRIQ<span className="text-amber-400">.pt</span>
+            FABRIQ<span className="text-amber-400">.PT</span>
           </p>
           <p className="text-white font-medium text-xs mt-2">{company?.nome_fantasia || company?.razao_social || 'Fabriq'}</p>
           <p className="text-slate-500 text-xs">{appUser?.role}</p>
@@ -33,11 +34,12 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `block rounded-md px-3 py-2 text-sm transition ${
+                `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
                   isActive ? 'bg-amber-500 text-black' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`
               }
             >
+              <item.icon size={16} strokeWidth={2} className="shrink-0" />
               {item.label}
             </NavLink>
           ))}
