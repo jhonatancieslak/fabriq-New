@@ -97,9 +97,26 @@ sessão de trabalho).
   (`dist/` servido por nginx). Confirmado `curl /t/<qr_code>` → 200 e proxy `/storage/v1/bucket`
   responde (400 sem auth, esperado).
 
+**Passo 4 (mesma sessão) — teste end-to-end via API real** (login simulado com JWT assinado pro
+utilizador `jhonatan.cieslak94@gmail.com`, mesmo `JWT_SECRET` do GoTrue, já que não tinha a
+password à mão): upsert de stage autenticado → upload de foto real (PNG) pro bucket via RLS de
+tenant → insert `production_order_photos` → conclusão da ordem → RPC pública `get_order_tracking`
+devolveu etapa + foto correctamente. Tudo na ordem real `a8eaaf52...` (empresa do Jhonatan),
+**revertida no fim pro estado original** (`em_producao`, sem stage/foto de teste) — confirmado com
+o utilizador antes de reverter.
+
+**Bug real encontrado e corrigido no teste**: `<img src>` na página pública não manda header
+`Authorization` — bucket privado exige isso mesmo com policy `anon select`, por isso a imagem
+dava 400 no browser (só funcionava via `curl` com header manual). Corrigido: bucket
+`production-photos` mudado pra `public: true` (o flag do storage-api que habilita o endpoint
+`/storage/v1/object/public/<bucket>/<path>`, sem precisar de auth header — RLS de escrita continua
+a valer igual, só afecta o atalho de leitura). `Tracking.tsx` ajustado pra montar a URL completa
+via esse endpoint (`photoUrl()`) em vez de usar `storage_path` cru como `src`.
+
 **Falta ainda**: pipeline multi-etapa real (UI de avançar quinagem/guilhotina/acabamento com
-ramificação por peça) — hoje só a etapa "corte" é criada/concluída via `/operador`; testar upload
-de foto end-to-end pelo telemóvel de um operador real (só testado via API direta até agora).
+ramificação por peça) — hoje só a etapa "corte" é criada/concluída via `/operador`; falta testar
+pelo telemóvel de um operador real com login de verdade (o teste desta sessão simulou o JWT
+directamente, nunca passou pela UI do browser).
 
 ---
 

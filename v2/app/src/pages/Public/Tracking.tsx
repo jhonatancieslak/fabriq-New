@@ -48,6 +48,12 @@ const STATUS_LABEL: Record<string, string> = {
   cancelado: 'Cancelado',
 }
 
+const STORAGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/production-photos`
+
+function photoUrl(path: string) {
+  return `${STORAGE_URL}/${path}`
+}
+
 function formatDate(value: string | null | undefined) {
   if (!value) return '—'
   return new Date(value).toLocaleString('pt-PT')
@@ -147,7 +153,7 @@ export default function Tracking() {
                 {etapa.fotos.map((foto, i) => (
                   <img
                     key={i}
-                    src={foto.thumbnail_path ?? foto.storage_path}
+                    src={photoUrl(foto.thumbnail_path ?? foto.storage_path)}
                     alt={`Foto ${ETAPA_LABEL[etapa.etapa]}`}
                     className="rounded-md object-cover aspect-square"
                   />
