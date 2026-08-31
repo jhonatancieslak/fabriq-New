@@ -26,11 +26,17 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-8">
-        <p className="text-lg font-black tracking-tight text-white mb-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 px-4">
+      <div className="flex flex-col items-center mb-8">
+        <div className="h-20 w-20 rounded-2xl bg-amber-500 flex items-center justify-center text-black text-4xl font-black shadow-lg shadow-amber-500/20 mb-4">
+          F
+        </div>
+        <p className="text-2xl font-black tracking-tight text-white">
           FABRIQ<span className="text-amber-400">.PT</span>
         </p>
+      </div>
+
+      <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-8">
         <h1 className="text-xl font-semibold text-white mb-1">Entrar</h1>
         <p className="text-sm text-slate-400 mb-6">Aceda à sua conta Fabriq</p>
 

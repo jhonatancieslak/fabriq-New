@@ -132,9 +132,23 @@ utilizador — como não existe campo no schema indicando se uma peça precisa q
   `get_order_tracking` devolveu as 4 etapas na ordem certa.
 - `tsc -b` + `vite build` sem erros, deploy feito.
 
-**Falta ainda**: testar pelo telemóvel de um operador real com login de verdade pela UI do browser
-(todos os testes desta sessão foram via API/JWT simulado, nunca clicando na interface); paridade
-fiscal/pricing e outros itens de sessões anteriores continuam pendentes à parte.
+**Passo 6 (mesma sessão) — teste real pela UI + fix "cara de app"**: utilizador de teste ajustado
+(`teste@fabriq.pt` / `Jcieslak@3202`, era `selfhost-teste@fabriq.pt`, senha trocada via
+`crypt()`/pgcrypto direto no `auth.users` do GoTrue). Testado via browser automation (Claude in
+Chrome, viewport mobile 390-500px): login real pela UI, `/operador`, iniciar ordem, ver etapa
+"Corte" em curso com upload de foto — tudo renderiza sem overflow/quebra de layout.
+
+Feedback do utilizador comparando com o v1: layout técnico ok, mas **v2 parecia "site", não
+"app"** (login era só um card genérico, sem ícone/identidade, ao contrário do v1 que tem ícone
+grande + nome do produto na tela de login, sensação de app nativo). PWA já estava correta
+(`vite.config.ts` já tinha `display: standalone`, ícones `pwa-192/512/maskable`) — faltava só a
+UI do login. Corrigido: `Login.tsx` ganhou bloco de ícone (quadrado âmbar 80×80 com "F", sombra)
++ nome do produto acima do card, mesmo padrão visual do v1. Rebuild + deploy, confirmado
+visualmente via screenshot (precisou hard-reload — o service worker do PWA cacheia o build
+anterior, `ctrl+shift+r` força buscar a versão nova).
+
+**Falta ainda**: paridade fiscal/pricing e outros itens de sessões anteriores continuam pendentes
+à parte; testar instalação real como PWA (ícone na home screen) num telemóvel físico.
 
 ---
 
