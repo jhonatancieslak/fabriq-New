@@ -1,6 +1,6 @@
-# FABRIQ v2 — stack Supabase self-hosted mínima (sem Kong/Storage/Realtime/Studio)
+# FABRIQ v2 — stack Supabase self-hosted mínima (sem Kong/Realtime/Studio)
 # Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
-# Postgres já roda no host (cluster existente, database fabriq_v2). Aqui só Auth + REST.
+# Postgres já roda no host (cluster existente, database fabriq_v2). Aqui Auth + REST + Storage.
 
 services:
   gotrue:
@@ -18,3 +18,13 @@ services:
     network_mode: host
     env_file:
       - ./postgrest.env
+
+  storage:
+    image: supabase/storage-api:v1.11.13
+    container_name: fabriq_v2_storage
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - ./storage.env
+    volumes:
+      - ../storage-data:/var/lib/storage

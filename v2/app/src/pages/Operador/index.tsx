@@ -13,7 +13,7 @@ import {
 } from '../../types/db'
 
 export default function Operador() {
-  const { company, signOut } = useAuth()
+  const { company, appUser, signOut } = useAuth()
   const [orders, setOrders] = useState<ProductionOrder[]>([])
   const [quotes, setQuotes] = useState<Quote[]>([])
   const [clients, setClients] = useState<Client[]>([])
@@ -66,11 +66,48 @@ export default function Operador() {
     setBusyId(null)
   }
 
-  async function concluir(order: ProductionOrder) {
+  async function concluir(order: ProductionOrder, foto: File) {
     setBusyId(order.id)
+    const now = new Date().toISOString()
+
+    const { data: stage, error: stageError } = await supabase
+      .from('production_order_stages')
+      .upsert(
+        {
+          company_id: company!.id,
+          production_order_id: order.id,
+          numero_etapa: 1,
+          etapa: 'corte',
+          status: 'concluido',
+          concluido_em: now,
+          operador_id: appUser?.id ?? null,
+        },
+        { onConflict: 'production_order_id,etapa' },
+      )
+      .select()
+      .single()
+
+    if (stageError || !stage) {
+      setBusyId(null)
+      return
+    }
+
+    const path = `${company!.id}/${stage.id}/${Date.now()}-${foto.name}`
+    const { error: uploadError } = await supabase.storage.from('production-photos').upload(path, foto, {
+      contentType: foto.type,
+    })
+
+    if (!uploadError) {
+      await supabase.from('production_order_photos').insert({
+        company_id: company!.id,
+        production_order_stage_id: stage.id,
+        storage_path: path,
+      })
+    }
+
     const { error } = await supabase
       .from('production_orders')
-      .update({ status: 'concluido', concluido_em: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update({ status: 'concluido', concluido_em: now, updated_at: now })
       .eq('id', order.id)
     if (!error) {
       setOrders((prev) => prev.filter((o) => o.id !== order.id))
@@ -115,9 +152,10 @@ export default function Operador() {
                     itemRows={items.filter((it) => it.production_order_id === o.id)}
                     materialName={materialName}
                     onToggle={() => setOpenId((v) => (v === o.id ? null : o.id))}
-                    onAction={() => concluir(o)}
+                    onAction={(foto) => foto && concluir(o, foto)}
                     actionLabel="Concluir"
                     actionCls="bg-emerald-500 text-black"
+                    requiresPhoto
                   />
                 ))}
               </Section>
@@ -168,6 +206,7 @@ function OrderCard({
   onAction,
   actionLabel,
   actionCls,
+  requiresPhoto,
 }: {
   order: ProductionOrder
   open: boolean
@@ -176,10 +215,13 @@ function OrderCard({
   itemRows: ProductionOrderItem[]
   materialName: (id: string | null) => string
   onToggle: () => void
-  onAction: () => void
+  onAction: (foto?: File) => void
   actionLabel: string
   actionCls: string
+  requiresPhoto?: boolean
 }) {
+  const [foto, setFoto] = useState<File | null>(null)
+
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900 overflow-hidden">
       <button className="w-full text-left px-4 py-3 flex items-center justify-between" onClick={onToggle}>
@@ -205,9 +247,21 @@ function OrderCard({
               ))}
             </ul>
           )}
+          {requiresPhoto && (
+            <label className="block mb-3">
+              <span className="text-xs text-slate-400 block mb-1">Foto de rastreabilidade (obrigatória)</span>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
+                className="block w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-slate-800 file:text-white"
+              />
+            </label>
+          )}
           <button
-            onClick={onAction}
-            disabled={busy}
+            onClick={() => onAction(foto ?? undefined)}
+            disabled={busy || (requiresPhoto && !foto)}
             className={`w-full py-3 rounded-md font-semibold text-sm ${actionCls} disabled:opacity-50`}
           >
             {busy ? '…' : actionLabel}

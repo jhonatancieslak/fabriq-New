@@ -45,3 +45,5 @@ services/nesting/
 v2/supabase/.selfhost-secrets
 v2/supabase/gotrue.env
 v2/supabase/postgrest.env
+v2/supabase/storage.env
+v2/storage-data/

@@ -1,6 +1,8 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
+import QRCode from 'qrcode'
 import { supabase } from '../../lib/supabase'
 import {
   MACHINE_TYPE_LABELS,
@@ -16,6 +18,23 @@ import {
 import { btnGhost, Card, Td, Th, PageLoading } from '../../components/form'
 
 const STATUSES: ProductionOrderStatus[] = ['aguardando', 'em_producao', 'concluido', 'cancelado']
+
+async function printLabel(qrCode: string) {
+  const dataUrl = await QRCode.toDataURL(`https://v2.fabriq.pt/t/${qrCode}`, { width: 300, margin: 1 })
+  const win = window.open('', '_blank', 'width=400,height=500')
+  if (!win) return
+  win.document.write(`
+    <html>
+      <head><title>Etiqueta ${qrCode}</title></head>
+      <body style="text-align:center;font-family:sans-serif;padding:20px">
+        <img src="${dataUrl}" style="width:250px;height:250px" />
+        <p style="font-size:12px;letter-spacing:1px">${qrCode}</p>
+        <script>window.onload = () => { window.print(); window.onafterprint = () => window.close() }</script>
+      </body>
+    </html>
+  `)
+  win.document.close()
+}
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>()
@@ -109,6 +128,14 @@ export default function OrderDetail() {
           <div className="text-right">
             <p className="text-xs text-slate-500 mb-1">QR de rastreio</p>
             <code className="text-xs text-amber-400 bg-slate-800 px-2 py-1 rounded">{order.qr_code}</code>
+            <div className="mt-2 flex flex-col items-end gap-2">
+              <div className="bg-white p-2 rounded-md inline-block">
+                <QRCodeSVG value={`https://v2.fabriq.pt/t/${order.qr_code}`} size={96} />
+              </div>
+              <button onClick={() => printLabel(order.qr_code)} className={btnGhost}>
+                Imprimir etiqueta
+              </button>
+            </div>
           </div>
         </div>
       </Card>

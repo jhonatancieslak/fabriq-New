@@ -57,11 +57,49 @@ sessão de trabalho).
   `try_files ... /index.html`, SPA fallback já configurado). Testado end-to-end: `curl
   /t/<qr_code real>` → 200; RPC direta via `rest/v1/rpc/get_order_tracking` devolve JSON correto
   pra ordem `em_producao` (só status básico, sem etapas — confirma comportamento certo).
-- **Falta ainda**: QR code não é gerado como imagem em lugar nenhum (`qr_code` é só texto na BD,
-  sem lib `qrcode`/`qrcode.react` no projeto) — próximo passo é adicionar geração visual +
-  impressão de etiqueta apontando pra `https://v2.fabriq.pt/t/<qr_code>`; bucket de Storage pras
-  fotos ainda não existe (nem policy, nem upload no frontend) — sem isso o array `fotos` fica
-  sempre vazio mesmo em ordens concluídas.
+**Passo 3 feito (mesma sessão)**: QR image + upload de fotos (Supabase Storage self-host).
+
+- **Storage self-host novo**: container `supabase/storage-api:v1.11.13` (`fabriq_v2_storage`,
+  porta `127.0.0.1:8092`, ficheiros em `v2/storage-data/`) adicionado ao
+  `supabase/docker-compose.yml`. Config em `supabase/storage.env` (gitignored, mesmo padrão de
+  `gotrue.env`/`postgrest.env`) — `ANON_KEY`/`SERVICE_KEY` mintadas com o mesmo `JWT_SECRET` já
+  usado por GoTrue/PostgREST. Migrations do storage-api criaram schema `storage` (`buckets`,
+  `objects`, etc) automaticamente no `fabriq_v2` já existente.
+  - Bug encontrado: bucket dava sempre `relation "buckets" does not exist` mesmo com
+    `search_path` certo — causa real era falta de `GRANT USAGE ON SCHEMA storage` +
+    `GRANT ALL ON TABLES` pras roles `anon/authenticated/service_role` (Postgres pula
+    silenciosamente schemas sem `USAGE` na resolução do `search_path`, dá erro de "relation não
+    existe" em vez de "permission denied" — confunde bastante). Corrigido via grants manuais +
+    `grant anon, authenticated, service_role to fabriq_v2_user` (role de conexão do storage-api
+    precisa poder assumir essas roles via RLS).
+  - Bucket `production-photos` criado (privado, limite 10MB). Testado upload/download/delete via
+    API direta com `SERVICE_KEY` — 200 OK.
+  - `supabase/010_storage_policies.sql`: RLS em `storage.objects` — `authenticated` só
+    insert/select/delete na própria pasta (`{company_id}/...`, via `auth_company_id()`); `anon`
+    só `select` (fotos da rastreabilidade pública precisam ser legíveis sem login).
+  - Nginx (`v2.fabriq.pt`): novo `location /storage/v1/` → proxy pra `127.0.0.1:8092` (mesmo
+    padrão de `/auth/v1/` e `/rest/v1/`, `supabase-js` no frontend não precisa saber que não é
+    Supabase Cloud).
+- `supabase/011_stage_unique_etapa.sql`: unique index `(production_order_id, etapa)` em
+  `production_order_stages` — necessário pro `upsert` funcionar no fluxo de conclusão.
+- **QR image**: `qrcode.react` (exibição inline) + `qrcode` (geração de etiqueta pra imprimir) em
+  `OrderDetail.tsx` — QR aponta pra `https://v2.fabriq.pt/t/<qr_code>`, botão "Imprimir etiqueta"
+  abre janela nova só com o QR + `window.print()`.
+- **Upload de fotos no fluxo do operador**: `Operador/index.tsx` — ao "Concluir" uma ordem em
+  curso, foto agora é **obrigatória** (`<input type=file capture=environment>`, botão desabilitado
+  sem ficheiro). Fluxo: upsert de uma `production_order_stage` (`etapa='corte'`, `numero_etapa=1`,
+  `operador_id` do utilizador logado) → upload da foto pro bucket `production-photos`
+  (`{company_id}/{stage_id}/{timestamp}-{nome}`) → insert em `production_order_photos` → só depois
+  marca a `production_order` como `concluido`. Isto só cobre a etapa "corte" (paridade com o
+  comportamento do v1) — pipeline multi-etapa completo (quinagem/guilhotina/acabamento com
+  ramificação por peça) continua pendente, é trabalho maior à parte.
+- `tsc -b` + `vite build` sem erros (`@types/qrcode` adicionado como dev dep). Deploy feito
+  (`dist/` servido por nginx). Confirmado `curl /t/<qr_code>` → 200 e proxy `/storage/v1/bucket`
+  responde (400 sem auth, esperado).
+
+**Falta ainda**: pipeline multi-etapa real (UI de avançar quinagem/guilhotina/acabamento com
+ramificação por peça) — hoje só a etapa "corte" é criada/concluída via `/operador`; testar upload
+de foto end-to-end pelo telemóvel de um operador real (só testado via API direta até agora).
 
 ---
 
