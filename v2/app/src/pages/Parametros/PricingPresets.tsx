@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { confirmDialog, notifyError, notifySuccess } from '../../lib/ui'
 import type { PricingPreset } from '../../types/db'
-import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
+import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th, PageLoading } from '../../components/form'
 
 const EMPTY = {
   nome: '',
@@ -76,8 +77,10 @@ export default function PricingPresets() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Remover este preset?')) return
-    await supabase.from('pricing_presets').delete().eq('id', id)
+    if (!(await confirmDialog('Remover este preset?'))) return
+    const { error: err } = await supabase.from('pricing_presets').delete().eq('id', id)
+    if (err) return notifyError(err.message)
+    notifySuccess('Preset removido.')
     load()
   }
 
@@ -122,7 +125,7 @@ export default function PricingPresets() {
 
       <div className="mt-6">
         {loading ? (
-          <p className="text-sm text-slate-500">A carregar…</p>
+          <PageLoading />
         ) : rows.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhum preset cadastrado.</p>
         ) : (

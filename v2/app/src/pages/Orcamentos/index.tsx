@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { QUOTE_STATUS_LABELS, type Client, type Quote } from '../../types/db'
-import { btnPrimary, Card, Td, Th } from '../../components/form'
+import { btnPrimary, Card, Td, Th, PageLoading } from '../../components/form'
 
 const STATUS_COLORS: Record<string, string> = {
   rascunho: 'bg-slate-700 text-slate-200',
@@ -61,7 +61,7 @@ export default function Orcamentos() {
 
       <Card>
         {loading ? (
-          <p className="text-sm text-slate-500">A carregar…</p>
+          <PageLoading />
         ) : rows.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhum orçamento cadastrado.</p>
         ) : (

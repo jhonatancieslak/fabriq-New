@@ -17,8 +17,9 @@ import {
 } from '../../types/db'
 import { computeQuoteTotals, itemCustoMateriaPrima, pesoKg } from '../../lib/pricing'
 import { gerarOrcamentoPdf } from '../../lib/quotePdf'
+import { confirmDialog, notifyError, notifySuccess } from '../../lib/ui'
 import { useAuth } from '../../contexts/AuthContext'
-import { btnDanger, btnGhost, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
+import { btnDanger, btnGhost, btnPrimary, Card, Field, inputCls, Td, Th, PageLoading } from '../../components/form'
 
 const STATUSES: QuoteStatus[] = ['rascunho', 'enviado', 'aprovado', 'rejeitado']
 
@@ -158,8 +159,13 @@ export default function QuoteForm() {
       .single()
     setSaving(false)
 
-    if (error) return setItemError(error.message)
+    if (error) {
+      setItemError(error.message)
+      notifyError(error.message)
+      return
+    }
 
+    notifySuccess('Item adicionado.')
     const nextItems = [...items, data as QuoteItem]
     setItems(nextItems)
     setItemForm(EMPTY_ITEM)
@@ -167,8 +173,10 @@ export default function QuoteForm() {
   }
 
   async function handleDeleteItem(itemId: string) {
-    if (!confirm('Remover este item?')) return
-    await supabase.from('quote_items').delete().eq('id', itemId)
+    if (!(await confirmDialog('Remover este item?'))) return
+    const { error: err } = await supabase.from('quote_items').delete().eq('id', itemId)
+    if (err) return notifyError(err.message)
+    notifySuccess('Item removido.')
     const nextItems = items.filter((it) => it.id !== itemId)
     setItems(nextItems)
     persistTotals(nextItems)
@@ -188,7 +196,7 @@ export default function QuoteForm() {
     return m ? MATERIAL_NAME_LABELS[m.nome] : '—'
   }
 
-  if (loading) return <p className="text-sm text-slate-500">A carregar…</p>
+  if (loading) return <PageLoading />
   if (!quote) return <p className="text-sm text-red-400">Orçamento não encontrado.</p>
 
   return (

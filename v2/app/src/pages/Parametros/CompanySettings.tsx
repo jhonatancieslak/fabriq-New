@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import type { CompanySettings as CompanySettingsRow, DobraPricingMode } from '../../types/db'
-import { btnPrimary, Card, Field, inputCls } from '../../components/form'
+import { btnPrimary, Card, Field, inputCls, PageLoading } from '../../components/form'
 
 export default function CompanySettings() {
   const { appUser } = useAuth()
@@ -46,7 +46,7 @@ export default function CompanySettings() {
     setSaved(true)
   }
 
-  if (loading) return <Card><p className="text-sm text-slate-500">A carregar…</p></Card>
+  if (loading) return <Card><PageLoading /></Card>
 
   return (
     <Card>

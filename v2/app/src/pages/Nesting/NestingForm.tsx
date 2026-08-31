@@ -11,7 +11,7 @@ import {
   type QuoteItem,
   type SheetModel,
 } from '../../types/db'
-import { btnGhost, btnPrimary, Card, Field, inputCls, labelCls } from '../../components/form'
+import { btnGhost, btnPrimary, Card, Field, inputCls, labelCls, PageLoading } from '../../components/form'
 
 function pecasFromQuoteItems(items: QuoteItem[]): Peca[] {
   const pecas: Peca[] = []
@@ -131,7 +131,7 @@ export default function NestingForm() {
     else if (error) setErro(error.message)
   }
 
-  if (loading) return <p className="text-sm text-slate-500">A carregar…</p>
+  if (loading) return <PageLoading />
   if (!job) return <p className="text-sm text-slate-500">Nesting não encontrado.</p>
 
   return (

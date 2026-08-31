@@ -94,7 +94,7 @@ export default function Cadastro() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-10">
       <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl p-8">
         <p className="text-lg font-black tracking-tight text-white mb-6">
-          FABRIQ<span className="text-amber-400">.pt</span>
+          FABRIQ<span className="text-amber-400">.PT</span>
         </p>
         <h1 className="text-xl font-semibold text-white mb-1">Teste grátis por 4 dias</h1>
         <p className="text-sm text-slate-400 mb-6">Crie a sua conta e comece a orçar agora. Sem cartão de crédito.</p>

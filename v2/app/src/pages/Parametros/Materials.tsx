@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { confirmDialog, notifyError, notifySuccess } from '../../lib/ui'
 import { MATERIAL_NAME_LABELS, type Material, type MaterialName } from '../../types/db'
-import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
+import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th, PageLoading } from '../../components/form'
 
 const NOMES: MaterialName[] = ['aco_carbono', 'aco_inoxidavel', 'aluminio', 'cobre', 'bronze']
 
@@ -46,8 +47,10 @@ export default function Materials() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Remover este material?')) return
-    await supabase.from('materials').delete().eq('id', id)
+    if (!(await confirmDialog('Remover este material?'))) return
+    const { error: err } = await supabase.from('materials').delete().eq('id', id)
+    if (err) return notifyError(err.message)
+    notifySuccess('Material removido.')
     load()
   }
 
@@ -84,7 +87,7 @@ export default function Materials() {
       {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-slate-500">A carregar…</p>
+        <PageLoading />
       ) : rows.length === 0 ? (
         <p className="text-sm text-slate-500">Nenhum material cadastrado.</p>
       ) : (

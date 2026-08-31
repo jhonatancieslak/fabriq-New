@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { confirmDialog, notifyError, notifySuccess } from '../../lib/ui'
 import {
   GAS_TYPE_LABELS,
   MACHINE_TYPE_LABELS,
@@ -12,7 +13,7 @@ import {
   type Material,
 } from '../../types/db'
 import { downloadCsvTemplate, parseCsvFile, type ParsedRow } from '../../lib/csvImport'
-import { btnDanger, btnGhost, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
+import { btnDanger, btnGhost, btnPrimary, Card, Field, inputCls, Td, Th, PageLoading } from '../../components/form'
 
 const GASES: GasType[] = ['oxigenio', 'nitrogenio', 'ar_comprimido']
 
@@ -116,8 +117,10 @@ export default function MachineParameters() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Remover este parâmetro?')) return
-    await supabase.from('machine_parameters').delete().eq('id', id)
+    if (!(await confirmDialog('Remover este parâmetro?'))) return
+    const { error: err } = await supabase.from('machine_parameters').delete().eq('id', id)
+    if (err) return notifyError(err.message)
+    notifySuccess('Parâmetro removido.')
     load()
   }
 
@@ -342,7 +345,7 @@ export default function MachineParameters() {
 
       <div className="mt-6">
         {loading ? (
-          <p className="text-sm text-slate-500">A carregar…</p>
+          <PageLoading />
         ) : rows.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhum parâmetro cadastrado.</p>
         ) : (

@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { confirmDialog, notifyError, notifySuccess } from '../../lib/ui'
 import { MACHINE_TYPE_LABELS, type Machine, type MachineType } from '../../types/db'
-import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
+import { btnDanger, btnPrimary, Card, Field, inputCls, Td, Th, PageLoading } from '../../components/form'
 
 const TIPOS: MachineType[] = ['laser', 'guilhotina', 'quinagem']
 
@@ -39,8 +40,10 @@ export default function Machines() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Remover esta máquina?')) return
-    await supabase.from('machines').delete().eq('id', id)
+    if (!(await confirmDialog('Remover esta máquina?'))) return
+    const { error: err } = await supabase.from('machines').delete().eq('id', id)
+    if (err) return notifyError(err.message)
+    notifySuccess('Máquina removida.')
     load()
   }
 
@@ -72,7 +75,7 @@ export default function Machines() {
       {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-slate-500">A carregar…</p>
+        <PageLoading />
       ) : rows.length === 0 ? (
         <p className="text-sm text-slate-500">Nenhuma máquina cadastrada.</p>
       ) : (

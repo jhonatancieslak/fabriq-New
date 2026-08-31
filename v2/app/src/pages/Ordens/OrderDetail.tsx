@@ -13,7 +13,7 @@ import {
   type ProductionOrderStatus,
   type Quote,
 } from '../../types/db'
-import { btnGhost, Card, Td, Th } from '../../components/form'
+import { btnGhost, Card, Td, Th, PageLoading } from '../../components/form'
 
 const STATUSES: ProductionOrderStatus[] = ['aguardando', 'em_producao', 'concluido', 'cancelado']
 
@@ -71,7 +71,7 @@ export default function OrderDetail() {
     return m ? MATERIAL_NAME_LABELS[m.nome] : '—'
   }
 
-  if (loading) return <p className="text-sm text-slate-500">A carregar…</p>
+  if (loading) return <PageLoading />
   if (!order) return <p className="text-sm text-red-400">Ordem não encontrada.</p>
 
   return (

@@ -11,7 +11,7 @@ import {
   type ProductionOrder,
   type Quote,
 } from '../../types/db'
-import { btnGhost, btnPrimary, Card, Field, inputCls, Td, Th } from '../../components/form'
+import { btnGhost, btnPrimary, Card, Field, inputCls, Td, Th, PageLoading } from '../../components/form'
 
 const STATUS_COLORS: Record<string, string> = {
   aguardando: 'bg-slate-700 text-slate-200',
@@ -151,7 +151,7 @@ export default function Ordens() {
       <div className="mt-5">
         <Card>
           {loading ? (
-            <p className="text-sm text-slate-500">A carregar…</p>
+            <PageLoading />
           ) : rows.length === 0 ? (
             <p className="text-sm text-slate-500">Nenhuma ordem de produção.</p>
           ) : (

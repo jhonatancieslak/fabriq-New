@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { confirmDialog, notifyError, notifySuccess } from '../lib/ui'
 import type { Client, PricingPreset } from '../types/db'
-import { btnDanger, btnGhost, btnPrimary, Card, Field, inputCls, Td, Th } from '../components/form'
+import { btnDanger, btnGhost, btnPrimary, Card, Field, inputCls, Td, Th, PageLoading } from '../components/form'
 
 const EMPTY = {
   empresa: '',
@@ -106,14 +107,21 @@ export default function Clientes() {
       : await supabase.from('clients').insert({ ...payload, company_id: appUser.company_id })
 
     setSaving(false)
-    if (err) return setError(err.message)
+    if (err) {
+      setError(err.message)
+      notifyError(err.message)
+      return
+    }
+    notifySuccess(editingId ? 'Cliente atualizado.' : 'Cliente criado.')
     setFormOpen(false)
     load()
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Remover este cliente?')) return
-    await supabase.from('clients').delete().eq('id', id)
+    if (!(await confirmDialog('Remover este cliente?'))) return
+    const { error: err } = await supabase.from('clients').delete().eq('id', id)
+    if (err) return notifyError(err.message)
+    notifySuccess('Cliente removido.')
     load()
   }
 
@@ -207,7 +215,7 @@ export default function Clientes() {
           />
 
           {loading ? (
-            <p className="text-sm text-slate-500">A carregar…</p>
+            <PageLoading />
           ) : filtered.length === 0 ? (
             <p className="text-sm text-slate-500">Nenhum cliente encontrado.</p>
           ) : (

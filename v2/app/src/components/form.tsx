@@ -30,3 +30,12 @@ export function Th({ children }: { children: ReactNode }) {
 export function Td({ children }: { children: ReactNode }) {
   return <td className="px-3 py-2 text-sm text-slate-200">{children}</td>
 }
+
+export function PageLoading() {
+  return (
+    <div className="flex items-center gap-3 text-sm text-slate-500 py-8 justify-center">
+      <span className="h-4 w-4 rounded-full border-2 border-slate-700 border-t-amber-500 animate-spin" />
+      A carregar…
+    </div>
+  )
+}
