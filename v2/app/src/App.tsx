@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import AppLayout from './components/AppLayout'
 import RequireAuth from './components/RequireAuth'
 import { AuthProvider } from './contexts/AuthContext'
@@ -15,15 +16,25 @@ import Ordens from './pages/Ordens'
 import OrderDetail from './pages/Ordens/OrderDetail'
 import Nesting from './pages/Nesting'
 import NestingForm from './pages/Nesting/NestingForm'
+import Operador from './pages/Operador'
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster theme="dark" position="top-right" richColors closeButton />
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/bloqueado" element={<Bloqueado />} />
+          <Route
+            path="/operador"
+            element={
+              <RequireAuth>
+                <Operador />
+              </RequireAuth>
+            }
+          />
 
           <Route
             element={

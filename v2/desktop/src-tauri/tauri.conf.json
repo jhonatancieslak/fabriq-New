@@ -5,13 +5,13 @@
   "identifier": "pt.fabriq.operador",
   "build": {
     "frontendDist": "../../app/dist",
-    "devUrl": "https://v2.fabriq.pt"
+    "devUrl": "https://v2.fabriq.pt/operador"
   },
   "app": {
     "windows": [
       {
         "title": "Fabriq — Operador do Laser",
-        "url": "https://v2.fabriq.pt",
+        "url": "https://v2.fabriq.pt/operador",
         "width": 1100,
         "height": 750,
         "minWidth": 800,
