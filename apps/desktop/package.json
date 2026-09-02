@@ -12,7 +12,7 @@
     "build": "pnpm build:renderer && pnpm build:main",
     "dist": "pnpm build && electron-builder",
     "dist:win": "pnpm build && electron-builder --win --publish always",
-    "dist:win:local": "pnpm build && electron-builder --win"
+    "dist:win:local": "pnpm build && electron-builder --win --publish never"
   },
   "dependencies": {
     "dxf-parser": "^1.1.2",
