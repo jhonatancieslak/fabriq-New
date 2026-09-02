@@ -1,10 +1,108 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-08-31 (Sessão 33 — pipeline etapas produção, passo 1)
+**Última sessão:** 2026-09-02 (Sessão 34 — app desktop Windows: nesting/DXF, login+licença, auto-update)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-08-31, sessão 33)
+## ▶ RETOMAR AQUI (2026-09-02, sessão 34)
+
+Pedido do utilizador: concorrente iDeal CUT/iCutDev tem instalador Windows nativo (editor
+DWG/DXF, orçamentos, nesting, impressão). Objetivo: `apps/web` continua sendo a versão web,
+novo `apps/desktop` vira a versão instalada Windows — mesmo monorepo pnpm, reaproveitando
+backend/API onde der.
+
+### O que foi feito
+
+**1. `apps/desktop` criado do zero** — Electron + Vite + React 19 + TS, workspace novo
+(`@fabriq/desktop`) dentro do monorepo pnpm existente (pega automático via `apps/*` no
+`pnpm-workspace.yaml`).
+- Motor de nesting 2D (Shelf First-Fit Decreasing) portado de
+  `services/dxf-processor/nest.py` pra TS puro (`src/shared/nesting.ts`) — sem depender de
+  Python/binários Linux no Windows. Testado isolado (13 peças → 1 chapa, 18.7% aproveitamento,
+  posicionamento confirmado correto).
+- UI MVP (`App.tsx`): import DXF (via `dxf-parser`, extrai bbox — DWG ainda bloqueado, pede
+  export pra DXF, mensagem clara), form manual de peças, config de chapa (largura/altura/gap),
+  canvas SVG do layout de nesting por chapa (`NestingCanvas.tsx`), zustand pra estado
+  (`store.ts`).
+- **Não é editor CAD completo** — não desenha/edita geometria, só importa bbox e organiza
+  nesting. Levantamento confirmou que nada no projeto (nem `services/nesting`, nem
+  `services/dxf-processor`) tinha isso — só análise/preview de DXF já pronto.
+
+**2. Instalador Windows via CI** — `electron-builder` (NSIS, wizard, atalho desktop + menu
+iniciar, `appId: pt.fabriq.desktop`) + workflow `.github/workflows/desktop-build.yml`
+(`windows-latest`, sem precisar de `wine` no servidor Linux). **Testado e funcionando** — o
+utilizador já instalou e correu o `.exe` gerado.
+- Bug corrigido no caminho: `tsconfig.main.json` incluía `src/shared` junto com `src/main`,
+  fazendo o `tsc` calcular root comum errado e gerar `dist/main/main/main.js` em vez de
+  `dist/main/main.js` (não batia com o `"main"` do `package.json` → electron-builder falhava
+  com "Application entry file ... does not exist"). Fix: `include` só `src/main`
+  (`main.ts`/`preload.ts` não usam `shared/`).
+
+**3. Login obrigatório + checagem de licença/plano + auto-update forçado** (pedido explícito:
+"deve logar obrigatoriamente a licença ativa, sem isso não usa o sistema" + "força atualizar o
+sistema").
+- **Backend**: nova rota `GET /api/v1/auth/session` em `apps/api/src/modules/auth/auth.routes.ts`
+  — só `requireAuth`, sem gate de role (a `GET /api/v1/billing` existente exige
+  `admin`/`financial`, o que quebraria login de vendedor/operador no desktop). Retorna
+  tenant+plano+trial. **Já em produção** (build + `pm2 restart fabriq-api`, confirmado com
+  `curl` → 401 sem token, rota no ar).
+- **Desktop — segurança de token**: `src/main/tokenStore.ts` guarda tokens só no processo
+  main via `safeStorage` do Electron (DPAPI no Windows) — renderer nunca toca no token cru, só
+  fala com main via IPC.
+- **Desktop — auth**: `src/main/auth.ts` — login/logout contra `https://api.fabriq.pt`, refresh
+  automático a cada 10min (accessToken dura 15min, sempre persiste o par rotacionado), retry
+  automático em 401. Todas as chamadas HTTP correm no processo main (sem CORS, sem exposição de
+  token ao renderer).
+- **Desktop — gate**: `LicenseGate.tsx` envolve `App.tsx` — sem login mostra `LoginScreen.tsx`;
+  logado mas plano expirado (e sem trial ativo) bloqueia tela cheia com motivo + botão sair; só
+  aí libera a UI de nesting.
+- **Auto-update**: `electron-updater` (`src/main/updater.ts`), checa a cada 30min. Ao terminar
+  de baixar NÃO instala sozinho — `LicenseGate` mostra overlay bloqueante "Reiniciar agora" sem
+  opção de pular (decisão confirmada com o utilizador: forçado mesmo, não "instala ao fechar").
+- **CI/publish**: `electron-builder` com `publish: { provider: github, repo: fabriq-New }`.
+  Push normal em `main` só gera artifact (sem publicar). Push com tag `desktop-v*` publica
+  Release no GitHub (gera o `.exe` + `latest.yml`, manifest que o `electron-updater` consulta)
+  — `permissions: contents: write` + `GH_TOKEN` no workflow.
+
+### Pendente / próximo passo
+
+- **Cortar a tag `desktop-v0.1.1`** pra smoke-test do fluxo completo: publish → download →
+  overlay "Reiniciar agora" funcionando de verdade num app já instalado. Ainda não foi feito
+  nesta sessão.
+- Confirmar que o build do CI com as mudanças de login/licença passou (`gh run list`, repo
+  `fabriq-New`, workflow "Desktop — build instalador Windows") — estava em andamento ao fim
+  desta sessão.
+- **Redesign visual completo** (pedido do utilizador): telas de referência do concorrente
+  iCutDev encontradas na pasta "Fabriq" do Google Drive do utilizador (`config-gerais.png`,
+  `param-taxas.png`, `materiais.png`, `novo-cliente.png`, `importar-dxf.png`, etc — tema claro,
+  ícones próprios). Ainda não iniciado — é sessão à parte, provavelmente com skill de design.
+- **DWG real** — hoje bloqueado com mensagem pedindo export pra DXF. `services/nesting` já tem
+  `ODAFileConverter` vendorizado (Linux) — no Windows precisa de outra solução (ODA/Teigha SDK
+  nativo ou serviço de conversão via API).
+- Ícone de app dedicado — hoje usa um placeholder copiado de
+  `v2/desktop/src-tauri/icons/icon.ico` (que é de outro projeto, o wrapper Tauri da PWA de
+  operador). Falta ícone próprio do FABRIQ desktop.
+
+### Ficheiros-chave desta sessão
+- `apps/desktop/` (novo workspace inteiro)
+- `apps/api/src/modules/auth/auth.routes.ts` (rota `/session` nova)
+- `.github/workflows/desktop-build.yml` (novo, depois ajustado pra tag+publish)
+
+### ⚠ Conferir antes de continuar (achado em memória, não investigado a fundo nesta sessão)
+- Memória de 2026-07-09 menciona decisão arquitetural: "Central SaaS como fonte única de
+  licenciamento entre múltiplos produtos". A rota `/auth/session` que criei fica dentro do
+  `apps/api` do próprio FABRIQ, não num Central SaaS separado — **conferir se isso conflita**
+  com essa decisão antes de expandir o gate de licença pra outros produtos.
+- Memória de 2026-08-29 menciona um segundo wrapper desktop feito com **Tauri** (módulo
+  Engenharia) — já vi localmente `v2/desktop-engenharia/` e `v2/desktop/` (esse último é
+  wrapper Tauri da PWA operador). `apps/desktop` que criei nesta sessão usa **Electron**, não
+  Tauri — decisão consciente (motor de nesting TS + `dxf-parser`, mais fácil achar libs CAD JS),
+  mas fica registado que o padrão dominante no projeto até agora era Tauri, caso valha
+  padronizar depois.
+
+---
+
+## ▶ SESSÃO ANTERIOR (2026-08-31, sessão 33)
 
 Análise pedida pelo utilizador: app v1 (Flask, `services/nesting`) só rastreia UMA etapa (corte
 laser) via QR-token (`/t/<token>`, sem login) com fotos por ordem. v2 `/operador` era só shell
