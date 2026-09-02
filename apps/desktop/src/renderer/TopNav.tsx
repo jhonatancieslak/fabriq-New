@@ -1,23 +1,19 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
 import { Zap } from 'lucide-react';
-import iconChapa from './assets/icons/chapa.png';
-import iconPecas from './assets/icons/pecas.png';
-import iconNesting from './assets/icons/nesting.png';
-import iconClientes from './assets/icons/clientes.png';
-import iconMaquinas from './assets/icons/maquinas.png';
 import iconOrcamentos from './assets/icons/orcamentos.png';
-import iconConfig from './assets/icons/config.png';
+import iconHistorico from './assets/icons/historico.png';
+import iconClientes from './assets/icons/clientes.png';
+import iconOrdens from './assets/icons/ordens.png';
+import iconParametros from './assets/icons/parametros.png';
 
-export type Tab = 'chapa' | 'pecas' | 'nesting' | 'clientes' | 'maquinas' | 'orcamentos' | 'config';
+export type Tab = 'orcamentos' | 'historico' | 'clientes' | 'ordens' | 'parametros';
 
 const tabs: { id: Tab; label: string; icon: string }[] = [
-  { id: 'chapa', label: 'Chapa', icon: iconChapa },
-  { id: 'pecas', label: 'Peças', icon: iconPecas },
-  { id: 'nesting', label: 'Nesting', icon: iconNesting },
   { id: 'orcamentos', label: 'Orçamentos', icon: iconOrcamentos },
+  { id: 'historico', label: 'Histórico', icon: iconHistorico },
   { id: 'clientes', label: 'Clientes', icon: iconClientes },
-  { id: 'maquinas', label: 'Máquinas', icon: iconMaquinas },
-  { id: 'config', label: 'Configurações', icon: iconConfig },
+  { id: 'ordens', label: 'Ordens', icon: iconOrdens },
+  { id: 'parametros', label: 'Parâmetros', icon: iconParametros },
 ];
 
 export default function TopNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
@@ -42,7 +38,7 @@ export default function TopNav({ active, onChange }: { active: Tab; onChange: (t
                 onClick={() => onChange(t.id)}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                  padding: '6px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  padding: '6px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
                   fontSize: 11.5, fontWeight: 500, whiteSpace: 'nowrap',
                   background: isActive ? '#FEF3C7' : 'transparent',
                   color: isActive ? '#B45309' : '#6B7280',

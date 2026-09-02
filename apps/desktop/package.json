@@ -1,6 +1,6 @@
 {
   "name": "@fabriq/desktop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "FABRIQ Desktop — editor DXF/DWG, nesting e orçamentos (Windows)",
   "author": "Jhonatan Cieslak <jhonatan.cieslak94@gmail.com>",
