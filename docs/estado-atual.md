@@ -1,10 +1,54 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-09-02 (Sessão 34 — app desktop Windows: nesting/DXF, login+licença, auto-update, UI, tema claro)
+**Última sessão:** 2026-09-02 (Sessão 34 — app desktop Windows: nesting/DXF, login+licença, auto-update, UI, tema claro, menu iCutDev)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-09-02, sessão 34 — tema claro + update automático + release real)
+## ▶ RETOMAR AQUI (2026-09-02, sessão 34 — menu reestruturado igual ao iCutDev)
+
+Utilizador mandou o link do Notion "icut dev app" (print completo do app deles, incluindo
+sub-telas) e pediu pra bater 1:1 a estrutura de abas. Estrutura real do iCutDev (extraída do
+Notion): abas de topo **Orçamentos, Histórico, Clientes, Parâmetros**, e dentro de
+Parâmetros sub-abas **Máquina | Materiais | Taxas | Precificação | Configurações Gerais**;
+dentro de Orçamentos, funções: Importar DXF, Classificação, Item Laser, Matéria-Prima,
+Processo, Desenhar peça, Agrupar. O utilizador anotou no próprio Notion que o FABRIQ vai ter
+**Ordens de Produção** (própria, não existe no iCutDev) — gerar ordens, imprimir etiquetas,
+custo, agrupar cortes em ordens, guilhotina/quinagem com preço e parâmetros próprios, QR
+code pra iniciar/finalizar processo.
+
+### O que foi feito
+- `apps/desktop/src/renderer/TopNav.tsx`: 5 abas de topo — **Orçamentos, Histórico,
+  Clientes, Ordens, Parâmetros** (substituindo os nomes genéricos Chapa/Peças/Nesting/etc.
+  da sessão anterior). Ícones novos baixados do Drive: `historico.png` (processo.png),
+  `ordens.png` (agrupar.png), `parametros.png` (parametros-maquina.png); reaproveitados
+  `orcamentos.png` e `clientes.png` já existentes.
+- `apps/desktop/src/renderer/SubNav.tsx` (novo, genérico): barra de sub-abas em pill, usada
+  dentro de cada aba de topo que precisa — visual igual ao do iCutDev (sub-abas horizontais
+  abaixo do título).
+- **Orçamentos** ganhou sub-abas **Chapa | Peças | Nesting** — é onde a funcionalidade real
+  já existente (import DXF, config de chapa, nesting) foi realocada (antes eram abas de
+  topo separadas).
+- **Parâmetros** ganhou sub-abas **Máquina | Materiais | Taxas | Precificação |
+  Configurações Gerais** — idêntico ao iCutDev, todas mostrando `ComingSoon` por enquanto
+  (sem função ainda).
+- **Histórico**, **Clientes**, **Ordens** — abas de topo com `ComingSoon` simples (sem
+  sub-abas ainda).
+- `ComingSoon.tsx` simplificado para receber `label` direto em vez de mapear por `Tab`.
+- Ícones órfãos da estrutura antiga removidos (`chapa.png`, `pecas.png`, `nesting.png`,
+  `config.png`, `maquinas.png` da pasta de ícones do menu).
+- Versão do desktop `0.3.0`; tag `desktop-v0.3.0` publicada (release real, auto-update ativo
+  desde a `v0.2.0` — ver seção anterior).
+
+### Pendente / próximo passo
+- Implementar de verdade os módulos por trás dos `ComingSoon`: Parâmetros (Máquina,
+  Materiais, Taxas, Precificação, Config. Gerais), Histórico, Clientes, e o módulo próprio
+  **Ordens de Produção** (etiquetas, QR code, guilhotina/quinagem) — ainda não desenhado,
+  só a aba existe.
+- Confirmar visualmente no Windows o layout final do menu com submenus.
+
+---
+
+## Sessão 34 (2026-09-02, tema claro + update automático + release real — versão anterior)
 
 Feedback do utilizador comparando com concorrente iCutDev (prints reais analisados, baixados
 do Notion via S3): quer tema **claro** (nada de tela preta), ícones grandes, menu com várias
