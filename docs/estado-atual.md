@@ -31,23 +31,30 @@ abas estilo AutoCAD, update 100% automático antes do login, e corrigir o erro
   `electron-updater` (provider `github`, repo `fabriq-New`) só tem feed para comparar
   quando existe uma Release real, publicada via tag `desktop-v*` (`pnpm dist:win`,
   `--publish always`). Sem release nenhuma, todo `checkForUpdates()` falha — daí o erro.
-  Fix: versão do desktop passou para `0.2.0`; falta cortar a tag `desktop-v0.2.0` para
-  gerar a primeira Release real (ver Pendente).
+  Fix: versão do desktop passou para `0.2.0`; tag `desktop-v0.2.0` cortada e enviada —
+  release real publicada com sucesso (ver abaixo).
 - **Rodapé** (`Footer.tsx`): versão + "Licenciado para: {tenant.name}" (via
   `auth.getState()`, já existia) + botão "Ativar licença" → abre
   `https://app.fabriq.pt/billing` no browser padrão (`shell.openExternal`, IPC
   `billing:openPortal` novo em `main.ts`).
 - Build (`pnpm build`) verificado sem erros de tipo em renderer+main.
+- **Release real publicada**: tag git `desktop-v0.2.0` → workflow rodou o passo
+  "Build + publicar release" → electron-builder criou a Release no GitHub com o nome
+  `v0.2.0` (**atenção**: electron-builder usa a versão do `package.json` pra nomear a
+  tag/release, ignora o nome da tag git que disparou o workflow — `desktop-v0.2.0` no git,
+  `v0.2.0` na Release). URL: https://github.com/jhonatancieslak/fabriq-New/releases/tag/v0.2.0
+  — assets `FABRIQ-Setup-0.2.0.exe`, `.blockmap` e `latest.yml` (o feed que o
+  `electron-updater` lê). A partir desta release o auto-update tem o que comparar.
 
 ### Pendente / próximo passo
-- **Cortar a tag `desktop-v0.2.0`** (`git tag desktop-v0.2.0 && git push origin desktop-v0.2.0`)
-  para o workflow publicar a primeira GitHub Release de verdade — só depois disso o
-  auto-update passa a funcionar em instalações já existentes (elas vão detectar essa
-  release e atualizar sozinhas). Builds futuros para o utilizador final devem sempre sair
-  por tag `desktop-v*`, não só push para `main` (push normal continua útil só para gerar
-  artifact de teste via Actions, sem publicar release).
+- Builds futuros para o utilizador final devem sempre sair por tag `desktop-v*` (bump de
+  `version` no `apps/desktop/package.json` + `git tag desktop-vX.Y.Z` +
+  `git push origin desktop-vX.Y.Z`) — push normal para `main` continua só gerando artifact
+  de teste via Actions (`dist:win:local`), sem publicar release nem alimentar o auto-update.
 - Confirmar visualmente no Windows (não dá para screenshot automatizado daqui) se o layout
   claro/ícones grandes/abas ficou como o utilizador imaginou antes de considerar fechado.
+- Testar o auto-update de ponta a ponta: abrir uma instalação antiga (ex.: a do artifact de
+  teste anterior à v0.2.0) e confirmar que ela detecta a release, baixa e reinicia sozinha.
 - Usuário de teste no banco: `teste@fabriq.pt` / `Jcieslak@3202` (tenant Jhonatan, role
   admin, is_active=true).
 
