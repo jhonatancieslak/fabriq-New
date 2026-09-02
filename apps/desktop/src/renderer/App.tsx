@@ -85,16 +85,20 @@ export default function App() {
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <aside style={{ width: 320, borderRight: '1px solid #262a33', padding: 16, overflow: 'auto' }}>
           <h4>Configuração da chapa</h4>
-          <label>Largura (mm) <input type="number" value={sheetW} onChange={(e) => setSheet(Number(e.target.value), sheetH, gap)} /></label><br />
-          <label>Altura (mm) <input type="number" value={sheetH} onChange={(e) => setSheet(sheetW, Number(e.target.value), gap)} /></label><br />
+          <label>Largura (mm) <input type="number" value={sheetW} onChange={(e) => setSheet(Number(e.target.value), sheetH, gap)} /></label>
+          <label>Altura (mm) <input type="number" value={sheetH} onChange={(e) => setSheet(sheetW, Number(e.target.value), gap)} /></label>
           <label>Gap (mm) <input type="number" value={gap} onChange={(e) => setSheet(sheetW, sheetH, Number(e.target.value))} /></label>
 
-          <h4 style={{ marginTop: 20 }}>Adicionar peça manual</h4>
-          <input placeholder="Nome" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} /><br />
-          <input type="number" placeholder="Largura" value={form.w} onChange={(e) => setForm({ ...form, w: Number(e.target.value) })} />
-          <input type="number" placeholder="Altura" value={form.h} onChange={(e) => setForm({ ...form, h: Number(e.target.value) })} />
-          <input type="number" placeholder="Qtd" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} /><br />
-          <button onClick={handleAddManual}>Adicionar peça</button>
+          <h4 style={{ marginTop: 24 }}>Adicionar peça manual</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <input type="text" placeholder="Nome" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="number" placeholder="Largura" value={form.w} onChange={(e) => setForm({ ...form, w: Number(e.target.value) })} />
+              <input type="number" placeholder="Altura" value={form.h} onChange={(e) => setForm({ ...form, h: Number(e.target.value) })} />
+              <input type="number" placeholder="Qtd" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
+            </div>
+            <button onClick={handleAddManual}>Adicionar peça</button>
+          </div>
 
           <h4 style={{ marginTop: 20 }}>Peças ({pieces.length})</h4>
           <ul style={{ listStyle: 'none', padding: 0, fontSize: 13 }}>
