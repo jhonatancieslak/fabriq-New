@@ -70,3 +70,4 @@ ipcMain.handle('auth:logout', () => logout());
 ipcMain.handle('auth:getState', () => getAuthState());
 ipcMain.handle('auth:checkLicense', () => checkLicense());
 ipcMain.handle('update:installNow', () => installUpdateNow());
+ipcMain.handle('app:getVersion', () => app.getVersion());

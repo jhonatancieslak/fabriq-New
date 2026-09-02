@@ -1,12 +1,15 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
-import { Layers, Boxes, LayoutGrid, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
+import iconChapa from './assets/icons/chapa.png';
+import iconPecas from './assets/icons/pecas.png';
+import iconNesting from './assets/icons/nesting.png';
 
 export type Tab = 'chapa' | 'pecas' | 'nesting';
 
-const tabs: { id: Tab; label: string; icon: typeof Layers }[] = [
-  { id: 'chapa', label: 'Chapa', icon: Layers },
-  { id: 'pecas', label: 'Peças', icon: Boxes },
-  { id: 'nesting', label: 'Nesting', icon: LayoutGrid },
+const tabs: { id: Tab; label: string; icon: string }[] = [
+  { id: 'chapa', label: 'Chapa', icon: iconChapa },
+  { id: 'pecas', label: 'Peças', icon: iconPecas },
+  { id: 'nesting', label: 'Nesting', icon: iconNesting },
 ];
 
 export default function TopNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
@@ -24,21 +27,20 @@ export default function TopNav({ active, onChange }: { active: Tab; onChange: (t
 
         <nav style={{ display: 'flex', gap: 4 }}>
           {tabs.map((t) => {
-            const Icon = t.icon;
             const isActive = t.id === active;
             return (
               <button
                 key={t.id}
                 onClick={() => onChange(t.id)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '6px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
                   fontSize: 13, fontWeight: 500,
                   background: isActive ? 'rgba(234,179,8,0.12)' : 'transparent',
                   color: isActive ? '#EAB308' : '#6B7280',
                 }}
               >
-                <Icon size={15} />
+                <img src={t.icon} alt="" width={20} height={20} style={{ filter: isActive ? 'none' : 'grayscale(0.4) opacity(0.85)' }} />
                 {t.label}
               </button>
             );

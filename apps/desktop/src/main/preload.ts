@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('fabriq', {
   openDxfDwg: () => ipcRenderer.invoke('file:openDxfDwg'),
+  getVersion: () => ipcRenderer.invoke('app:getVersion'),
   auth: {
     login: (email: string, password: string) => ipcRenderer.invoke('auth:login', { email, password }),
     logout: () => ipcRenderer.invoke('auth:logout'),

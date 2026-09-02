@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import LoginScreen from './LoginScreen';
 import App from './App';
+import Footer from './Footer';
 import type { AuthState, UpdateStatus } from './types';
 
 type GateState =
@@ -79,5 +80,12 @@ export default function LicenseGate() {
     );
   }
 
-  return <App />;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <App />
+      </div>
+      <Footer updateStatus={updateStatus} />
+    </div>
+  );
 }

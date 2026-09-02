@@ -26,6 +26,7 @@ declare global {
         | { ok: false; error: string }
         | null
       >;
+      getVersion: () => Promise<string>;
       auth: {
         login: (email: string, password: string) => Promise<{ ok: true; state: AuthState } | { ok: false; error: string }>;
         logout: () => Promise<void>;
