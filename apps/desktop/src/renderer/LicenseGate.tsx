@@ -6,17 +6,20 @@ import Footer from './Footer';
 import type { AuthState, UpdateStatus } from './types';
 
 type GateState =
+  | { phase: 'checking-update' }
   | { phase: 'loading' }
   | { phase: 'login' }
   | { phase: 'blocked'; reason: string }
   | { phase: 'ready' };
 
 export default function LicenseGate() {
-  const [gate, setGate] = useState<GateState>({ phase: 'loading' });
+  const [gate, setGate] = useState<GateState>({ phase: 'checking-update' });
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [tenantName, setTenantName] = useState<string | null>(null);
 
   async function evaluate() {
     const auth = await window.fabriq.auth.getState();
+    setTenantName(auth.tenant?.name ?? null);
     if (!auth.loggedIn) {
       setGate({ phase: 'login' });
       return;
@@ -30,8 +33,14 @@ export default function LicenseGate() {
   }
 
   useEffect(() => {
-    evaluate();
     const unsubscribe = window.fabriq.update.onStatus(setUpdateStatus);
+
+    window.fabriq.update.checkAndWait().then(({ hasUpdate }) => {
+      // Se houver update, o processo principal já está a baixar/instalar automaticamente
+      // (ver updater.ts) — fica-se na tela de update via `updateStatus` até reiniciar sozinho.
+      if (!hasUpdate) evaluate();
+    });
+
     return unsubscribe;
   }, []);
 
@@ -44,23 +53,28 @@ export default function LicenseGate() {
     setGate({ phase: 'login' });
   }
 
-  if (updateStatus?.state === 'ready') {
+  const updating = updateStatus?.state === 'checking' || updateStatus?.state === 'downloading' || updateStatus?.state === 'ready';
+
+  if (gate.phase === 'checking-update' && updating) {
+    const label =
+      updateStatus?.state === 'ready' ? 'Atualização pronta — reiniciando…' :
+      updateStatus?.state === 'downloading' ? 'Baixando atualização…' :
+      'Verificando atualizações…';
     return (
       <div style={{
         height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        background: '#0f1115', color: '#e6e6e6', textAlign: 'center', gap: 16,
+        background: '#F3F4F6', color: '#374151', textAlign: 'center', gap: 12,
       }}>
-        <h2>Atualização disponível</h2>
-        <p>Versão {updateStatus.version} pronta. Reinicie para continuar usando o FABRIQ.</p>
-        <button onClick={() => window.fabriq.update.installNow()} style={{ padding: '10px 24px' }}>
-          Reiniciar agora
-        </button>
+        <div style={{ fontWeight: 900, fontSize: 20, textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
+          FABRIQ<span style={{ color: '#B45309' }}>.IA</span>
+        </div>
+        <p style={{ margin: 0, fontSize: 13, color: '#6B7280' }}>{label}</p>
       </div>
     );
   }
 
-  if (gate.phase === 'loading') {
-    return <div style={{ padding: 40, color: '#6b7280' }}>Carregando…</div>;
+  if (gate.phase === 'checking-update' || gate.phase === 'loading') {
+    return <div style={{ padding: 40, color: '#6B7280' }}>Carregando…</div>;
   }
 
   if (gate.phase === 'login') {
@@ -71,7 +85,7 @@ export default function LicenseGate() {
     return (
       <div style={{
         height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        background: '#0f1115', color: '#e6e6e6', textAlign: 'center', gap: 16,
+        background: '#F3F4F6', color: '#111827', textAlign: 'center', gap: 16,
       }}>
         <h2>Acesso bloqueado</h2>
         <p>{gate.reason}</p>
@@ -85,7 +99,7 @@ export default function LicenseGate() {
       <div style={{ flex: 1, minHeight: 0 }}>
         <App />
       </div>
-      <Footer updateStatus={updateStatus} />
+      <Footer updateStatus={updateStatus} tenantName={tenantName} />
     </div>
   );
 }

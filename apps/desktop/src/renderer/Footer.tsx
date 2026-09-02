@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import type { UpdateStatus } from './types';
 
-export default function Footer({ updateStatus }: { updateStatus: UpdateStatus | null }) {
+export default function Footer({ updateStatus, tenantName }: { updateStatus: UpdateStatus | null; tenantName: string | null }) {
   const [version, setVersion] = useState('');
 
   useEffect(() => {
@@ -12,13 +12,22 @@ export default function Footer({ updateStatus }: { updateStatus: UpdateStatus | 
   return (
     <div
       style={{
-        flexShrink: 0, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 12px', fontSize: 11, color: '#4b5563', background: '#07080A', borderTop: '1px solid #111318',
+        flexShrink: 0, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 12px', fontSize: 11, color: '#6B7280', background: '#F9FAFB', borderTop: '1px solid #E5E7EB',
       }}
     >
-      <span>FABRIQ.IA v{version}</span>
-      {updateStatus?.state === 'downloading' && <span style={{ color: '#EAB308' }}>Baixando atualização…</span>}
-      {updateStatus?.state === 'error' && <span style={{ color: '#fca5a5' }}>Erro ao verificar atualização</span>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span>FABRIQ.IA v{version}</span>
+        {tenantName && <span>Licenciado para: <strong style={{ color: '#374151' }}>{tenantName}</strong></span>}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {updateStatus?.state === 'checking' && <span>Verificando atualização…</span>}
+        {updateStatus?.state === 'downloading' && <span style={{ color: '#B45309' }}>Baixando atualização…</span>}
+        {updateStatus?.state === 'ready' && <span style={{ color: '#B45309' }}>Instalando atualização…</span>}
+        <button onClick={() => window.fabriq.billing.openPortal()} style={{ padding: '2px 10px', fontSize: 11 }}>
+          Ativar licença
+        </button>
+      </div>
     </div>
   );
 }

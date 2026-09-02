@@ -13,7 +13,7 @@ export type LicenseCheckResult =
   | { ok: false };
 
 export interface UpdateStatus {
-  state: 'downloading' | 'ready' | 'error';
+  state: 'checking' | 'up-to-date' | 'downloading' | 'ready' | 'error';
   version?: string;
   message?: string;
 }
@@ -35,7 +35,11 @@ declare global {
       };
       update: {
         installNow: () => Promise<void>;
+        checkAndWait: () => Promise<{ hasUpdate: boolean }>;
         onStatus: (cb: (status: UpdateStatus) => void) => () => void;
+      };
+      billing: {
+        openPortal: () => Promise<void>;
       };
     };
   }

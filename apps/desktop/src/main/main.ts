@@ -1,9 +1,9 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { login, logout, getAuthState, checkLicense } from './auth';
-import { initUpdater, installUpdateNow } from './updater';
+import { initUpdater, installUpdateNow, checkForUpdatesOnce } from './updater';
 
 const isDev = !app.isPackaged;
 
@@ -70,4 +70,6 @@ ipcMain.handle('auth:logout', () => logout());
 ipcMain.handle('auth:getState', () => getAuthState());
 ipcMain.handle('auth:checkLicense', () => checkLicense());
 ipcMain.handle('update:installNow', () => installUpdateNow());
+ipcMain.handle('update:checkAndWait', () => (isDev ? Promise.resolve({ hasUpdate: false }) : checkForUpdatesOnce()));
 ipcMain.handle('app:getVersion', () => app.getVersion());
+ipcMain.handle('billing:openPortal', () => shell.openExternal('https://app.fabriq.pt/billing'));

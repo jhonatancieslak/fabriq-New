@@ -12,10 +12,14 @@ contextBridge.exposeInMainWorld('fabriq', {
   },
   update: {
     installNow: () => ipcRenderer.invoke('update:installNow'),
+    checkAndWait: () => ipcRenderer.invoke('update:checkAndWait'),
     onStatus: (cb: (status: { state: string; version?: string; message?: string }) => void) => {
       const listener = (_e: unknown, status: { state: string; version?: string; message?: string }) => cb(status);
       ipcRenderer.on('update:status', listener);
       return () => ipcRenderer.removeListener('update:status', listener);
     },
+  },
+  billing: {
+    openPortal: () => ipcRenderer.invoke('billing:openPortal'),
   },
 });

@@ -28,12 +28,15 @@ export default function LoginScreen({ onSuccess }: Props) {
   return (
     <div style={{
       height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#0f1115',
+      background: '#F3F4F6',
     }}>
       <form onSubmit={handleSubmit} style={{
-        width: 320, padding: 32, background: '#181b22', borderRadius: 8, border: '1px solid #262a33',
+        width: 320, padding: 32, background: '#FFFFFF', borderRadius: 10, border: '1px solid #E5E7EB',
+        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07)',
       }}>
-        <h2 style={{ margin: '0 0 24px', textAlign: 'center' }}>FABRIQ</h2>
+        <h2 style={{ margin: '0 0 24px', textAlign: 'center', color: '#111827' }}>
+          FABRIQ<span style={{ color: '#B45309' }}>.IA</span>
+        </h2>
 
         <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>E-mail</label>
         <input
@@ -54,7 +57,7 @@ export default function LoginScreen({ onSuccess }: Props) {
         />
 
         {error && (
-          <div style={{ color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>{error}</div>
+          <div style={{ color: '#B91C1C', fontSize: 13, marginBottom: 12 }}>{error}</div>
         )}
 
         <button type="submit" disabled={loading} style={{ width: '100%', padding: 10 }}>

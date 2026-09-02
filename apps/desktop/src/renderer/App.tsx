@@ -5,6 +5,7 @@ import { useFabriqStore } from './store';
 import { nest } from '../shared/nesting';
 import NestingCanvas from './NestingCanvas';
 import TopNav, { type Tab } from './TopNav';
+import ComingSoon from './ComingSoon';
 
 function bboxFromDxf(content: string): { w: number; h: number } | null {
   const parser = new DxfParser();
@@ -71,18 +72,20 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <TopNav active={tab} onChange={setTab} />
 
-      <div style={{ padding: '8px 16px', borderBottom: '1px solid #262a33', display: 'flex', gap: 12, alignItems: 'center' }}>
-        <span style={{ fontSize: 12, color: '#9ca3af' }}>
-          Chapa: {sheetW}×{sheetH}mm · gap {gap}mm · {pieces.length} peça(s)
-        </span>
-        <button onClick={handleOpenDxf}>Abrir DXF…</button>
-        <button onClick={handleCalcular} disabled={pieces.length === 0} style={{ marginLeft: 'auto' }}>
-          Calcular Nesting
-        </button>
-      </div>
+      {(tab === 'chapa' || tab === 'pecas' || tab === 'nesting') && (
+        <div style={{ padding: '8px 16px', borderBottom: '1px solid #E5E7EB', background: '#FFFFFF', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{ fontSize: 12, color: '#6B7280' }}>
+            Chapa: {sheetW}×{sheetH}mm · gap {gap}mm · {pieces.length} peça(s)
+          </span>
+          <button onClick={handleOpenDxf}>Abrir DXF…</button>
+          <button onClick={handleCalcular} disabled={pieces.length === 0} style={{ marginLeft: 'auto' }}>
+            Calcular Nesting
+          </button>
+        </div>
+      )}
 
       {error && (
-        <div style={{ padding: 8, background: '#3f1d1d', color: '#fca5a5', fontSize: 13 }}>{error}</div>
+        <div style={{ padding: 8, background: '#FEF2F2', color: '#B91C1C', fontSize: 13 }}>{error}</div>
       )}
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: tab === 'nesting' ? 0 : 16 }}>
@@ -126,22 +129,24 @@ export default function App() {
               {result ? (
                 <NestingCanvas result={result} sheetW={sheetW} sheetH={sheetH} />
               ) : (
-                <div style={{ padding: 40, color: '#6b7280' }}>
+                <div style={{ padding: 40, color: '#6B7280' }}>
                   Adicione peças e clique em "Calcular Nesting" para ver o layout.
                 </div>
               )}
             </main>
             {result && (
-              <aside style={{ width: 240, borderLeft: '1px solid #262a33', padding: 16, fontSize: 13, color: '#9ca3af' }}>
+              <aside style={{ width: 240, borderLeft: '1px solid #E5E7EB', background: '#FFFFFF', padding: 16, fontSize: 13, color: '#374151' }}>
                 <div>Chapas necessárias: {result.sheetsNeeded}</div>
                 <div>Aproveitamento: {result.utilizationPct}%</div>
                 {result.unplacedPieces > 0 && (
-                  <div style={{ color: '#fca5a5' }}>Não coube: {result.unplacedPieces}</div>
+                  <div style={{ color: '#B91C1C' }}>Não coube: {result.unplacedPieces}</div>
                 )}
               </aside>
             )}
           </div>
         )}
+
+        {tab !== 'chapa' && tab !== 'pecas' && tab !== 'nesting' && <ComingSoon tab={tab} />}
       </div>
     </div>
   );

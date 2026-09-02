@@ -17,13 +17,13 @@ export default function NestingCanvas({ result, sheetW, sheetH }: Props) {
     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', padding: 16, overflow: 'auto' }}>
       {Array.from({ length: sheetsCount }).map((_, sheetIdx) => (
         <div key={sheetIdx}>
-          <div style={{ fontSize: 12, marginBottom: 4, color: '#9ca3af' }}>
+          <div style={{ fontSize: 12, marginBottom: 4, color: '#6B7280' }}>
             Chapa {sheetIdx + 1}
           </div>
           <svg
             width={sheetW * scale}
             height={sheetH * scale}
-            style={{ background: '#1a1d24', border: '1px solid #333' }}
+            style={{ background: '#F9FAFB', border: '1px solid #D1D5DB' }}
           >
             {result.layout
               .filter((item) => item.sheet === sheetIdx)
@@ -36,14 +36,14 @@ export default function NestingCanvas({ result, sheetW, sheetH }: Props) {
                     height={item.h * scale}
                     fill={COLORS[i % COLORS.length]}
                     fillOpacity={0.7}
-                    stroke="#fff"
+                    stroke="#111827"
                     strokeWidth={0.5}
                   />
                   <text
                     x={item.x * scale + 4}
                     y={item.y * scale + 12}
                     fontSize={9}
-                    fill="#fff"
+                    fill="#111827"
                   >
                     {item.label}
                   </text>
