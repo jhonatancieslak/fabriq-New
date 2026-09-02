@@ -1,10 +1,59 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-09-02 (Sessão 34 — app desktop Windows: nesting/DXF, login+licença, auto-update, UI)
+**Última sessão:** 2026-09-02 (Sessão 34 — app desktop Windows: nesting/DXF, login+licença, auto-update, UI, tema claro)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-09-02, sessão 34 — continuação UI desktop)
+## ▶ RETOMAR AQUI (2026-09-02, sessão 34 — tema claro + update automático + release real)
+
+Feedback do utilizador comparando com concorrente iCutDev (prints reais analisados, baixados
+do Notion via S3): quer tema **claro** (nada de tela preta), ícones grandes, menu com várias
+abas estilo AutoCAD, update 100% automático antes do login, e corrigir o erro
+"erro ao verificar atualização".
+
+### O que foi feito
+- **Tema claro em todo `apps/desktop`**: `index.html`, `App.tsx`, `TopNav.tsx`, `Footer.tsx`,
+  `LoginScreen.tsx`, `LicenseGate.tsx`, `NestingCanvas.tsx` — fundo `#F3F4F6`/branco, texto
+  `#111827`/`#374151`, acento `#EAB308`/`#B45309` (mantém a marca, mas sobre claro).
+- **Menu ampliado** (`TopNav.tsx`): ícones 32px (eram 20px) + novas abas Orçamentos,
+  Clientes, Máquinas, Configurações (além de Chapa/Peças/Nesting) — ícones reais baixados
+  do Google Drive (pasta "Fabriq"). Abas novas sem função ainda mostram `ComingSoon.tsx`
+  ("Módulo em breve").
+- **Update automático forçado antes do login** (`LicenseGate.tsx` + `main/updater.ts` +
+  `main/main.ts`): app abre → chama `update:checkAndWait` (IPC novo) → se houver update,
+  fica na tela "Verificando/Baixando atualização…" e quando termina de baixar o
+  `main/updater.ts` chama `autoUpdater.quitAndInstall()` sozinho (sem botão) → reinicia
+  → só depois mostra login. Se não houver update ou a checagem falhar/expirar (timeout
+  10s), segue para login normalmente sem mostrar erro.
+- **Causa raiz do "erro ao verificar atualização"**: os instaladores entregues até agora
+  saíram de push normal para `main` (`pnpm dist:win:local`, `--publish never` — ver
+  `.github/workflows/desktop-build.yml`), que NUNCA cria uma GitHub Release. O
+  `electron-updater` (provider `github`, repo `fabriq-New`) só tem feed para comparar
+  quando existe uma Release real, publicada via tag `desktop-v*` (`pnpm dist:win`,
+  `--publish always`). Sem release nenhuma, todo `checkForUpdates()` falha — daí o erro.
+  Fix: versão do desktop passou para `0.2.0`; falta cortar a tag `desktop-v0.2.0` para
+  gerar a primeira Release real (ver Pendente).
+- **Rodapé** (`Footer.tsx`): versão + "Licenciado para: {tenant.name}" (via
+  `auth.getState()`, já existia) + botão "Ativar licença" → abre
+  `https://app.fabriq.pt/billing` no browser padrão (`shell.openExternal`, IPC
+  `billing:openPortal` novo em `main.ts`).
+- Build (`pnpm build`) verificado sem erros de tipo em renderer+main.
+
+### Pendente / próximo passo
+- **Cortar a tag `desktop-v0.2.0`** (`git tag desktop-v0.2.0 && git push origin desktop-v0.2.0`)
+  para o workflow publicar a primeira GitHub Release de verdade — só depois disso o
+  auto-update passa a funcionar em instalações já existentes (elas vão detectar essa
+  release e atualizar sozinhas). Builds futuros para o utilizador final devem sempre sair
+  por tag `desktop-v*`, não só push para `main` (push normal continua útil só para gerar
+  artifact de teste via Actions, sem publicar release).
+- Confirmar visualmente no Windows (não dá para screenshot automatizado daqui) se o layout
+  claro/ícones grandes/abas ficou como o utilizador imaginou antes de considerar fechado.
+- Usuário de teste no banco: `teste@fabriq.pt` / `Jcieslak@3202` (tenant Jhonatan, role
+  admin, is_active=true).
+
+---
+
+## Sessão 34 (dark theme, versão anterior — substituída pelo tema claro acima)
 
 Após instalador Windows funcionando, feedback do utilizador: tela "Configuração da chapa"
 abria sem estrutura (inputs/labels soltos, sem menu). Correções em `apps/desktop`:
