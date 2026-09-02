@@ -2,10 +2,12 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
+import { login, logout, getAuthState, checkLicense } from './auth';
+import { initUpdater, installUpdateNow } from './updater';
 
 const isDev = !app.isPackaged;
 
-function createWindow() {
+function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -26,10 +28,14 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
+
+  return win;
 }
 
 app.whenReady().then(() => {
-  createWindow();
+  const win = createWindow();
+  if (!isDev) initUpdater(win);
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
@@ -56,3 +62,11 @@ ipcMain.handle('file:openDxfDwg', async () => {
   const content = fs.readFileSync(filePath, 'utf-8');
   return { ok: true, fileName: path.basename(filePath), content };
 });
+
+ipcMain.handle('auth:login', (_e, { email, password }: { email: string; password: string }) =>
+  login(email, password),
+);
+ipcMain.handle('auth:logout', () => logout());
+ipcMain.handle('auth:getState', () => getAuthState());
+ipcMain.handle('auth:checkLicense', () => checkLicense());
+ipcMain.handle('update:installNow', () => installUpdateNow());

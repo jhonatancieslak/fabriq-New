@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { loginSchema, operatorLoginSchema, refreshSchema } from './auth.schema.js'
 import { loginUser, loginOperator, refreshAccessToken, revokeRefreshToken } from './auth.service.js'
 import { resolveTenant } from '../../shared/middleware/tenant.js'
+import { requireAuth } from '../../shared/middleware/auth.js'
 import { audit } from '../../shared/utils/audit.js'
 import { recordLoginAttempt, isIpBlocked } from '../../shared/utils/security.js'
 
@@ -95,5 +96,28 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       await revokeRefreshToken(app, body.refreshToken)
     }
     return reply.send({ ok: true })
+  })
+
+  // GET /api/v1/auth/session — sessão actual (utilizador, tenant, estado do plano), sem gate de role
+  // (GET /billing exige admin/financial — esta rota serve qualquer utilizador autenticado, ex: app desktop)
+  app.get('/session', { preHandler: [requireAuth] }, async (req, reply) => {
+    const tenant = await app.prisma.tenant.findUnique({
+      where: { id: req.tenantId! },
+      select: { id: true, slug: true, name: true, plan: true, trialEndsAt: true, planExpiresAt: true },
+    })
+    if (!tenant) return reply.status(404).send({ error: 'Tenant não encontrado' })
+
+    const now = new Date()
+    const isTrial = tenant.plan === 'trial'
+    const trialExpired = isTrial && tenant.trialEndsAt ? new Date(tenant.trialEndsAt) < now : false
+    const planExpired = tenant.planExpiresAt ? new Date(tenant.planExpiresAt) < now : false
+
+    return {
+      tenant: {
+        id: tenant.id, slug: tenant.slug, name: tenant.name,
+        plan: tenant.plan, planExpiresAt: tenant.planExpiresAt, planExpired,
+      },
+      trial: { isTrialPlan: isTrial, expiresAt: tenant.trialEndsAt, expired: trialExpired },
+    }
   })
 }

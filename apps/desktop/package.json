@@ -11,10 +11,12 @@
     "build:main": "tsc -p tsconfig.main.json",
     "build": "pnpm build:renderer && pnpm build:main",
     "dist": "pnpm build && electron-builder",
-    "dist:win": "pnpm build && electron-builder --win"
+    "dist:win": "pnpm build && electron-builder --win --publish always",
+    "dist:win:local": "pnpm build && electron-builder --win"
   },
   "dependencies": {
     "dxf-parser": "^1.1.2",
+    "electron-updater": "^6.3.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.3"
@@ -34,6 +36,12 @@
     "productName": "FABRIQ",
     "directories": { "output": "release" },
     "files": ["dist/**/*"],
+    "publish": {
+      "provider": "github",
+      "owner": "jhonatancieslak",
+      "repo": "fabriq-New",
+      "releaseType": "release"
+    },
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"
