@@ -1,10 +1,42 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-09-02 (Sessão 34 — app desktop Windows: nesting/DXF, login+licença, auto-update)
+**Última sessão:** 2026-09-02 (Sessão 34 — app desktop Windows: nesting/DXF, login+licença, auto-update, UI)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-09-02, sessão 34)
+## ▶ RETOMAR AQUI (2026-09-02, sessão 34 — continuação UI desktop)
+
+Após instalador Windows funcionando, feedback do utilizador: tela "Configuração da chapa"
+abria sem estrutura (inputs/labels soltos, sem menu). Correções em `apps/desktop`:
+
+- `src/renderer/index.html`: reset CSS (inputs, botões, labels) — estilo antes era inline
+  cru sem alinhamento.
+- `src/renderer/TopNav.tsx` (novo): barra superior estilo sistema web (fundo `#07080A`,
+  destaque `#EAB308` — mesmas cores do sidebar/logo do `apps/web`), com ícones lucide-react
+  e abas (Chapa / Peças / Nesting).
+- `src/renderer/App.tsx`: conteúdo dividido nas 3 abas do TopNav em vez de tudo numa
+  coluna lateral única.
+- `build/icon.ico`: ícone da app regenerado (fundo `#07080A`, raio `#EAB308`) — a versão
+  anterior era placeholder copiado do scaffold Tauri.
+- Referência de padrão (prints do concorrente no Notion, página "iCutDev"): barra de
+  módulos no topo + abas horizontais abaixo por seção (ex.: Parâmetros da Máquina |
+  Materiais | Precificação | Config. Gerais) — confirma a estrutura ícones-topo +
+  abas-abaixo adotada.
+- Pasta Drive "Fabriq" tem só ícones clip-art avulsos (config-gerais.png, materiais.png,
+  etc., estilo azul/prata) — não achei favicon/logo oficial em vetor lá; ícone da app
+  ficou nas cores da marca (`#EAB308`/`#07080A`), não nesse clip-art azul.
+- Build (`pnpm build`) verificado sem erros; push feito, GitHub Actions gera novo instalador.
+
+### Pendente / próximo passo
+- Confirmar com utilizador se quer usar os ícones clip-art do Drive como iconografia dos
+  módulos (atualmente usa lucide-react) — cores desses cliparts não batem com a paleta
+  amarela da marca.
+- Usuário de teste criado no banco: `teste@fabriq.pt` / `Jcieslak@3202` (tenant Jhonatan,
+  role admin, is_active=true) para testes do instalador.
+
+---
+
+## Sessão 34 (original) — app desktop Windows: nesting/DXF, login+licença, auto-update
 
 Pedido do utilizador: concorrente iDeal CUT/iCutDev tem instalador Windows nativo (editor
 DWG/DXF, orçamentos, nesting, impressão). Objetivo: `apps/web` continua sendo a versão web,

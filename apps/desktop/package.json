@@ -17,6 +17,7 @@
   "dependencies": {
     "dxf-parser": "^1.1.2",
     "electron-updater": "^6.3.9",
+    "lucide-react": "^0.474.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.3"
@@ -34,8 +35,12 @@
   "build": {
     "appId": "pt.fabriq.desktop",
     "productName": "FABRIQ",
-    "directories": { "output": "release" },
-    "files": ["dist/**/*"],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*"
+    ],
     "publish": {
       "provider": "github",
       "owner": "jhonatancieslak",

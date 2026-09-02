@@ -105,6 +105,9 @@ importers:
       electron-updater:
         specifier: ^6.3.9
         version: 6.8.9
+      lucide-react:
+        specifier: ^0.474.0
+        version: 0.474.0(react@19.2.7)
       react:
         specifier: ^19.0.0
         version: 19.2.7

@@ -4,6 +4,7 @@ import DxfParser from 'dxf-parser';
 import { useFabriqStore } from './store';
 import { nest } from '../shared/nesting';
 import NestingCanvas from './NestingCanvas';
+import TopNav, { type Tab } from './TopNav';
 
 function bboxFromDxf(content: string): { w: number; h: number } | null {
   const parser = new DxfParser();
@@ -38,6 +39,7 @@ export default function App() {
     useFabriqStore();
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ label: '', w: 100, h: 100, qty: 1 });
+  const [tab, setTab] = useState<Tab>('chapa');
 
   async function handleOpenDxf() {
     setError(null);
@@ -67,69 +69,79 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <header style={{ padding: '10px 16px', borderBottom: '1px solid #262a33', display: 'flex', gap: 12, alignItems: 'center' }}>
-        <strong>FABRIQ</strong>
-        <button onClick={handleOpenDxf}>Abrir DXF…</button>
+      <TopNav active={tab} onChange={setTab} />
+
+      <div style={{ padding: '8px 16px', borderBottom: '1px solid #262a33', display: 'flex', gap: 12, alignItems: 'center' }}>
         <span style={{ fontSize: 12, color: '#9ca3af' }}>
-          Chapa: {sheetW}×{sheetH}mm · gap {gap}mm
+          Chapa: {sheetW}×{sheetH}mm · gap {gap}mm · {pieces.length} peça(s)
         </span>
+        <button onClick={handleOpenDxf}>Abrir DXF…</button>
         <button onClick={handleCalcular} disabled={pieces.length === 0} style={{ marginLeft: 'auto' }}>
           Calcular Nesting
         </button>
-      </header>
+      </div>
 
       {error && (
         <div style={{ padding: 8, background: '#3f1d1d', color: '#fca5a5', fontSize: 13 }}>{error}</div>
       )}
 
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <aside style={{ width: 320, borderRight: '1px solid #262a33', padding: 16, overflow: 'auto' }}>
-          <h4>Configuração da chapa</h4>
-          <label>Largura (mm) <input type="number" value={sheetW} onChange={(e) => setSheet(Number(e.target.value), sheetH, gap)} /></label>
-          <label>Altura (mm) <input type="number" value={sheetH} onChange={(e) => setSheet(sheetW, Number(e.target.value), gap)} /></label>
-          <label>Gap (mm) <input type="number" value={gap} onChange={(e) => setSheet(sheetW, sheetH, Number(e.target.value))} /></label>
-
-          <h4 style={{ marginTop: 24 }}>Adicionar peça manual</h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <input type="text" placeholder="Nome" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input type="number" placeholder="Largura" value={form.w} onChange={(e) => setForm({ ...form, w: Number(e.target.value) })} />
-              <input type="number" placeholder="Altura" value={form.h} onChange={(e) => setForm({ ...form, h: Number(e.target.value) })} />
-              <input type="number" placeholder="Qtd" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
-            </div>
-            <button onClick={handleAddManual}>Adicionar peça</button>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: tab === 'nesting' ? 0 : 16 }}>
+        {tab === 'chapa' && (
+          <div style={{ maxWidth: 360 }}>
+            <h4>Configuração da chapa</h4>
+            <label>Largura (mm) <input type="number" value={sheetW} onChange={(e) => setSheet(Number(e.target.value), sheetH, gap)} /></label>
+            <label>Altura (mm) <input type="number" value={sheetH} onChange={(e) => setSheet(sheetW, Number(e.target.value), gap)} /></label>
+            <label>Gap (mm) <input type="number" value={gap} onChange={(e) => setSheet(sheetW, sheetH, Number(e.target.value))} /></label>
           </div>
+        )}
 
-          <h4 style={{ marginTop: 20 }}>Peças ({pieces.length})</h4>
-          <ul style={{ listStyle: 'none', padding: 0, fontSize: 13 }}>
-            {pieces.map((p) => (
-              <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-                <span>{p.label} — {p.w}×{p.h} ×{p.qty}</span>
-                <button onClick={() => removePiece(p.id)}>×</button>
-              </li>
-            ))}
-          </ul>
+        {tab === 'pecas' && (
+          <div style={{ maxWidth: 420 }}>
+            <h4>Adicionar peça manual</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input type="text" placeholder="Nome" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="number" placeholder="Largura" value={form.w} onChange={(e) => setForm({ ...form, w: Number(e.target.value) })} />
+                <input type="number" placeholder="Altura" value={form.h} onChange={(e) => setForm({ ...form, h: Number(e.target.value) })} />
+                <input type="number" placeholder="Qtd" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
+              </div>
+              <button onClick={handleAddManual}>Adicionar peça</button>
+            </div>
 
-          {result && (
-            <div style={{ marginTop: 20, fontSize: 13, color: '#9ca3af' }}>
-              <div>Chapas necessárias: {result.sheetsNeeded}</div>
-              <div>Aproveitamento: {result.utilizationPct}%</div>
-              {result.unplacedPieces > 0 && (
-                <div style={{ color: '#fca5a5' }}>Não coube: {result.unplacedPieces}</div>
+            <h4 style={{ marginTop: 24 }}>Peças ({pieces.length})</h4>
+            <ul style={{ listStyle: 'none', padding: 0, fontSize: 13 }}>
+              {pieces.map((p) => (
+                <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <span>{p.label} — {p.w}×{p.h} ×{p.qty}</span>
+                  <button onClick={() => removePiece(p.id)}>×</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {tab === 'nesting' && (
+          <div style={{ display: 'flex', height: '100%' }}>
+            <main style={{ flex: 1, minHeight: 0 }}>
+              {result ? (
+                <NestingCanvas result={result} sheetW={sheetW} sheetH={sheetH} />
+              ) : (
+                <div style={{ padding: 40, color: '#6b7280' }}>
+                  Adicione peças e clique em "Calcular Nesting" para ver o layout.
+                </div>
               )}
-            </div>
-          )}
-        </aside>
-
-        <main style={{ flex: 1, minHeight: 0 }}>
-          {result ? (
-            <NestingCanvas result={result} sheetW={sheetW} sheetH={sheetH} />
-          ) : (
-            <div style={{ padding: 40, color: '#6b7280' }}>
-              Adicione peças e clique em "Calcular Nesting" para ver o layout.
-            </div>
-          )}
-        </main>
+            </main>
+            {result && (
+              <aside style={{ width: 240, borderLeft: '1px solid #262a33', padding: 16, fontSize: 13, color: '#9ca3af' }}>
+                <div>Chapas necessárias: {result.sheetsNeeded}</div>
+                <div>Aproveitamento: {result.utilizationPct}%</div>
+                {result.unplacedPieces > 0 && (
+                  <div style={{ color: '#fca5a5' }}>Não coube: {result.unplacedPieces}</div>
+                )}
+              </aside>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
