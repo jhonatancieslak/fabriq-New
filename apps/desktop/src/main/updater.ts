@@ -4,7 +4,7 @@ import type { BrowserWindow } from 'electron';
 
 let win: BrowserWindow | null = null;
 
-function send(status: { state: string; version?: string; message?: string }): void {
+function send(status: { state: string; version?: string; message?: string; percent?: number }): void {
   win?.webContents.send('update:status', status);
 }
 
@@ -15,9 +15,12 @@ export function initUpdater(mainWindow: BrowserWindow): void {
 
   autoUpdater.on('checking-for-update', () => send({ state: 'checking' }));
   autoUpdater.on('update-not-available', () => send({ state: 'up-to-date' }));
-  autoUpdater.on('update-available', (info) => send({ state: 'downloading', version: info.version }));
+  autoUpdater.on('update-available', (info) => send({ state: 'found', version: info.version }));
+  autoUpdater.on('download-progress', (progress) => {
+    send({ state: 'downloading', percent: Math.round(progress.percent) });
+  });
   autoUpdater.on('update-downloaded', (info) => {
-    send({ state: 'ready', version: info.version });
+    send({ state: 'ready', version: info.version, percent: 100 });
     autoUpdater.quitAndInstall();
   });
   autoUpdater.on('error', (err) => send({ state: 'error', message: err.message }));

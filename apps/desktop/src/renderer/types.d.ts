@@ -21,9 +21,10 @@ export type LicenseCheckResult =
   | { ok: false };
 
 export interface UpdateStatus {
-  state: 'checking' | 'up-to-date' | 'downloading' | 'ready' | 'error';
+  state: 'checking' | 'up-to-date' | 'found' | 'downloading' | 'ready' | 'error';
   version?: string;
   message?: string;
+  percent?: number;
 }
 
 declare global {

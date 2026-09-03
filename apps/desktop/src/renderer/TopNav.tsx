@@ -1,6 +1,5 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
 import { Factory } from 'lucide-react';
-import fabriqMark from './assets/icons/fabriq-mark.svg';
 import iconOrcamentos from './assets/icons/orcamentos.png';
 import iconHistorico from './assets/icons/historico.png';
 import iconClientes from './assets/icons/clientes.png';
@@ -27,8 +26,6 @@ export default function TopNav({ active, onChange }: { active: Tab; onChange: (t
         paddingTop: 14, gap: 6,
       }}
     >
-      <img src={fabriqMark} alt="" width={32} height={32} style={{ borderRadius: 8, marginBottom: 12 }} />
-
       {tabs.map((t) => {
         const isActive = t.id === active;
         return (

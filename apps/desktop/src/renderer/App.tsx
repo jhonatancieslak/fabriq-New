@@ -38,13 +38,6 @@ function bboxFromDxf(content: string): { w: number; h: number } | null {
   return { w: Math.round(maxX - minX), h: Math.round(maxY - minY) };
 }
 
-export type OrcamentoSub = 'chapa' | 'pecas' | 'nesting';
-const ORCAMENTO_SUBTABS: { id: OrcamentoSub; label: string }[] = [
-  { id: 'chapa', label: 'Chapa' },
-  { id: 'pecas', label: 'Peças' },
-  { id: 'nesting', label: 'Nesting' },
-];
-
 type ParametroSub = 'maquina' | 'materiais' | 'taxas' | 'precificacao' | 'config';
 const PARAMETRO_SUBTABS: { id: ParametroSub; label: string }[] = [
   { id: 'maquina', label: 'Máquina' },
@@ -60,7 +53,6 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ label: '', w: 100, h: 100, qty: 1 });
   const [tab, setTab] = useState<Tab>('orcamentos');
-  const [orcamentoSub, setOrcamentoSub] = useState<OrcamentoSub>('chapa');
   const [parametroSub, setParametroSub] = useState<ParametroSub>('maquina');
   const [budgetDocs, setBudgetDocs] = useState<BudgetDoc[]>([{ id: 'b1', label: 'Novo Orçamento 1' }]);
   const [activeBudgetId, setActiveBudgetId] = useState('b1');
@@ -114,18 +106,12 @@ export default function App() {
       case 'importarDxf':
         handleOpenDxf();
         break;
-      case 'materiaPrima':
-        setOrcamentoSub('chapa');
-        break;
-      case 'desenharPeca':
       case 'itemLaser':
-      case 'agrupar':
-        setOrcamentoSub('pecas');
-        break;
-      case 'nesting':
-        setOrcamentoSub('nesting');
-        break;
+      case 'materiaPrima':
       case 'processo':
+      case 'desenharPeca':
+      case 'agrupar':
+      case 'nesting':
       case 'bancoDados':
       case 'filtros':
       case 'selecionarCliente':
@@ -140,61 +126,61 @@ export default function App() {
 
       {tab === 'orcamentos' && (
         <>
+          <BudgetTabsBar
+            docs={budgetDocs}
+            activeId={activeBudgetId}
+            onSelect={setActiveBudgetId}
+            onAdd={handleAddBudget}
+            onClose={handleCloseBudget}
+          />
           <OrcamentosToolbar onAction={handleToolbarAction} />
-          <SubNav items={ORCAMENTO_SUBTABS} active={orcamentoSub} onChange={setOrcamentoSub} />
-
-          <div style={{ padding: '8px 16px', borderBottom: '1px solid #E5E7EB', background: '#FFFFFF', display: 'flex', gap: 12, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: '#6B7280' }}>
-              Chapa: {sheetW}×{sheetH}mm · gap {gap}mm · {pieces.length} peça(s)
-            </span>
-            <button onClick={handleOpenDxf}>Abrir DXF…</button>
-            <button onClick={handleCalcular} disabled={pieces.length === 0} style={{ marginLeft: 'auto' }}>
-              Calcular Nesting
-            </button>
-          </div>
 
           {error && (
             <div style={{ padding: 8, background: '#FEF2F2', color: '#B91C1C', fontSize: 13 }}>{error}</div>
           )}
 
-          <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: orcamentoSub === 'nesting' ? 0 : 16 }}>
-            {orcamentoSub === 'chapa' && (
-              <div style={{ maxWidth: 360 }}>
-                <h4>Configuração da chapa</h4>
-                <label>Largura (mm) <input type="number" value={sheetW} onChange={(e) => setSheet(Number(e.target.value), sheetH, gap)} /></label>
-                <label>Altura (mm) <input type="number" value={sheetH} onChange={(e) => setSheet(sheetW, Number(e.target.value), gap)} /></label>
-                <label>Gap (mm) <input type="number" value={gap} onChange={(e) => setSheet(sheetW, sheetH, Number(e.target.value))} /></label>
-              </div>
-            )}
+          <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+            <aside style={{ width: 300, flexShrink: 0, borderRight: '1px solid #E5E7EB', background: '#FFFFFF', padding: 16, overflow: 'auto' }}>
+              <h4>Chapa</h4>
+              <label>Largura (mm) <input type="number" value={sheetW} onChange={(e) => setSheet(Number(e.target.value), sheetH, gap)} /></label>
+              <label>Altura (mm) <input type="number" value={sheetH} onChange={(e) => setSheet(sheetW, Number(e.target.value), gap)} /></label>
+              <label>Gap (mm) <input type="number" value={gap} onChange={(e) => setSheet(sheetW, sheetH, Number(e.target.value))} /></label>
 
-            {orcamentoSub === 'pecas' && (
-              <div style={{ maxWidth: 420 }}>
-                <h4>Adicionar peça manual</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <input type="text" placeholder="Nome" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input type="number" placeholder="Largura" value={form.w} onChange={(e) => setForm({ ...form, w: Number(e.target.value) })} />
-                    <input type="number" placeholder="Altura" value={form.h} onChange={(e) => setForm({ ...form, h: Number(e.target.value) })} />
-                    <input type="number" placeholder="Qtd" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
-                  </div>
-                  <button onClick={handleAddManual}>Adicionar peça</button>
+              <h4 style={{ marginTop: 20 }}>Peça manual</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input type="text" placeholder="Nome" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input type="number" placeholder="Largura" value={form.w} onChange={(e) => setForm({ ...form, w: Number(e.target.value) })} />
+                  <input type="number" placeholder="Altura" value={form.h} onChange={(e) => setForm({ ...form, h: Number(e.target.value) })} />
+                  <input type="number" placeholder="Qtd" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} />
                 </div>
-
-                <h4 style={{ marginTop: 24 }}>Peças ({pieces.length})</h4>
-                <ul style={{ listStyle: 'none', padding: 0, fontSize: 13 }}>
-                  {pieces.map((p) => (
-                    <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-                      <span>{p.label} — {p.w}×{p.h} ×{p.qty}</span>
-                      <button onClick={() => removePiece(p.id)}>×</button>
-                    </li>
-                  ))}
-                </ul>
+                <button onClick={handleAddManual}>Adicionar peça</button>
+                <button onClick={handleOpenDxf}>Importar DXF…</button>
               </div>
-            )}
 
-            {orcamentoSub === 'nesting' && (
-              <div style={{ display: 'flex', height: '100%' }}>
-                <main style={{ flex: 1, minHeight: 0 }}>
+              <h4 style={{ marginTop: 20 }}>Peças ({pieces.length})</h4>
+              <ul style={{ listStyle: 'none', padding: 0, fontSize: 13 }}>
+                {pieces.map((p) => (
+                  <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                    <span>{p.label} — {p.w}×{p.h} ×{p.qty}</span>
+                    <button onClick={() => removePiece(p.id)}>×</button>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+
+            <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '8px 16px', borderBottom: '1px solid #E5E7EB', background: '#FFFFFF', display: 'flex', gap: 12, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#6B7280' }}>
+                  Chapa: {sheetW}×{sheetH}mm · gap {gap}mm · {pieces.length} peça(s)
+                </span>
+                <button onClick={handleCalcular} disabled={pieces.length === 0} style={{ marginLeft: 'auto' }}>
+                  Calcular Nesting
+                </button>
+              </div>
+
+              <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+                <div style={{ flex: 1, minHeight: 0 }}>
                   {result ? (
                     <NestingCanvas result={result} sheetW={sheetW} sheetH={sheetH} />
                   ) : (
@@ -202,7 +188,7 @@ export default function App() {
                       Adicione peças e clique em "Calcular Nesting" para ver o layout.
                     </div>
                   )}
-                </main>
+                </div>
                 {result && (
                   <aside style={{ width: 240, borderLeft: '1px solid #E5E7EB', background: '#FFFFFF', padding: 16, fontSize: 13, color: '#374151' }}>
                     <div>Chapas necessárias: {result.sheetsNeeded}</div>
@@ -213,16 +199,8 @@ export default function App() {
                   </aside>
                 )}
               </div>
-            )}
+            </main>
           </div>
-
-          <BudgetTabsBar
-            docs={budgetDocs}
-            activeId={activeBudgetId}
-            onSelect={setActiveBudgetId}
-            onAdd={handleAddBudget}
-            onClose={handleCloseBudget}
-          />
         </>
       )}
 
