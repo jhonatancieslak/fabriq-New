@@ -1,10 +1,38 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-09-02 (Sessão 34 — app desktop Windows: nesting/DXF, login+licença, auto-update, UI, tema claro, menu iCutDev)
+**Última sessão:** 2026-09-03 (Sessão 35 — desktop: titlebar frameless, licença em modal, sidebar navy, marca real)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-09-02, sessão 34 — menu reestruturado igual ao iCutDev)
+## ▶ RETOMAR AQUI (2026-09-03, sessão 35 — titlebar + sidebar + marca real)
+
+- Janela agora frameless (`frame:false`), titlebar própria escura com logo (`fabriq-mark.svg`, copiado
+  do `favicon.svg` do web) + botões minimizar/maximizar/fechar via IPC novo (`window:minimize`,
+  `window:maximizeToggle`, `window:close`, `window:isMaximized`, evento `window:maximized`)
+- Banner abaixo do titlebar (`TrialBanner.tsx`) mostra dias de trial ou plano ativo, botão abre
+  `LicenseModal.tsx` (serial, plano, validade, "Gerir assinatura" abre billing portal, "Contactar suporte")
+- `GET /auth/session` agora devolve `tenant.serial` (derivado do id do tenant, único por empresa —
+  ainda não é um número de série "de verdade" gerado/gerido, é placeholder determinístico)
+- Menu virou sidebar vertical navy (`#0B1220`) à esquerda com os ícones de marca já existentes
+  (baixados do Drive em sessão anterior) — `App.tsx` mudou de `flex-column` pra `flex-row` (sidebar + conteúdo)
+- Nova aba **Produção** entre Ordens e Histórico (ainda `ComingSoon`, sem ícone de marca — usa
+  ícone genérico `Factory` do lucide até ter asset próprio no Drive)
+- Cores corrigidas pra marca real: navy `#1E3A8A` + amber `#EAB308` (tinha colocado azul/roxo
+  chutado a partir do iCutDev por engano — usuário corrigiu: ícones e logo são os nossos, já
+  têm manual de marca)
+- Footer: removido botão "Ativar licença" (função migrou pro banner/modal)
+- Build local (`npm run build`, `tsc --noEmit` api+desktop) e GH Actions `desktop-build.yml`
+  (run 33727646999) passaram — instalador Windows gerado como artifact, não publicado como release
+- Push feito em `main` (commit `31434bd`)
+
+**Próximo passo:** ícone de marca próprio pra aba Produção (falta no Drive); revisar toolbar de
+ícones da aba Orçamentos (limpar dados, importar DXF etc) — não achei essa tela específica no
+Notion do iCutDev, só via outras sub-telas; rodapé calculadora (IVA/m²/minutos/salvar) da aba
+Orçamentos ainda não implementado.
+
+---
+
+## Sessão anterior (2026-09-02, sessão 34 — menu reestruturado igual ao iCutDev)
 
 Utilizador mandou o link do Notion "icut dev app" (print completo do app deles, incluindo
 sub-telas) e pediu pra bater 1:1 a estrutura de abas. Estrutura real do iCutDev (extraída do
