@@ -1,56 +1,59 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
-import { Zap } from 'lucide-react';
+import { Factory } from 'lucide-react';
+import fabriqMark from './assets/icons/fabriq-mark.svg';
 import iconOrcamentos from './assets/icons/orcamentos.png';
 import iconHistorico from './assets/icons/historico.png';
 import iconClientes from './assets/icons/clientes.png';
 import iconOrdens from './assets/icons/ordens.png';
 import iconParametros from './assets/icons/parametros.png';
 
-export type Tab = 'orcamentos' | 'historico' | 'clientes' | 'ordens' | 'parametros';
+export type Tab = 'orcamentos' | 'ordens' | 'producao' | 'historico' | 'clientes' | 'parametros';
 
-const tabs: { id: Tab; label: string; icon: string }[] = [
+const tabs: { id: Tab; label: string; icon: string | null }[] = [
   { id: 'orcamentos', label: 'Orçamentos', icon: iconOrcamentos },
+  { id: 'ordens', label: 'Ordens', icon: iconOrdens },
+  { id: 'producao', label: 'Produção', icon: null },
   { id: 'historico', label: 'Histórico', icon: iconHistorico },
   { id: 'clientes', label: 'Clientes', icon: iconClientes },
-  { id: 'ordens', label: 'Ordens', icon: iconOrdens },
   { id: 'parametros', label: 'Parâmetros', icon: iconParametros },
 ];
 
 export default function TopNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   return (
-    <div style={{ background: '#FFFFFF', borderBottom: '1px solid #E5E7EB', flexShrink: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 16px', height: 64 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: '#EAB308', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap size={17} strokeWidth={2.5} color="#111827" />
-          </div>
-          <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: '-0.02em', color: '#111827', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-            FABRIQ<span style={{ color: '#B45309' }}>.IA</span>
-          </span>
-        </div>
+    <div
+      style={{
+        width: 68, flexShrink: 0, height: '100%', background: '#0B1220',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        paddingTop: 14, gap: 6,
+      }}
+    >
+      <img src={fabriqMark} alt="" width={32} height={32} style={{ borderRadius: 8, marginBottom: 12 }} />
 
-        <nav style={{ display: 'flex', gap: 4, overflowX: 'auto' }}>
-          {tabs.map((t) => {
-            const isActive = t.id === active;
-            return (
-              <button
-                key={t.id}
-                onClick={() => onChange(t.id)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                  padding: '6px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                  fontSize: 11.5, fontWeight: 500, whiteSpace: 'nowrap',
-                  background: isActive ? '#FEF3C7' : 'transparent',
-                  color: isActive ? '#B45309' : '#6B7280',
-                }}
-              >
-                <img src={t.icon} alt="" width={32} height={32} style={{ filter: isActive ? 'none' : 'grayscale(0.25) opacity(0.85)' }} />
-                {t.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+      {tabs.map((t) => {
+        const isActive = t.id === active;
+        return (
+          <button
+            key={t.id}
+            onClick={() => onChange(t.id)}
+            title={t.label}
+            style={{
+              width: 56, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              padding: '8px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+              fontSize: 9.5, fontWeight: 500, whiteSpace: 'nowrap', lineHeight: 1.2, textAlign: 'center',
+              background: isActive ? 'rgba(234,179,8,0.18)' : 'transparent',
+              color: isActive ? '#EAB308' : '#8B96AB',
+              opacity: isActive ? 1 : 0.85,
+            }}
+          >
+            {t.icon ? (
+              <img src={t.icon} alt="" width={24} height={24} />
+            ) : (
+              <Factory size={24} strokeWidth={1.8} color={isActive ? '#EAB308' : '#8B96AB'} />
+            )}
+            {t.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

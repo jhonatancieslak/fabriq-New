@@ -88,8 +88,9 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', height: '100%' }}>
       <TopNav active={tab} onChange={setTab} />
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
 
       {tab === 'orcamentos' && (
         <>
@@ -170,6 +171,12 @@ export default function App() {
         </>
       )}
 
+      {tab === 'producao' && (
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ComingSoon label="Produção" />
+        </div>
+      )}
+
       {tab === 'historico' && (
         <div style={{ flex: 1, minHeight: 0 }}>
           <ComingSoon label="Histórico" />
@@ -196,6 +203,7 @@ export default function App() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -116,6 +116,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       tenant: {
         id: tenant.id, slug: tenant.slug, name: tenant.name,
         plan: tenant.plan, planExpiresAt: tenant.planExpiresAt, planExpired,
+        serial: tenant.id.slice(0, 8).toUpperCase(),
       },
       trial: { isTrialPlan: isTrial, expiresAt: tenant.trialEndsAt, expired: trialExpired },
     }

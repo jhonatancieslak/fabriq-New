@@ -22,4 +22,15 @@ contextBridge.exposeInMainWorld('fabriq', {
   billing: {
     openPortal: () => ipcRenderer.invoke('billing:openPortal'),
   },
+  window: {
+    minimize: () => ipcRenderer.invoke('window:minimize'),
+    maximizeToggle: () => ipcRenderer.invoke('window:maximizeToggle'),
+    close: () => ipcRenderer.invoke('window:close'),
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
+    onMaximizedChange: (cb: (maximized: boolean) => void) => {
+      const listener = (_e: unknown, maximized: boolean) => cb(maximized);
+      ipcRenderer.on('window:maximized', listener);
+      return () => ipcRenderer.removeListener('window:maximized', listener);
+    },
+  },
 });

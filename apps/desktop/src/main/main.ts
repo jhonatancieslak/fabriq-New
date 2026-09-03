@@ -15,6 +15,7 @@ function createWindow(): BrowserWindow {
     minHeight: 700,
     title: 'FABRIQ',
     autoHideMenuBar: true,
+    frame: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -35,6 +36,14 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(() => {
   const win = createWindow();
   if (!isDev) initUpdater(win);
+
+  win.on('maximize', () => win.webContents.send('window:maximized', true));
+  win.on('unmaximize', () => win.webContents.send('window:maximized', false));
+
+  ipcMain.handle('window:minimize', () => win.minimize());
+  ipcMain.handle('window:maximizeToggle', () => (win.isMaximized() ? win.unmaximize() : win.maximize()));
+  ipcMain.handle('window:close', () => win.close());
+  ipcMain.handle('window:isMaximized', () => win.isMaximized());
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

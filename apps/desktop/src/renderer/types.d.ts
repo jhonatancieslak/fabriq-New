@@ -7,9 +7,17 @@ export interface AuthState {
   tenant: { id: string; slug: string; name: string } | null;
 }
 
+export interface LicenseInfo {
+  serial: string;
+  plan: string;
+  isTrial: boolean;
+  expiresAt: string | null;
+  daysLeft: number | null;
+}
+
 export type LicenseCheckResult =
-  | { ok: true; blocked: false }
-  | { ok: true; blocked: true; reason: string }
+  | { ok: true; blocked: false; info: LicenseInfo }
+  | { ok: true; blocked: true; reason: string; info: LicenseInfo | null }
   | { ok: false };
 
 export interface UpdateStatus {
@@ -40,6 +48,13 @@ declare global {
       };
       billing: {
         openPortal: () => Promise<void>;
+      };
+      window: {
+        minimize: () => Promise<void>;
+        maximizeToggle: () => Promise<void>;
+        close: () => Promise<void>;
+        isMaximized: () => Promise<boolean>;
+        onMaximizedChange: (cb: (maximized: boolean) => void) => () => void;
       };
     };
   }

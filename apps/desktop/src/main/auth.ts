@@ -10,9 +10,17 @@ export interface AuthState {
 }
 
 export type LicenseCheckResult =
-  | { ok: true; blocked: false }
-  | { ok: true; blocked: true; reason: string }
+  | { ok: true; blocked: false; info: LicenseInfo }
+  | { ok: true; blocked: true; reason: string; info: LicenseInfo | null }
   | { ok: false };
+
+export interface LicenseInfo {
+  serial: string;
+  plan: string;
+  isTrial: boolean;
+  expiresAt: string | null;
+  daysLeft: number | null;
+}
 
 let accessToken: string | null = null;
 let currentUser: AuthState['user'] = null;
@@ -167,18 +175,30 @@ export async function checkLicense(): Promise<LicenseCheckResult> {
     const res = await authorizedFetch('/auth/session');
     if (!res.ok) return { ok: false };
     const data: {
-      tenant: { planExpired: boolean };
-      trial: { isTrialPlan: boolean; expired: boolean };
+      tenant: { planExpired: boolean; plan: string; serial: string };
+      trial: { isTrialPlan: boolean; expiresAt: string | null; expired: boolean };
     } = await res.json();
+
+    const expiresAt = data.trial.isTrialPlan ? data.trial.expiresAt : null;
+    const daysLeft = expiresAt
+      ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000))
+      : null;
+    const info: LicenseInfo = {
+      serial: data.tenant.serial,
+      plan: data.tenant.plan,
+      isTrial: data.trial.isTrialPlan,
+      expiresAt,
+      daysLeft,
+    };
 
     const trialActive = data.trial.isTrialPlan && !data.trial.expired;
     if (data.tenant.planExpired && !trialActive) {
-      return { ok: true, blocked: true, reason: 'Plano expirado. Contacte o financeiro para renovar.' };
+      return { ok: true, blocked: true, reason: 'Plano expirado. Contacte o financeiro para renovar.', info };
     }
     if (data.trial.isTrialPlan && data.trial.expired) {
-      return { ok: true, blocked: true, reason: 'Período de teste terminou. Faça upgrade para continuar.' };
+      return { ok: true, blocked: true, reason: 'Período de teste terminou. Faça upgrade para continuar.', info };
     }
-    return { ok: true, blocked: false };
+    return { ok: true, blocked: false, info };
   } catch {
     return { ok: false };
   }

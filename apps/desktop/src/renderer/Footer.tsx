@@ -24,9 +24,6 @@ export default function Footer({ updateStatus, tenantName }: { updateStatus: Upd
         {updateStatus?.state === 'checking' && <span>Verificando atualização…</span>}
         {updateStatus?.state === 'downloading' && <span style={{ color: '#B45309' }}>Baixando atualização…</span>}
         {updateStatus?.state === 'ready' && <span style={{ color: '#B45309' }}>Instalando atualização…</span>}
-        <button onClick={() => window.fabriq.billing.openPortal()} style={{ padding: '2px 10px', fontSize: 11 }}>
-          Ativar licença
-        </button>
       </div>
     </div>
   );

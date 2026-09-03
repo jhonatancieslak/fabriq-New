@@ -35,7 +35,7 @@ export default function LoginScreen({ onSuccess }: Props) {
         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07)',
       }}>
         <h2 style={{ margin: '0 0 24px', textAlign: 'center', color: '#111827' }}>
-          FABRIQ<span style={{ color: '#B45309' }}>.IA</span>
+          FABRIQ<span style={{ color: '#EAB308' }}>.IA</span>
         </h2>
 
         <label style={{ display: 'block', fontSize: 13, marginBottom: 4 }}>E-mail</label>
@@ -60,7 +60,14 @@ export default function LoginScreen({ onSuccess }: Props) {
           <div style={{ color: '#B91C1C', fontSize: 13, marginBottom: 12 }}>{error}</div>
         )}
 
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10 }}>
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: '100%', padding: 10, background: '#1E3A8A',
+            color: '#FFFFFF', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer',
+          }}
+        >
           {loading ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
