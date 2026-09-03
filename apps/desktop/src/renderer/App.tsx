@@ -7,6 +7,8 @@ import NestingCanvas from './NestingCanvas';
 import TopNav, { type Tab } from './TopNav';
 import SubNav from './SubNav';
 import ComingSoon from './ComingSoon';
+import OrcamentosToolbar, { type OrcamentoAction } from './OrcamentosToolbar';
+import BudgetTabsBar, { type BudgetDoc } from './BudgetTabsBar';
 
 function bboxFromDxf(content: string): { w: number; h: number } | null {
   const parser = new DxfParser();
@@ -36,7 +38,7 @@ function bboxFromDxf(content: string): { w: number; h: number } | null {
   return { w: Math.round(maxX - minX), h: Math.round(maxY - minY) };
 }
 
-type OrcamentoSub = 'chapa' | 'pecas' | 'nesting';
+export type OrcamentoSub = 'chapa' | 'pecas' | 'nesting';
 const ORCAMENTO_SUBTABS: { id: OrcamentoSub; label: string }[] = [
   { id: 'chapa', label: 'Chapa' },
   { id: 'pecas', label: 'Peças' },
@@ -60,6 +62,21 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('orcamentos');
   const [orcamentoSub, setOrcamentoSub] = useState<OrcamentoSub>('chapa');
   const [parametroSub, setParametroSub] = useState<ParametroSub>('maquina');
+  const [budgetDocs, setBudgetDocs] = useState<BudgetDoc[]>([{ id: 'b1', label: 'Novo Orçamento 1' }]);
+  const [activeBudgetId, setActiveBudgetId] = useState('b1');
+
+  function handleAddBudget() {
+    const n = budgetDocs.length + 1;
+    const id = `b${Date.now()}`;
+    setBudgetDocs([...budgetDocs, { id, label: `Novo Orçamento ${n}` }]);
+    setActiveBudgetId(id);
+  }
+
+  function handleCloseBudget(id: string) {
+    const remaining = budgetDocs.filter((d) => d.id !== id);
+    setBudgetDocs(remaining);
+    if (activeBudgetId === id) setActiveBudgetId(remaining[0].id);
+  }
 
   async function handleOpenDxf() {
     setError(null);
@@ -87,6 +104,35 @@ export default function App() {
     setResult(nest(pieces, sheetW, sheetH, gap));
   }
 
+  function handleToolbarAction(action: OrcamentoAction) {
+    switch (action) {
+      case 'limpar':
+        pieces.forEach((p) => removePiece(p.id));
+        setResult(null);
+        setError(null);
+        break;
+      case 'importarDxf':
+        handleOpenDxf();
+        break;
+      case 'materiaPrima':
+        setOrcamentoSub('chapa');
+        break;
+      case 'desenharPeca':
+      case 'itemLaser':
+      case 'agrupar':
+        setOrcamentoSub('pecas');
+        break;
+      case 'nesting':
+        setOrcamentoSub('nesting');
+        break;
+      case 'processo':
+      case 'bancoDados':
+      case 'filtros':
+      case 'selecionarCliente':
+        break;
+    }
+  }
+
   return (
     <div style={{ display: 'flex', height: '100%' }}>
       <TopNav active={tab} onChange={setTab} />
@@ -94,6 +140,7 @@ export default function App() {
 
       {tab === 'orcamentos' && (
         <>
+          <OrcamentosToolbar onAction={handleToolbarAction} />
           <SubNav items={ORCAMENTO_SUBTABS} active={orcamentoSub} onChange={setOrcamentoSub} />
 
           <div style={{ padding: '8px 16px', borderBottom: '1px solid #E5E7EB', background: '#FFFFFF', display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -168,6 +215,14 @@ export default function App() {
               </div>
             )}
           </div>
+
+          <BudgetTabsBar
+            docs={budgetDocs}
+            activeId={activeBudgetId}
+            onSelect={setActiveBudgetId}
+            onAdd={handleAddBudget}
+            onClose={handleCloseBudget}
+          />
         </>
       )}
 

@@ -4,9 +4,12 @@
   <head>
     <meta charset="UTF-8" />
     <title>FABRIQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
     <style>
       html, body, #root { height: 100%; margin: 0; }
-      body { font-family: system-ui, sans-serif; background: #F3F4F6; color: #111827; }
+      body { font-family: 'Inter', system-ui, sans-serif; background: #F3F4F6; color: #111827; }
       * { box-sizing: border-box; }
       button {
         background: #FFFFFF; color: #111827; border: 1px solid #D1D5DB;
@@ -24,6 +27,8 @@
       }
       label input { width: 110px; }
       h4 { margin: 0 0 10px; font-size: 13px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.03em; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .spin { animation: spin 0.9s linear infinite; }
     </style>
   </head>
   <body>
