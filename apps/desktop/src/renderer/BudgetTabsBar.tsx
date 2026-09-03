@@ -54,10 +54,11 @@ export default function BudgetTabsBar({
         title="Novo orçamento"
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24,
-          border: 'none', background: 'transparent', cursor: 'pointer', color: '#6B7280',
+          flexShrink: 0, borderRadius: 4, border: '1px solid #D1D5DB', background: '#FFFFFF',
+          cursor: 'pointer', color: '#1E40AF', padding: 0, marginLeft: 4,
         }}
       >
-        <Plus size={14} />
+        <Plus size={14} strokeWidth={2.5} />
       </button>
     </div>
   );
