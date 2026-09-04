@@ -60,6 +60,16 @@ IVA editáveis, subtotal+total recalculam ao digitar, botão Salvar persiste em 
 - Versão bump `0.3.4`, tag `desktop-v0.3.4` publicada — release real no GitHub com `latest.yml`
   (confirmado via `gh release view`), CI passou (`gh run watch`).
 
+**Bug real encontrado ao testar 0.3.3 -> 0.3.4**: modal de update dava erro 404/auth
+("double check your authentication token"). Causa raiz: repo `fabriq-New` é **privado** —
+`electron-updater` provider `github` em repo privado exige token embutido no app instalado pra
+ler `releases.atom`, o que nunca foi configurado (e não devia: token com acesso ao repo dentro
+do `.exe` é extraível por qualquer cliente, furo de segurança). Decisão com o utilizador, depois
+de checar que não há segredo commitado (só `.env.example` rastreado, `.gitignore` cobre os
+`.env` reais, sem padrão de chave/token hardcoded no histório): **tornar o repo público**
+(`gh repo edit --visibility public`). Feed `latest.yml` testado sem token, 200/302 normal do
+GitHub, funcional.
+
 **Próximo passo:** confirmar visualmente no Windows (versão 0.3.3 instalada) que o botão
 "Atualizar" abre o modal e completa o fluxo até reiniciar em 0.3.4. Depois: Matéria-Prima/
 Processo/Banco de Dados e persistência de orçamento de verdade (hoje só localStorage) dependem
