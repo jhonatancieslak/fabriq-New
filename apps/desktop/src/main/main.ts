@@ -2,7 +2,7 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
-import { login, logout, getAuthState, checkLicense } from './auth';
+import { login, logout, getAuthState, checkLicense, authorizedFetch } from './auth';
 import { initUpdater, installUpdateNow, checkForUpdatesOnce } from './updater';
 
 const isDev = !app.isPackaged;
@@ -82,3 +82,10 @@ ipcMain.handle('update:installNow', () => installUpdateNow());
 ipcMain.handle('update:checkAndWait', () => (isDev ? Promise.resolve({ hasUpdate: false }) : checkForUpdatesOnce()));
 ipcMain.handle('app:getVersion', () => app.getVersion());
 ipcMain.handle('billing:openPortal', () => shell.openExternal('https://app.fabriq.pt/billing'));
+
+ipcMain.handle('clients:list', async (_e, search?: string) => {
+  const res = await authorizedFetch(`/clients${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+  if (!res.ok) return { ok: false as const, error: `Falha ao buscar clientes (${res.status})` };
+  const clients = (await res.json()) as { id: string; name: string }[];
+  return { ok: true as const, clients };
+});

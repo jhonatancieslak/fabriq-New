@@ -1,10 +1,10 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
 import { useEffect, useState } from 'react';
-import { Minus, Square, Copy, X, RefreshCw, DownloadCloud } from 'lucide-react';
+import { Minus, Square, Copy, X, RefreshCw, DownloadCloud, LogOut } from 'lucide-react';
 import fabriqMark from './assets/icons/fabriq-mark.svg';
 import type { UpdateStatus } from './types';
 
-export default function TitleBar() {
+export default function TitleBar({ onLogout }: { onLogout?: () => void }) {
   const [maximized, setMaximized] = useState(false);
   const [checking, setChecking] = useState(false);
   const [upToDate, setUpToDate] = useState(false);
@@ -59,6 +59,11 @@ export default function TitleBar() {
         <TitleBtn onClick={handleCheckUpdates} title="Buscar atualizações">
           <RefreshCw size={13} className={checking ? 'spin' : ''} />
         </TitleBtn>
+        {onLogout && (
+          <TitleBtn onClick={onLogout} title="Sair">
+            <LogOut size={13} />
+          </TitleBtn>
+        )}
         <TitleBtn onClick={() => window.fabriq.window.minimize()}><Minus size={13} /></TitleBtn>
         <TitleBtn onClick={() => window.fabriq.window.maximizeToggle()}>
           {maximized ? <Copy size={11} /> : <Square size={11} />}

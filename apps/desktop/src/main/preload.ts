@@ -22,6 +22,9 @@ contextBridge.exposeInMainWorld('fabriq', {
   billing: {
     openPortal: () => ipcRenderer.invoke('billing:openPortal'),
   },
+  clients: {
+    list: (search?: string) => ipcRenderer.invoke('clients:list', search),
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximizeToggle: () => ipcRenderer.invoke('window:maximizeToggle'),

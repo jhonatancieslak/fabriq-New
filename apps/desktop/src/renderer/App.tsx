@@ -11,6 +11,7 @@ import OrcamentosToolbar, { type OrcamentoAction } from './OrcamentosToolbar';
 import BudgetTabsBar, { type BudgetDoc } from './BudgetTabsBar';
 import AddPieceModal from './AddPieceModal';
 import BudgetFooterCalc from './BudgetFooterCalc';
+import SelectClientModal from './SelectClientModal';
 
 function bboxFromDxf(content: string): { w: number; h: number } | null {
   const parser = new DxfParser();
@@ -60,7 +61,8 @@ export default function App() {
   const [pieceModal, setPieceModal] = useState<{ title: string } | null>(null);
   const [filtro, setFiltro] = useState('');
   const [filtroAberto, setFiltroAberto] = useState(false);
-  const [cliente, setCliente] = useState<string | null>(null);
+  const [cliente, setCliente] = useState<{ id: string; name: string } | null>(null);
+  const [clienteModalOpen, setClienteModalOpen] = useState(false);
   const [agrupado, setAgrupado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -122,11 +124,9 @@ export default function App() {
       case 'filtros':
         setFiltroAberto((v) => !v);
         break;
-      case 'selecionarCliente': {
-        const nome = window.prompt('Nome do cliente:', cliente ?? '');
-        if (nome !== null) setCliente(nome.trim() || null);
+      case 'selecionarCliente':
+        setClienteModalOpen(true);
         break;
-      }
       case 'materiaPrima':
       case 'processo':
       case 'bancoDados':
@@ -186,7 +186,7 @@ export default function App() {
               <span style={{ fontSize: 12, color: '#6B7280' }}>{pieces.length} peça(s)</span>
               {cliente && (
                 <span style={{ fontSize: 12, color: '#1E40AF', background: '#EFF6FF', padding: '2px 8px', borderRadius: 4 }}>
-                  Cliente: {cliente}
+                  Cliente: {cliente.name}
                 </span>
               )}
               {agrupado && (
@@ -309,6 +309,12 @@ export default function App() {
           title={pieceModal.title}
           onClose={() => setPieceModal(null)}
           onConfirm={(piece) => addPiece(piece)}
+        />
+      )}
+      {clienteModalOpen && (
+        <SelectClientModal
+          onClose={() => setClienteModalOpen(false)}
+          onSelect={setCliente}
         />
       )}
     </div>

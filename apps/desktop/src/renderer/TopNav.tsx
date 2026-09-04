@@ -1,17 +1,17 @@
 // Desenvolvimento: Jhonatan Cieslak | jhonatan.cieslak94@gmail.com | +351 935 834 214
-import { Factory } from 'lucide-react';
 import iconOrcamentos from './assets/icons/orcamentos.png';
 import iconHistorico from './assets/icons/historico.png';
 import iconClientes from './assets/icons/clientes.png';
 import iconOrdens from './assets/icons/ordens.png';
 import iconParametros from './assets/icons/parametros.png';
+import iconProducao from './assets/icons/producao.svg';
 
 export type Tab = 'orcamentos' | 'ordens' | 'producao' | 'historico' | 'clientes' | 'parametros';
 
-const tabs: { id: Tab; label: string; icon: string | null }[] = [
+const tabs: { id: Tab; label: string; icon: string }[] = [
   { id: 'orcamentos', label: 'Orçamentos', icon: iconOrcamentos },
   { id: 'ordens', label: 'Ordens', icon: iconOrdens },
-  { id: 'producao', label: 'Produção', icon: null },
+  { id: 'producao', label: 'Produção', icon: iconProducao },
   { id: 'historico', label: 'Histórico', icon: iconHistorico },
   { id: 'clientes', label: 'Clientes', icon: iconClientes },
   { id: 'parametros', label: 'Parâmetros', icon: iconParametros },
@@ -42,11 +42,7 @@ export default function TopNav({ active, onChange }: { active: Tab; onChange: (t
               opacity: isActive ? 1 : 0.85,
             }}
           >
-            {t.icon ? (
-              <img src={t.icon} alt="" width={24} height={24} />
-            ) : (
-              <Factory size={24} strokeWidth={1.8} color={isActive ? '#EAB308' : '#8B96AB'} />
-            )}
+            <img src={t.icon} alt="" width={24} height={24} />
             {t.label}
           </button>
         );

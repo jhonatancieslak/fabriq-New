@@ -50,6 +50,11 @@ declare global {
       billing: {
         openPortal: () => Promise<void>;
       };
+      clients: {
+        list: (search?: string) => Promise<
+          { ok: true; clients: { id: string; name: string }[] } | { ok: false; error: string }
+        >;
+      };
       window: {
         minimize: () => Promise<void>;
         maximizeToggle: () => Promise<void>;

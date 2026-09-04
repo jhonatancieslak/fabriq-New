@@ -98,7 +98,7 @@ export default function LicenseGate() {
 
   if (gate.phase === 'blocked') {
     return (
-      <Shell licenseInfo={licenseInfo} tenantName={tenantName}>
+      <Shell licenseInfo={licenseInfo} tenantName={tenantName} onLogout={handleLogout}>
         <div style={{
           height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           background: '#F3F4F6', color: '#111827', textAlign: 'center', gap: 16,
@@ -112,7 +112,7 @@ export default function LicenseGate() {
   }
 
   return (
-    <Shell licenseInfo={licenseInfo} tenantName={tenantName}>
+    <Shell licenseInfo={licenseInfo} tenantName={tenantName} onLogout={handleLogout}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ flex: 1, minHeight: 0 }}>
           <App />
@@ -127,15 +127,17 @@ function Shell({
   children,
   licenseInfo,
   tenantName,
+  onLogout,
 }: {
   children: React.ReactNode;
   licenseInfo: LicenseInfo | null;
   tenantName: string | null;
+  onLogout?: () => void;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <TitleBar />
+      <TitleBar onLogout={onLogout} />
       <TrialBanner info={licenseInfo} onOpenLicense={() => setModalOpen(true)} />
       <div style={{ flex: 1, minHeight: 0 }}>{children}</div>
       {modalOpen && (
