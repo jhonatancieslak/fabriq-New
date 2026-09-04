@@ -9,6 +9,7 @@ import SubNav from './SubNav';
 import ComingSoon from './ComingSoon';
 import OrcamentosToolbar, { type OrcamentoAction } from './OrcamentosToolbar';
 import BudgetTabsBar, { type BudgetDoc } from './BudgetTabsBar';
+import AddPieceModal from './AddPieceModal';
 
 function bboxFromDxf(content: string): { w: number; h: number } | null {
   const parser = new DxfParser();
@@ -55,6 +56,12 @@ export default function App() {
   const [parametroSub, setParametroSub] = useState<ParametroSub>('maquina');
   const [budgetDocs, setBudgetDocs] = useState<BudgetDoc[]>([{ id: 'b1', label: 'Novo Orçamento 1' }]);
   const [activeBudgetId, setActiveBudgetId] = useState('b1');
+  const [pieceModal, setPieceModal] = useState<{ title: string } | null>(null);
+  const [filtro, setFiltro] = useState('');
+  const [filtroAberto, setFiltroAberto] = useState(false);
+  const [cliente, setCliente] = useState<string | null>(null);
+  const [agrupado, setAgrupado] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   function handleAddBudget() {
     const n = budgetDocs.length + 1;
@@ -100,17 +107,54 @@ export default function App() {
         handleOpenDxf();
         break;
       case 'itemLaser':
+        setPieceModal({ title: 'Novo Item Laser' });
+        break;
+      case 'desenharPeca':
+        setPieceModal({ title: 'Desenhar Peça' });
+        break;
+      case 'agrupar':
+        setAgrupado((v) => !v);
+        break;
+      case 'nesting':
+        handleCalcular();
+        break;
+      case 'filtros':
+        setFiltroAberto((v) => !v);
+        break;
+      case 'selecionarCliente': {
+        const nome = window.prompt('Nome do cliente:', cliente ?? '');
+        if (nome !== null) setCliente(nome.trim() || null);
+        break;
+      }
       case 'materiaPrima':
       case 'processo':
-      case 'desenharPeca':
-      case 'agrupar':
-      case 'nesting':
       case 'bancoDados':
-      case 'filtros':
-      case 'selecionarCliente':
+        setAviso('Módulo ainda não implementado.');
+        setTimeout(() => setAviso(null), 2500);
         break;
     }
   }
+
+  const pecasExibidas = (() => {
+    let lista = filtro.trim()
+      ? pieces.filter((p) => p.label.toLowerCase().includes(filtro.trim().toLowerCase()))
+      : pieces;
+    if (agrupado) {
+      const grupos = new Map<string, { label: string; w: number; h: number; qty: number; ids: string[] }>();
+      for (const p of lista) {
+        const chave = `${p.w}x${p.h}`;
+        const existente = grupos.get(chave);
+        if (existente) {
+          existente.qty += p.qty;
+          existente.ids.push(p.id);
+        } else {
+          grupos.set(chave, { label: p.label, w: p.w, h: p.h, qty: p.qty, ids: [p.id] });
+        }
+      }
+      lista = Array.from(grupos.values()).map((g) => ({ id: g.ids.join('+'), label: g.label, w: g.w, h: g.h, qty: g.qty }));
+    }
+    return lista;
+  })();
 
   return (
     <div style={{ display: 'flex', height: '100%' }}>
@@ -131,15 +175,40 @@ export default function App() {
           {error && (
             <div style={{ padding: 8, background: '#FEF2F2', color: '#B91C1C', fontSize: 13 }}>{error}</div>
           )}
+          {aviso && (
+            <div style={{ padding: 8, background: '#FEF9C3', color: '#854D0E', fontSize: 13 }}>{aviso}</div>
+          )}
 
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '8px 16px', borderBottom: '1px solid #E5E7EB', background: '#FFFFFF', display: 'flex', gap: 12, alignItems: 'center' }}>
               <button onClick={handleOpenDxf}>Importar DXF…</button>
               <span style={{ fontSize: 12, color: '#6B7280' }}>{pieces.length} peça(s)</span>
+              {cliente && (
+                <span style={{ fontSize: 12, color: '#1E40AF', background: '#EFF6FF', padding: '2px 8px', borderRadius: 4 }}>
+                  Cliente: {cliente}
+                </span>
+              )}
+              {agrupado && (
+                <span style={{ fontSize: 12, color: '#065F46', background: '#ECFDF5', padding: '2px 8px', borderRadius: 4 }}>
+                  Agrupado
+                </span>
+              )}
               <button onClick={handleCalcular} disabled={pieces.length === 0} style={{ marginLeft: 'auto' }}>
                 Calcular Nesting
               </button>
             </div>
+
+            {filtroAberto && (
+              <div style={{ padding: '6px 16px', borderBottom: '1px solid #E5E7EB', background: '#FFFFFF' }}>
+                <input
+                  value={filtro}
+                  onChange={(e) => setFiltro(e.target.value)}
+                  placeholder="Filtrar peças por nome…"
+                  style={{ padding: '4px 8px', fontSize: 12.5, width: 260 }}
+                  autoFocus
+                />
+              </div>
+            )}
 
             {pieces.length > 0 && (
               <div style={{ padding: '8px 16px', borderBottom: '1px solid #E5E7EB', background: '#FFFFFF' }}>
@@ -154,14 +223,14 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pieces.map((p) => (
+                    {pecasExibidas.map((p) => (
                       <tr key={p.id}>
                         <td style={{ padding: '2px 8px 2px 0' }}>{p.label}</td>
                         <td style={{ padding: '2px 8px' }}>{p.w}mm</td>
                         <td style={{ padding: '2px 8px' }}>{p.h}mm</td>
                         <td style={{ padding: '2px 8px' }}>{p.qty}</td>
                         <td style={{ padding: '2px 8px' }}>
-                          <button onClick={() => removePiece(p.id)}>×</button>
+                          {!agrupado && <button onClick={() => removePiece(p.id)}>×</button>}
                         </td>
                       </tr>
                     ))}
@@ -228,6 +297,13 @@ export default function App() {
         </>
       )}
       </div>
+      {pieceModal && (
+        <AddPieceModal
+          title={pieceModal.title}
+          onClose={() => setPieceModal(null)}
+          onConfirm={(piece) => addPiece(piece)}
+        />
+      )}
     </div>
   );
 }
