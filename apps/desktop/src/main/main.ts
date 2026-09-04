@@ -3,7 +3,7 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { login, logout, getAuthState, checkLicense, authorizedFetch } from './auth';
-import { initUpdater, installUpdateNow, checkForUpdatesOnce } from './updater';
+import { initUpdater, installUpdateNow, checkForUpdatesOnce, checkForUpdatesManual, downloadUpdate } from './updater';
 
 const isDev = !app.isPackaged;
 
@@ -80,6 +80,8 @@ ipcMain.handle('auth:getState', () => getAuthState());
 ipcMain.handle('auth:checkLicense', () => checkLicense());
 ipcMain.handle('update:installNow', () => installUpdateNow());
 ipcMain.handle('update:checkAndWait', () => (isDev ? Promise.resolve({ hasUpdate: false }) : checkForUpdatesOnce()));
+ipcMain.handle('update:checkManual', () => checkForUpdatesManual());
+ipcMain.handle('update:downloadUpdate', () => downloadUpdate());
 ipcMain.handle('app:getVersion', () => app.getVersion());
 ipcMain.handle('billing:openPortal', () => shell.openExternal('https://app.fabriq.pt/billing'));
 

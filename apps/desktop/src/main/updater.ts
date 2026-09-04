@@ -10,7 +10,10 @@ function send(status: { state: string; version?: string; message?: string; perce
 
 export function initUpdater(mainWindow: BrowserWindow): void {
   win = mainWindow;
-  autoUpdater.autoDownload = true;
+  // Download não é mais automático: fluxo forçado do pré-login chama downloadUpdate()
+  // ele próprio; fluxo manual (botão "Atualizar" na titlebar) só baixa depois do
+  // utilizador confirmar no modal.
+  autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on('checking-for-update', () => send({ state: 'checking' }));
@@ -32,7 +35,9 @@ export function initUpdater(mainWindow: BrowserWindow): void {
 
 // Usado no arranque, antes do login: verifica update e resolve assim que souber
 // se há (para o renderer decidir se fica na tela de update ou segue para o login).
-// Nunca rejeita — falha de rede/feed é tratada como "sem update" para não travar o utilizador.
+// Encontrando update, baixa sozinho (fluxo forçado, sem confirmação do utilizador).
+// Falha real (rede/feed) é reportada via evento 'error' — quem escuta decide o que fazer;
+// aqui resolve hasUpdate:false só pra não travar o login.
 export function checkForUpdatesOnce(): Promise<{ hasUpdate: boolean }> {
   return new Promise((resolve) => {
     let done = false;
@@ -41,12 +46,26 @@ export function checkForUpdatesOnce(): Promise<{ hasUpdate: boolean }> {
       done = true;
       resolve({ hasUpdate });
     };
-    autoUpdater.once('update-available', () => finish(true));
+    autoUpdater.once('update-available', () => {
+      autoUpdater.downloadUpdate().catch(() => {});
+      finish(true);
+    });
     autoUpdater.once('update-not-available', () => finish(false));
     autoUpdater.once('error', () => finish(false));
     autoUpdater.checkForUpdates().catch(() => finish(false));
     setTimeout(() => finish(false), 10000);
   });
+}
+
+// Fluxo manual (botão "Atualizar" na titlebar): dispara a verificação e deixa os
+// eventos ('checking'/'found'/'up-to-date'/'error') fluírem pro modal via update:status.
+// Não baixa sozinho — espera confirmação via downloadUpdate().
+export function checkForUpdatesManual(): void {
+  autoUpdater.checkForUpdates().catch((err) => send({ state: 'error', message: err.message }));
+}
+
+export function downloadUpdate(): void {
+  autoUpdater.downloadUpdate().catch((err) => send({ state: 'error', message: err.message }));
 }
 
 export function installUpdateNow(): void {

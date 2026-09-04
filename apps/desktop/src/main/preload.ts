@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('fabriq', {
   update: {
     installNow: () => ipcRenderer.invoke('update:installNow'),
     checkAndWait: () => ipcRenderer.invoke('update:checkAndWait'),
+    checkManual: () => ipcRenderer.invoke('update:checkManual'),
+    downloadUpdate: () => ipcRenderer.invoke('update:downloadUpdate'),
     onStatus: (cb: (status: { state: string; version?: string; message?: string; percent?: number }) => void) => {
       const listener = (_e: unknown, status: { state: string; version?: string; message?: string; percent?: number }) => cb(status);
       ipcRenderer.on('update:status', listener);

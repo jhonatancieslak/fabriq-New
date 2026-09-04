@@ -45,6 +45,8 @@ declare global {
       update: {
         installNow: () => Promise<void>;
         checkAndWait: () => Promise<{ hasUpdate: boolean }>;
+        checkManual: () => Promise<void>;
+        downloadUpdate: () => Promise<void>;
         onStatus: (cb: (status: UpdateStatus) => void) => () => void;
       };
       billing: {
