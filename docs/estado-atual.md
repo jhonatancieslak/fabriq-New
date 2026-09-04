@@ -31,10 +31,15 @@ update. Confirmado via `git log`/`git show`, doc estava desatualizada.
   builda normal — não é regressão minha).
 - Commit `ffffa1c`, push feito.
 
-**Próximo passo:** Matéria-Prima/Processo/Banco de Dados/Seleção de Cliente real dependem de
-ligar o desktop à API de materiais/processos/clientes (hoje só auth/session e nesting local
-funcionam) — decidir se vale a pena antes ou depois do rodapé calculadora e do ícone da aba
-Produção (pendências da sessão 35 abaixo, ainda não feitas).
+**Rodapé calculadora feito também nesta sessão** (commit `fe817e3`): `BudgetFooterCalc.tsx` novo,
+abaixo do nesting na aba Orçamentos. Área (m²) real das peças, Tempo (min)/Preço-m²/Hora-Máquina/
+IVA editáveis, subtotal+total recalculam ao digitar, botão Salvar persiste em `localStorage`
+(`fabriq.orcamento.<id>.calc` — sem API de orçamentos no desktop ainda, não é backend real).
+
+**Próximo passo:** Matéria-Prima/Processo/Banco de Dados/Seleção de Cliente real e persistência
+de orçamento de verdade (hoje é só localStorage) dependem de ligar o desktop à API de materiais/
+processos/clientes/orçamentos (hoje só auth/session e nesting local funcionam). Falta também
+ícone de marca próprio pra aba Produção (pendência da sessão 35).
 
 ---
 
