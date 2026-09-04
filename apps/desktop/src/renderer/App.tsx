@@ -10,6 +10,7 @@ import ComingSoon from './ComingSoon';
 import OrcamentosToolbar, { type OrcamentoAction } from './OrcamentosToolbar';
 import BudgetTabsBar, { type BudgetDoc } from './BudgetTabsBar';
 import AddPieceModal from './AddPieceModal';
+import BudgetFooterCalc from './BudgetFooterCalc';
 
 function bboxFromDxf(content: string): { w: number; h: number } | null {
   const parser = new DxfParser();
@@ -261,6 +262,12 @@ export default function App() {
               )}
             </div>
           </div>
+
+          <BudgetFooterCalc
+            budgetId={activeBudgetId}
+            pieces={pieces}
+            onSave={() => {}}
+          />
         </>
       )}
 
