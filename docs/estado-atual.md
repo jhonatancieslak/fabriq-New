@@ -1,10 +1,44 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-09-03 (Sessão 35 — desktop: titlebar frameless, licença em modal, sidebar navy, marca real)
+**Última sessão:** 2026-09-04 (Sessão 36 — desktop: botões da toolbar Orçamentos ligados)
 
 ---
 
-## ▶ RETOMAR AQUI (2026-09-03, sessão 35 — titlebar + sidebar + marca real)
+## ▶ RETOMAR AQUI (2026-09-04, sessão 36 — toolbar Orçamentos funcional)
+
+Sessão 35 tinha deixado 3 commits não documentados (feitos na madrugada seguinte, mesma sessão de
+trabalho): `OrcamentosToolbar.tsx` com ícones reais (grupos Arquivo/Itens/Dados/Custos-Taxas/
+Clientes), `BudgetTabsBar.tsx` (tabs de orçamentos abertos abaixo da toolbar, botão + visível),
+tabela de peças direta após import DXF (sem tela separada de config de chapa), progress bar de
+update. Confirmado via `git log`/`git show`, doc estava desatualizada.
+
+**Feito nesta sessão:**
+- Todos os 9 botões da `OrcamentosToolbar` agora fazem algo (antes: `switch` com `break` vazio):
+  - **Item Laser / Desenhar Peça**: abrem `AddPieceModal.tsx` (novo) — form nome/largura/altura/qtd,
+    adiciona à lista de peças do orçamento (mesmo `addPiece` do store usado pelo import DXF).
+  - **Agrupar**: funde peças com mesmas dimensões (w×h) somando quantidade, toggle visual (badge
+    "Agrupado" no header, botão remover some nas linhas agrupadas — ambíguo remover 1 de um grupo).
+  - **Filtros**: abre campo de busca por nome acima da tabela de peças.
+  - **Selecionar Cliente**: `window.prompt` simples (sem tela de seleção de clientes cadastrados
+    ainda — API de clientes não está ligada no desktop), guarda nome, mostra badge no header.
+  - **Nesting**: dispara o `handleCalcular()` já existente (mesma função do botão separado).
+  - **Matéria-Prima / Processo / Banco de Dados**: sem dado real pra puxar ainda (desktop não
+    busca materiais/processos/clientes da API) — em vez de ficar mudo, mostra aviso amarelo
+    "Módulo ainda não implementado." por 2.5s.
+- `tsc --noEmit` e `npm run build` (`apps/desktop`) limpos — os 6 erros de módulo de ícone
+  (`TitleBar.tsx`/`TopNav.tsx` importando `.svg`/`.png`) são pré-existentes, confirmados via
+  `git stash` (tsc direto não reconhece os asset imports do Vite, mas `npm run build` via vite
+  builda normal — não é regressão minha).
+- Commit `ffffa1c`, push feito.
+
+**Próximo passo:** Matéria-Prima/Processo/Banco de Dados/Seleção de Cliente real dependem de
+ligar o desktop à API de materiais/processos/clientes (hoje só auth/session e nesting local
+funcionam) — decidir se vale a pena antes ou depois do rodapé calculadora e do ícone da aba
+Produção (pendências da sessão 35 abaixo, ainda não feitas).
+
+---
+
+## Sessão 35 (2026-09-03 — titlebar + sidebar + marca real)
 
 - Janela agora frameless (`frame:false`), titlebar própria escura com logo (`fabriq-mark.svg`, copiado
   do `favicon.svg` do web) + botões minimizar/maximizar/fechar via IPC novo (`window:minimize`,
