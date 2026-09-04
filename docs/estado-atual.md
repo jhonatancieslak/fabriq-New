@@ -36,10 +36,35 @@ abaixo do nesting na aba Orçamentos. Área (m²) real das peças, Tempo (min)/P
 IVA editáveis, subtotal+total recalculam ao digitar, botão Salvar persiste em `localStorage`
 (`fabriq.orcamento.<id>.calc` — sem API de orçamentos no desktop ainda, não é backend real).
 
-**Próximo passo:** Matéria-Prima/Processo/Banco de Dados/Seleção de Cliente real e persistência
-de orçamento de verdade (hoje é só localStorage) dependem de ligar o desktop à API de materiais/
-processos/clientes/orçamentos (hoje só auth/session e nesting local funcionam). Falta também
-ícone de marca próprio pra aba Produção (pendência da sessão 35).
+**Continuação mesma sessão (36):**
+- Botão **Sair** na titlebar (`LogOut`, ao lado do buscar-atualizações), visível só quando logado.
+- Ícone próprio pra aba **Produção** (`producao.svg`, cores da marca) — placeholder até ter asset
+  oficial do Drive.
+- **API de clientes ligada de verdade**: IPC `clients:list` (main -> `authorizedFetch GET
+  /clients`) + `SelectClientModal.tsx` — botão "Selecionar Cliente" da toolbar agora busca os
+  clientes reais da empresa (debounce), troca o `window.prompt` provisório.
+- **Bug real corrigido no update**: `checkForUpdatesOnce` tratava qualquer erro (feed quebrado,
+  sem rede) como "sem atualização" — por isso a titlebar sempre dizia "Já atualizado" mesmo
+  quando devia achar update ou reportar erro. Reescrito o fluxo: `autoDownload` desligado global,
+  fluxo forçado pré-login baixa sozinho ao achar (sem confirmação, comportamento mantido), fluxo
+  manual (botão da titlebar) abre `UpdateModal.tsx` novo — procurando → encontrou (confirmar
+  Sim/Não) → baixando (progresso real %) → pronto (reinicia) → ou "já atualizado"/erro com
+  mensagem de verdade em vez de silêncio.
+- **Avaliado e descartado**: link próprio de updates (`updates.fabriq.pt`, provider `generic` em
+  vez de GitHub Releases) — DNS já criado pelo utilizador e propagado, cheguei a criar usuário
+  `fabriqdeploy` + chave SSH restrita (rrsync, forced-command) + `AllowUsers` no sshd, mas
+  **revertido tudo** antes de terminar: VPS hospeda vários outros sistemas, mexer em
+  `AllowUsers`/política SSH do servidor inteiro pra um ganho só estético (URL com marca própria)
+  não compensa o risco. Decisão: manter GitHub Releases (já funciona, HTTPS+CDN, zero superfície
+  nova). Servidor confirmado limpo (usuário removido, sshd_config revertido ao original).
+- Versão bump `0.3.4`, tag `desktop-v0.3.4` publicada — release real no GitHub com `latest.yml`
+  (confirmado via `gh release view`), CI passou (`gh run watch`).
+
+**Próximo passo:** confirmar visualmente no Windows (versão 0.3.3 instalada) que o botão
+"Atualizar" abre o modal e completa o fluxo até reiniciar em 0.3.4. Depois: Matéria-Prima/
+Processo/Banco de Dados e persistência de orçamento de verdade (hoje só localStorage) dependem
+de ligar mais API (materiais/processos/orçamentos — só clientes está ligado). Ícone de marca
+oficial pra Produção ainda pendente (Drive).
 
 ---
 
