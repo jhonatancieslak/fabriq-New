@@ -3,6 +3,11 @@
 **Última sessão:** 2026-09-04 (Sessão 36 — desktop: botões da toolbar Orçamentos ligados)
 
 
+## 2026-09-21 — Stock de chapas + controlo de gás (Flask NestCut)
+3 QRs sem login/PWA: entrada de chapas, baixa de chapas (obra com nesting ou manual em mm), gás (receção + início/fim de uso com tempos). Admin: menu Stock > Chapas / Gás. Tabelas novas `rececoes_chapa`, `linhas_chapa`, `baixas_chapa`, `packs_gas`. `nestcut` reiniciado. Detalhes: `services/nesting/CHANGELOG.md`. Pendente: imprimir QRs em `/stock/chapas/qr` e `/stock/gas/qr`; testar no telemóvel.
+
+---
+
 ## 2026-09-21 — Mídias (Flask NestCut)
 Fotos de `/midias/` convertidas para WebP (1758MB → 93MB, originais em `fotos_originais_backup/`), uploads novos já saem WebP, cartões de ordem agrupados (sem repetir), div vazando no template corrigido. Detalhes: `services/nesting/CHANGELOG.md` [2026-09-21]. Pendente: decidir como versionar `services/nesting` (ignorado pelo git raiz).
 
