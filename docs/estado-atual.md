@@ -2,6 +2,10 @@
 
 **Última sessão:** 2026-09-04 (Sessão 36 — desktop: botões da toolbar Orçamentos ligados)
 
+
+## 2026-09-21 — Mídias (Flask NestCut)
+Fotos de `/midias/` convertidas para WebP (1758MB → 93MB, originais em `fotos_originais_backup/`), uploads novos já saem WebP, cartões de ordem agrupados (sem repetir), div vazando no template corrigido. Detalhes: `services/nesting/CHANGELOG.md` [2026-09-21]. Pendente: decidir como versionar `services/nesting` (ignorado pelo git raiz).
+
 ---
 
 ## ▶ RETOMAR AQUI (2026-09-04, sessão 36 — toolbar Orçamentos funcional)
