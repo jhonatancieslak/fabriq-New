@@ -1,6 +1,27 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-09-04 (Sessão 36 — desktop: botões da toolbar Orçamentos ligados)
+**Última sessão:** 2026-09-28 (Sessão 37 — 2 instâncias NestCut + landing de volta)
+
+
+## 2026-09-28 — Alta disponibilidade sistema.fabriq.pt + landing reposta
+
+**Feito (etapa 1 — PWA / 2 instâncias):**
+- NestCut passa a correr em 2 instâncias (`nestcut` + `nestcut-b`) atrás do upstream nginx `nestcut_app`; deploy com `services/nesting/scripts/deploy_rolling.sh` (0 erros em teste com tráfego contínuo e com queda de uma instância).
+- Service workers dos PWAs (operador e admin) tratam 502/503/504: repetem e mostram "Sistema a atualizar" com reload automático.
+- Doc completa: `docs/alta-disponibilidade-nestcut.md`.
+
+**Landing fabriq.pt estava em baixo (502):** o processo PM2 `fabriq-landing` (porta 3290,
+`/var/www/fabriq-landing/`) tinha desaparecido da lista PM2 (não tinha sido gravado com `pm2 save`).
+Reposto com `pm2 start npm --name fabriq-landing -- start` + `pm2 save`. Agora 200.
+
+**Auditoria da landing (por fazer — próxima etapa):**
+- Links partidos (404): `sistema.fabriq.pt/register`, `/contact` (CTAs principais, pricing, FinalCta) — o sistema.fabriq.pt agora é o Flask, que não tem estas rotas; `fabriq.pt/privacy`, `/terms`, `robots.txt`, `sitemap.xml`.
+- Conteúdo inventado: "47 empresas activas", testemunhos (Paulo Rodrigues/MetalPro etc.), barra de escassez "7 de 12 vagas", "garantia 30 dias" — risco legal (práticas comerciais enganosas) e de credibilidade; decidir com o utilizador o que substitui.
+- Sem analytics: criar propriedade GA4 (precisa da conta Google do utilizador → ID `G-XXXX`) + banner de consentimento (RGPD) + eventos nos CTAs.
+- Typo "Gerais ordens" (= "Gere as ordens"); hero usa imagem hotlinked do Unsplash; sem imagem OG; sem JSON-LD.
+- Pricing faz checkout Stripe via `api.fabriq.pt` (stack Next.js posta de lado) — rever.
+
+**Próximo passo:** (2) telas de gestão de nestings / agrupar ordens / ordens de corte profissionais com referência Nest&Cut; (3) landing — corrigir links, analytics GA4, conteúdo real.
 
 
 ## 2026-09-21 — Stock de chapas + controlo de gás (Flask NestCut)
