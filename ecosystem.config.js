@@ -17,7 +17,7 @@ module.exports = {
     {
       name: 'fabriq-web',
       script: '/var/www/fabriq/apps/web/node_modules/.bin/next',
-      args: 'start -p 3190',
+      args: 'start -p 3190 -H 127.0.0.1',
       cwd: '/var/www/fabriq/apps/web',
       interpreter: 'none',
       instances: 1,

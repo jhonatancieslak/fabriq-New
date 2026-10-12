@@ -168,3 +168,18 @@ Branches:
 - Toda documentação vai dentro de `/var/www/fabriq/docs/` — **nunca fora deste diretório**
 - Atualizar `docs/estado-atual.md` ao fim de cada sessão ou tarefa concluída
 - Formato do estado atual: data, o que foi feito, o que está em progresso, próximo passo
+---
+
+## Firewall e portas da VPS — OBRIGATÓRIO (desde 2026-10-12)
+
+A VPS (srv1428173 / 187.77.162.178) tem a **firewall da Hostinger ativa** (hPanel → VPS →
+Segurança → Firewall). Só entram de fora: **2244** (SSH), **80/443** (nginx), **25/465/587/
+993/995/110/143/4190** (mailcow). Tudo o resto é bloqueado antes de chegar à VPS.
+
+- Toda app nova escuta **só em `127.0.0.1`** e é publicada via **nginx**
+  (Next: `next start -p <porta> -H 127.0.0.1`; Node: `listen(PORT, '127.0.0.1')`;
+  gunicorn: `--bind 127.0.0.1:<porta>`; Docker: `-p 127.0.0.1:<porta>:<porta>`).
+- Uma porta nova "não abre" de fora? É a firewall — não é bug. Para abrir, adicionar regra
+  no hPanel e documentar.
+- Nunca deixar `prisma studio`, `python -m http.server`, `next dev` a correr expostos.
+- Detalhes, tabela de portas e histórico: **`/root/SEGURANCA-FIREWALL.md`**.
