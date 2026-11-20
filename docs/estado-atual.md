@@ -26,6 +26,8 @@
 
 **Erro Pipe fora dos custos:** `OrdemCorte.custo_calculado` devolve custos a zero com `erro_pipe`. Aplica-se a relatórios, PDF, gerência, obras e API, porque todos usam essa propriedade.
 
+**Pausar e retomar corte (QR):** estado novo `pausado`. Pausar (`POST /pwa/t/<token>/pausar`) soma o segmento atual a `ordens_corte.tempo_acumulado_segundos` e limpa `hora_inicio`. Retomar (`POST /pwa/t/<token>/retomar`) abre novo segmento. Tempo real = `tempo_corte` do operador, ou acumulado + último segmento. Coluna nova aplicada em `nesting_db` (default 0). Backup antes: `/var/backups/nesting/nesting_db-pre-pausa-20261120-090655.dump`. API expõe `tempo_acumulado_segundos`. Não coberto ainda: planeamento em lote e painel de gerência tratam `pausado` como fora de corte.
+
 **Backup:** `/var/backups/nesting/nesting_db-pre-erro-pipe-20261120-081757.dump` (pg_dump -Fc, validado, 47 tabelas).
 
 **Limitações:**
