@@ -14,6 +14,8 @@
 
 **Erro Pipe no painel:** botão "Marcar Erro Pipe (retrabalho)" no detalhe da ordem (`POST /ordens/<id>/erro-pipe`, com CSRF, qualquer estado, registado em `LogAlteracaoOrdem`). Badge vermelho quando marcada.
 
+**Novo número de ordem:** `OC-XXXXX` (com obra) ou `FS-XXXXX` (folha de serviço, sem obra), 5 dígitos aleatórios, validados contra a BD (até 100 tentativas). Sem sequência mensal. Gerado no servidor ao guardar (`gerar_numero_ordem(obra_id)` em `app/routes/ordens.py`); o campo "Nº Ordem" do formulário fica vazio. Ordens antigas `OC-AAAAMM-NNNN` mantêm-se. Corte rápido do PWA usa o mesmo gerador. Capacidade: 90 000 códigos por prefixo; se crescer, subir para 6 dígitos.
+
 **Backup:** `/var/backups/nesting/nesting_db-pre-erro-pipe-20261120-081757.dump` (pg_dump -Fc, validado, 47 tabelas).
 
 **Limitações:**
