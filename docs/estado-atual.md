@@ -18,7 +18,7 @@
 
 **Modelo da API de exportação:** https://claude.ai/artifact/3Wzj52dVtePGBRyxrSHYkF (página privada, dados fictícios; `chapa_cliente` e `erro_pipe` nas ordens, custo a zero com Erro Pipe).
 
-**Lista de ordens (`/ordens/`):** badge vermelho **Retrabalho** quando `erro_pipe` está marcado; ícone de retrabalho (`bi-arrow-repeat`) ao lado de Editar quando a ordem tem peças em falta (`pecas_incompletas`), leva a `nova?retrabalho=<id>`.
+**Lista de ordens (`/ordens/`):** badge vermelho **Retrabalho** quando `erro_pipe` está marcado; ícone de retrabalho (`bi-arrow-repeat`) ao lado de Editar quando a ordem tem peças em falta (`pecas_incompletas`) ou Erro Pipe (`erro_pipe`), leva a `nova?retrabalho=<id>`.
 
 **Limitação conhecida — Erro Pipe por item:** hoje é só por ordem. A API expõe tempo e custo por ordem, por isso não dá para marcar um item de uma ordem com vários itens (ex.: OC-202611-0021, 10 itens; OC-202611-0047, 4 itens). Para resolver: `erro_pipe`, tempo e custo por item na API do fabriq, e o NestingSync soma só os itens válidos. Até lá, marcar a ordem inteira. Registado também em `services/nesting/CHANGELOG.md` (fora do git).
 
