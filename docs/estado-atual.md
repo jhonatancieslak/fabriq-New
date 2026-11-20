@@ -18,6 +18,8 @@
 
 **Modelo da API de exportação:** https://claude.ai/artifact/3Wzj52dVtePGBRyxrSHYkF (página privada, dados fictícios; `chapa_cliente` e `erro_pipe` nas ordens, custo a zero com Erro Pipe).
 
+**Lista de ordens (`/ordens/`):** badge vermelho **Retrabalho** quando `erro_pipe` está marcado; ícone de retrabalho (`bi-arrow-repeat`) ao lado de Editar quando a ordem tem peças em falta (`pecas_incompletas`), leva a `nova?retrabalho=<id>`.
+
 **Backup:** `/var/backups/nesting/nesting_db-pre-erro-pipe-20261120-081757.dump` (pg_dump -Fc, validado, 47 tabelas).
 
 **Limitações:**
