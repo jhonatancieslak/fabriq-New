@@ -1,6 +1,32 @@
 # FABRIQ.IA — Estado Actual
 
-**Última sessão:** 2026-09-28 (Sessão 37 — 2 instâncias NestCut + landing de volta)
+**Última sessão:** 2026-11-20 (Sessão 38 — origem da chapa e Erro Pipe no QR)
+
+---
+
+## 2026-11-20 — Origem da chapa + Erro Pipe (PWA QR / NestCut)
+
+**Feito:**
+- Abertura da obra pelo QR (operador logado, ordem `pendente`): popup "Origem da chapa" com 2 botões — **Chapa nossa** / **Chapa cliente**. Grava `ordens_corte.chapa_cliente` via `POST /pwa/t/<token>/chapa`.
+- Conclusão pelo QR: pergunta "Faltaram peças?" → se sim, "Erro nosso?". Sim = **Erro Pipe** (`erro_pipe = true`), não debita na obra.
+- Nova coluna `ordens_corte.erro_pipe BOOLEAN NOT NULL DEFAULT FALSE` (aplicada em `nesting_db`).
+- API v1: `GET /api/v1/ordens` e `/ordens/<id>` passam a devolver `chapa_cliente` e `erro_pipe`; com `erro_pipe` o `custo` vem a zero. `GET /api/v1/obras/<id>/mapa`: linha com `erro_pipe` e custos a zero.
+
+**Backup:** `/var/backups/nesting/nesting_db-pre-erro-pipe-20261120-081757.dump` (pg_dump -Fc, validado, 47 tabelas).
+
+**Limitações:**
+- Relatórios/PDF/Excel internos ainda debitam a obra num Erro Pipe; só API e mapa JSON excluem.
+- Fluxo de conclusão com sessão de operador (`/ordem/<id>/concluir`) não tem as perguntas novas, só o QR.
+- Popup repete-se a cada abertura enquanto a ordem estiver `pendente`.
+- Conclusão QR regista "Peças em falta (indicado no QR)" sem detalhe por peça.
+
+**Verificado:** `nestcut` e `nestcut-b` reiniciados (um de cada vez), `/api/v1/health` 200 nos dois sockets, página QR de ordem real 200 com o popup no markup.
+
+**Próximo passo:** testar popup no telemóvel com login de operador; decidir se Erro Pipe entra nos relatórios.
+
+---
+
+**Sessão anterior:** 2026-09-28 (Sessão 37 — 2 instâncias NestCut + landing de volta)
 
 
 ## 2026-09-28 — Alta disponibilidade sistema.fabriq.pt + landing reposta
