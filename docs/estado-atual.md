@@ -12,6 +12,8 @@
 - Nova coluna `ordens_corte.erro_pipe BOOLEAN NOT NULL DEFAULT FALSE` (aplicada em `nesting_db`).
 - API v1: `GET /api/v1/ordens` e `/ordens/<id>` passam a devolver `chapa_cliente` e `erro_pipe`; com `erro_pipe` o `custo` vem a zero. `GET /api/v1/obras/<id>/mapa`: linha com `erro_pipe` e custos a zero.
 
+**Erro Pipe no painel:** botão "Marcar Erro Pipe (retrabalho)" no detalhe da ordem (`POST /ordens/<id>/erro-pipe`, com CSRF, qualquer estado, registado em `LogAlteracaoOrdem`). Badge vermelho quando marcada.
+
 **Backup:** `/var/backups/nesting/nesting_db-pre-erro-pipe-20261120-081757.dump` (pg_dump -Fc, validado, 47 tabelas).
 
 **Limitações:**
