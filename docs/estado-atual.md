@@ -28,6 +28,8 @@
 
 **Pausar e retomar corte (QR):** estado novo `pausado`. Pausar (`POST /pwa/t/<token>/pausar`) soma o segmento atual a `ordens_corte.tempo_acumulado_segundos` e limpa `hora_inicio`. Retomar (`POST /pwa/t/<token>/retomar`) abre novo segmento. Tempo real = `tempo_corte` do operador, ou acumulado + último segmento. Coluna nova aplicada em `nesting_db` (default 0). Backup antes: `/var/backups/nesting/nesting_db-pre-pausa-20261120-090655.dump`. API expõe `tempo_acumulado_segundos`. Não coberto ainda: planeamento em lote e painel de gerência tratam `pausado` como fora de corte.
 
+**Retrabalho de ordem concluída (QR):** ordem `concluido` mostra "Fazer retrabalho" a operador com sessão. Pergunta "Foi erro nosso?". Cria ordem nova (`POST /pwa/t/<token>/retrabalho`, função `criar_ordem_retrabalho` em `app/routes/ordens.py`) com `ordem_origem_id` apontando à original. Copia só as peças em falta (`pecas_incompletas` com `qtd_faltou`); sem detalhe, copia todos os itens e marca "quantidades a confirmar". Só uma ordem de retrabalho por original. Erro Pipe fica na ordem de retrabalho, não na original: a original cobra as peças cortadas; o retrabalho com erro nosso não cobra. Coluna `ordens_corte.ordem_origem_id` aplicada (backup `/var/backups/nesting/nesting_db-pre-retrabalho-*.dump`). API expõe `ordem_origem_id` e `ordem_origem_numero`. Detalhe mostra links para original e retrabalhos. Ordem 445 (Erro Pipe antigo, marcado na própria ordem) mantém-se como estava.
+
 **Backup:** `/var/backups/nesting/nesting_db-pre-erro-pipe-20261120-081757.dump` (pg_dump -Fc, validado, 47 tabelas).
 
 **Limitações:**
