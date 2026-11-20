@@ -22,6 +22,10 @@
 
 **Limitação conhecida — Erro Pipe por item:** hoje é só por ordem. A API expõe tempo e custo por ordem, por isso não dá para marcar um item de uma ordem com vários itens (ex.: OC-202611-0021, 10 itens; OC-202611-0047, 4 itens). Para resolver: `erro_pipe`, tempo e custo por item na API do fabriq, e o NestingSync soma só os itens válidos. Até lá, marcar a ordem inteira. Registado também em `services/nesting/CHANGELOG.md` (fora do git).
 
+**Cancelar ordem:** botão "Cancelar ordem" no detalhe (`POST /ordens/<id>/cancelar`), só para `pendente`, `programado` e `em_corte`, com confirmação e registo em `LogAlteracaoOrdem`. Para refazer, criar nova ordem.
+
+**Erro Pipe fora dos custos:** `OrdemCorte.custo_calculado` devolve custos a zero com `erro_pipe`. Aplica-se a relatórios, PDF, gerência, obras e API, porque todos usam essa propriedade.
+
 **Backup:** `/var/backups/nesting/nesting_db-pre-erro-pipe-20261120-081757.dump` (pg_dump -Fc, validado, 47 tabelas).
 
 **Limitações:**
